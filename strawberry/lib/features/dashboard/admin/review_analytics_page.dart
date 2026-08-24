@@ -8,6 +8,8 @@ import 'package:excel/excel.dart' hide Border;
 import 'package:file_saver/file_saver.dart';
 import 'package:share_plus/share_plus.dart';
 
+import 'package:strawberry/core/theme/app_colors.dart';
+
 /// Admin "Review & Analysis" dashboard.
 /// - Total students / new admissions this month
 /// - Category-wise student breakdown
@@ -23,25 +25,25 @@ class ReviewAnalyticsPage extends StatefulWidget {
 
 class _ReviewAnalyticsPageState extends State<ReviewAnalyticsPage> {
   // ── Palette ──────────────────────────────────────────────────────────
-  static const _primary = Color(0xFFE94464);
-  static const _primaryDark = Color(0xFFD32F52);
-  static const _primarySoft = Color(0xFFFFE7EC);
-  static const _accentPeach = Color(0xFFFF8FA3);
-  static const _violet = Color(0xFF7C6FF0);
-  static const _blueAccent = Color(0xFF3E8EFF);
+  static const _primary = AppColors.primary;
+  static const _primaryDark = AppColors.primaryDark;
+  static const _primarySoft = AppColors.primarySoft;
+  static const _accentPeach = AppColors.primaryLight;
+  static const _violet = AppColors.violet;
+  static const _blueAccent = AppColors.sky;
 
-  static const _bg = Color(0xFFF6F6FB);
-  static const _surface = Colors.white;
-  static const _border = Color(0xFFEDEDF4);
-  static const _textDark = Color(0xFF1E1B24);
-  static const _textMuted = Color(0xFF8A8794);
+  static const _bg = AppColors.background;
+  static const _surface = AppColors.surface;
+  static const _border = AppColors.borderSubtle;
+  static const _textDark = AppColors.textDark;
+  static const _textMuted = AppColors.textMuted;
 
-  static const _success = Color(0xFF22B07D);
-  static const _successSoft = Color(0xFFE4F6E8);
-  static const _danger = Color(0xFFEF4949);
-  static const _dangerSoft = Color(0xFFFBE7E6);
-  static const _amber = Color(0xFFF5A623);
-  static const _amberSoft = Color(0xFFFCF0DD);
+  static const _success = AppColors.emerald;
+  static const _successSoft = AppColors.emeraldSoft;
+  static const _amber = AppColors.amber;
+  static const _amberSoft = AppColors.amberSoft;
+  static const _danger = AppColors.danger;
+  static const _dangerSoft = AppColors.dangerSoft;
 
   bool _loading = true;
   bool _exporting = false;
@@ -90,11 +92,47 @@ class _ReviewAnalyticsPageState extends State<ReviewAnalyticsPage> {
     }
   }
 
+  bool _changingMonth = false;
+
   Future<void> _changeMonth(int delta) async {
+    final newMonth = DateTime(_visibleMonth.year, _visibleMonth.month + delta);
+    final daysInNewMonth = DateTime(newMonth.year, newMonth.month + 1, 0).day;
+    final clampedDay = _selectedDate.day.clamp(1, daysInNewMonth);
+    var newSelectedDate = DateTime(newMonth.year, newMonth.month, clampedDay);
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    if (newSelectedDate.isAfter(today)) {
+      newSelectedDate = today;
+    }
+
     setState(() {
-      _visibleMonth = DateTime(_visibleMonth.year, _visibleMonth.month + delta);
+      _visibleMonth = newMonth;
+      _selectedDate = newSelectedDate;
+      _changingMonth = true;
     });
-    await _loadAll();
+
+    try {
+      final firstDay = DateTime(newMonth.year, newMonth.month, 1);
+      final lastDay = DateTime(newMonth.year, newMonth.month + 1, 0);
+
+      final results = await Future.wait([
+        widget.authService.getAttendanceInRange(start: firstDay, end: lastDay),
+        widget.authService.getHolidaysForMonth(newMonth.year, newMonth.month),
+      ]);
+
+      if (!mounted) return;
+      setState(() {
+        _monthAttendance = results[0];
+        _monthHolidays = results[1];
+        _changingMonth = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _changingMonth = false;
+      });
+    }
   }
 
   // ── Derived: overview ────────────────────────────────────────────────
@@ -207,12 +245,30 @@ class _ReviewAnalyticsPageState extends State<ReviewAnalyticsPage> {
 
   Future<void> _pickDate() async {
     final firstDay = DateTime(_visibleMonth.year, _visibleMonth.month, 1);
-    final lastDay = DateTime(_visibleMonth.year, _visibleMonth.month + 1, 0);
+    final lastDayOfVisibleMonth = DateTime(_visibleMonth.year, _visibleMonth.month + 1, 0);
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    // Effective last selectable date cannot exceed today nor the visible month's end
+    DateTime effectiveLastDate = lastDayOfVisibleMonth.isAfter(today) ? today : lastDayOfVisibleMonth;
+    if (effectiveLastDate.isBefore(firstDay)) {
+      effectiveLastDate = firstDay;
+    }
+
+    // Effective initial date must be strictly clamped between firstDay and effectiveLastDate
+    DateTime effectiveInitialDate = _selectedDate;
+    if (effectiveInitialDate.isBefore(firstDay)) {
+      effectiveInitialDate = firstDay;
+    } else if (effectiveInitialDate.isAfter(effectiveLastDate)) {
+      effectiveInitialDate = effectiveLastDate;
+    }
+
     final picked = await showDatePicker(
       context: context,
-      initialDate: _selectedDate.isAfter(lastDay) ? lastDay : _selectedDate,
+      initialDate: effectiveInitialDate,
       firstDate: firstDay,
-      lastDate: lastDay.isAfter(DateTime.now()) ? DateTime.now() : lastDay,
+      lastDate: effectiveLastDate,
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -774,9 +830,14 @@ class _ReviewAnalyticsPageState extends State<ReviewAnalyticsPage> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        const Text('Day-wise Attendance',
-            style: TextStyle(
-                fontSize: 15, fontWeight: FontWeight.w800, color: _textDark)),
+        const Text(
+          'Day-wise Attendance',
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w800,
+            color: _textDark,
+          ),
+        ),
         InkWell(
           onTap: _pickDate,
           borderRadius: BorderRadius.circular(12),
@@ -794,9 +855,10 @@ class _ReviewAnalyticsPageState extends State<ReviewAnalyticsPage> {
                 Text(
                   DateFormat('d MMM, yyyy').format(_selectedDate),
                   style: const TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w700,
-                      color: _primaryDark),
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                    color: _primaryDark,
+                  ),
                 ),
               ],
             ),
@@ -926,24 +988,54 @@ class _ReviewAnalyticsPageState extends State<ReviewAnalyticsPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Attendance Trend',
-                  style: TextStyle(
-                      fontSize: 15, fontWeight: FontWeight.w800, color: _textDark)),
               Row(
                 children: [
-                  _RoundIconBtn(icon: Icons.chevron_left_rounded, onTap: () => _changeMonth(-1)),
+                  const Text(
+                    'Attendance Trend',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: _textDark,
+                    ),
+                  ),
+                  if (_changingMonth) ...[
+                    const SizedBox(width: 8),
+                    const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation(_primary),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              Row(
+                children: [
+                  _RoundIconBtn(
+                    icon: Icons.chevron_left_rounded,
+                    onTap: _changingMonth ? null : () => _changeMonth(-1),
+                  ),
                   const SizedBox(width: 6),
                   SizedBox(
                     width: 100,
-                    child: Text(monthLabel,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                            fontSize: 12.5, fontWeight: FontWeight.w700, color: _textDark)),
+                    child: Text(
+                      monthLabel,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        color: _textDark,
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 6),
                   _RoundIconBtn(
                     icon: Icons.chevron_right_rounded,
-                    onTap: isCurrentOrFuture ? null : () => _changeMonth(1),
+                    onTap: (isCurrentOrFuture || _changingMonth)
+                        ? null
+                        : () => _changeMonth(1),
                   ),
                 ],
               ),

@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:strawberry/core/theme/app_colors.dart';
+import 'package:strawberry/core/theme/app_typography.dart';
+import 'package:strawberry/core/theme/app_decorations.dart';
+import 'package:strawberry/core/utils/responsive.dart';
+import 'package:strawberry/core/widgets/app_button.dart';
 import 'package:strawberry/features/auth/auth_service.dart';
 import 'package:strawberry/features/payments/payment_service.dart';
 import 'package:strawberry/features/dashboard/student/payment_history_page.dart';
@@ -20,16 +25,6 @@ class PayFeesPage extends StatefulWidget {
 class _PayFeesPageState extends State<PayFeesPage> {
   final _paymentService = PaymentService();
   final _amountController = TextEditingController();
-
-  static const Color _bg = Color(0xFFF6F6FB);
-  static const Color _surface = Colors.white;
-  static const Color _primary = Color(0xFFE94464);
-  static const Color _primarySoft = Color(0xFFFFE7EC);
-  static const Color _textDark = Color(0xFF1E1B24);
-  static const Color _textMuted = Color(0xFF8A8794);
-  static const Color _border = Color(0xFFEDEDF4);
-  static const Color _success = Color(0xFF22B07D);
-  static const Color _danger = Color(0xFFEF4949);
 
   String? _selectedMonth;
   bool _paying = false;
@@ -136,7 +131,6 @@ class _PayFeesPageState extends State<PayFeesPage> {
         _snack('Payment was cancelled.', danger: true);
         return;
       default:
-        // Ambiguous outcome — fall back to asking the student, same as before.
         _showFollowUpDialog(result.rowId);
     }
   }
@@ -146,31 +140,25 @@ class _PayFeesPageState extends State<PayFeesPage> {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        backgroundColor: _surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Row(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: AppDecorations.radiusLg),
+        title: Row(
           children: [
-            Icon(Icons.hourglass_top_rounded, color: Color(0xFFF5A623)),
-            SizedBox(width: 10),
+            const Icon(Icons.hourglass_top_rounded, color: AppColors.amberDark),
+            const SizedBox(width: 10),
             Expanded(
               child: Text(
-                'Complete the Payment',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: _textDark,
-                ),
+                'Complete Payment in UPI',
+                style: AppTypography.h3,
               ),
             ),
           ],
         ),
-        content: const Text(
-          'We opened your UPI app with the school\'s UPI ID and amount pre-filled. '
-          'Once you finish it there, come back and let us know below — the school will '
-          'confirm it shortly after.',
-          style: TextStyle(color: _textMuted),
+        content: Text(
+          'We initiated your transaction with the school\'s UPI ID and amount pre-filled. '
+          'Once completed in your UPI app, tap below to confirm.',
+          style: AppTypography.bodySmall,
         ),
-        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
           TextButton(
             onPressed: () async {
@@ -178,11 +166,7 @@ class _PayFeesPageState extends State<PayFeesPage> {
               await _paymentService.markSelfReportedFailed(rowId);
               _snack('Marked as not completed', danger: true);
             },
-            style: TextButton.styleFrom(foregroundColor: _danger),
-            child: const Text(
-              'Didn\'t complete it',
-              style: TextStyle(fontWeight: FontWeight.w700),
-            ),
+            child: Text('Cancel', style: AppTypography.button.copyWith(color: AppColors.danger)),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -193,17 +177,11 @@ class _PayFeesPageState extends State<PayFeesPage> {
               setState(() {});
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: _success,
+              backgroundColor: AppColors.emerald,
               foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: AppDecorations.radiusSm),
             ),
-            child: const Text(
-              'I\'ve Paid',
-              style: TextStyle(fontWeight: FontWeight.w700),
-            ),
+            child: const Text('I\'ve Paid'),
           ),
         ],
       ),
@@ -213,10 +191,8 @@ class _PayFeesPageState extends State<PayFeesPage> {
   void _snack(String msg, {bool danger = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(msg),
-        backgroundColor: danger ? _danger : _success,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        content: Text(msg, style: AppTypography.bodySmall.copyWith(color: Colors.white)),
+        backgroundColor: danger ? AppColors.danger : AppColors.emerald,
       ),
     );
   }
@@ -226,19 +202,13 @@ class _PayFeesPageState extends State<PayFeesPage> {
     final unpaid = _unpaidMonths;
 
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: _bg,
-        elevation: 0,
-        foregroundColor: _textDark,
-        title: const Text(
-          'Pay Fees',
-          style: TextStyle(fontWeight: FontWeight.w800, color: _textDark),
-        ),
+        title: Text('Pay Academic Fees', style: AppTypography.h2),
         actions: [
           IconButton(
             tooltip: 'Payment History',
-            icon: const Icon(Icons.history_rounded),
+            icon: const Icon(Icons.receipt_long_rounded, color: AppColors.primary),
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) =>
@@ -248,196 +218,156 @@ class _PayFeesPageState extends State<PayFeesPage> {
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
-        children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: _primarySoft,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.account_balance_wallet_rounded,
-                  color: _primary,
-                  size: 28,
+      body: Center(
+        child: ResponsiveContentWrapper(
+          maxWidth: 600,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: ListView(
+            physics: const BouncingScrollPhysics(),
+            children: [
+              // Monthly Fee Header Card
+              Container(
+                padding: const EdgeInsets.all(22),
+                decoration: BoxDecoration(
+                  gradient: AppColors.primaryGradient,
+                  borderRadius: AppDecorations.radiusXl,
+                  boxShadow: AppDecorations.primaryGlow,
                 ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Monthly Fees',
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w600,
-                          color: _textMuted,
-                        ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        shape: BoxShape.circle,
                       ),
-                      Text(
-                        '₹${_monthlyFee.toStringAsFixed(0)}/month',
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                          color: _textDark,
+                      child: const Icon(
+                        Icons.account_balance_wallet_rounded,
+                        color: Colors.white,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Monthly Tuition Fee',
+                            style: AppTypography.caption.copyWith(color: Colors.white.withValues(alpha: 0.85)),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '₹${_monthlyFee.toStringAsFixed(0)} / month',
+                            style: AppTypography.h1.copyWith(color: Colors.white, fontSize: 24),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              if (unpaid.isEmpty) ...[
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: AppDecorations.radiusLg,
+                    border: Border.all(color: AppColors.borderSubtle),
+                    boxShadow: AppDecorations.shadowSm,
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.celebration_rounded, color: AppColors.emerald, size: 28),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Text(
+                          'All monthly fees are cleared! No pending dues.',
+                          style: AppTypography.bodyMedium.copyWith(
+                            color: AppColors.emeraldDark,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-          if (unpaid.isEmpty) ...[
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: _surface,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: _border),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.celebration_rounded, color: _success),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'All fees for the last 12 months are paid. 🎉',
-                      style: TextStyle(
-                        color: _textDark,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+              ] else ...[
+                Text('Select Fee Month', style: AppTypography.h3),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  value: _selectedMonth,
+                  dropdownColor: Colors.white,
+                  style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600),
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.calendar_month_rounded, color: AppColors.primary),
                   ),
-                ],
-              ),
-            ),
-          ] else ...[
-            const Text(
-              'Select Month',
-              style: TextStyle(fontWeight: FontWeight.w800, color: _textDark),
-            ),
-            const SizedBox(height: 10),
-            DropdownButtonFormField<String>(
-              value: _selectedMonth,
-              dropdownColor: _surface,
-              style: const TextStyle(color: _textDark),
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: _surface,
-                prefixIcon: const Icon(
-                  Icons.calendar_month_rounded,
-                  color: _primary,
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: _border),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: _primary, width: 1.6),
-                ),
-              ),
-              items: unpaid
-                  .map(
-                    (m) => DropdownMenuItem(
-                      value: m,
-                      child: Text(_formatMonthKey(m)),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (v) => setState(() => _selectedMonth = v),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'Amount',
-              style: TextStyle(fontWeight: FontWeight.w800, color: _textDark),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _amountController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              style: const TextStyle(
-                color: _textDark,
-                fontWeight: FontWeight.w700,
-              ),
-              decoration: InputDecoration(
-                prefixText: '₹ ',
-                filled: true,
-                fillColor: _surface,
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: _border),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: _primary, width: 1.6),
-                ),
-              ),
-            ),
-            const SizedBox(height: 28),
-            SizedBox(
-              height: 54,
-              child: ElevatedButton.icon(
-                onPressed: _paying ? null : _startPayment,
-                icon: _paying
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.4,
-                          color: Colors.white,
+                  items: unpaid
+                      .map(
+                        (m) => DropdownMenuItem(
+                          value: m,
+                          child: Text(_formatMonthKey(m)),
                         ),
                       )
-                    : const Icon(Icons.bolt_rounded),
-                label: Text(_paying ? 'Opening UPI app…' : 'Pay Now via UPI'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _primary,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  textStyle: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 15.5,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                      .toList(),
+                  onChanged: (v) => setState(() => _selectedMonth = v),
+                ),
+
+                const SizedBox(height: 20),
+
+                Text('Payment Amount (₹)', style: AppTypography.h3),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _amountController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  style: AppTypography.h2,
+                  decoration: InputDecoration(
+                    prefixText: '₹ ',
+                    prefixStyle: AppTypography.h2.copyWith(color: AppColors.primary),
                   ),
                 ),
+
+                const SizedBox(height: 28),
+
+                AppButton(
+                  label: _paying ? 'Opening UPI App...' : 'Pay Instant via UPI',
+                  icon: Icons.bolt_rounded,
+                  loading: _paying,
+                  onPressed: _paying ? null : _startPayment,
+                  variant: AppButtonVariant.primary,
+                  height: 52,
+                ),
+
+                const SizedBox(height: 12),
+
+                Center(
+                  child: Text(
+                    'Compatible with Google Pay, PhonePe, Paytm & BHIM UPI',
+                    textAlign: TextAlign.center,
+                    style: AppTypography.caption,
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: 28),
+
+              AppButton(
+                label: 'View Payment Receipts',
+                icon: Icons.receipt_long_rounded,
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => PaymentHistoryPage(studentId: widget.profile['id']),
+                  ),
+                ),
+                variant: AppButtonVariant.outline,
+                height: 48,
               ),
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              'Opens Google Pay / PhonePe / Paytm with the school\'s UPI ID and amount pre-filled. No extra charges.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12, color: _textMuted),
-            ),
-          ],
-          const SizedBox(height: 28),
-          OutlinedButton.icon(
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) =>
-                    PaymentHistoryPage(studentId: widget.profile['id']),
-              ),
-            ),
-            icon: const Icon(Icons.receipt_long_rounded, color: _primary),
-            label: const Text('View Payment History'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: _primary,
-              side: const BorderSide(color: _primary),
-              minimumSize: const Size.fromHeight(50),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

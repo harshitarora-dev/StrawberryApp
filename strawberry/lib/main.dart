@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:strawberry/core/supabase_config.dart';
+import 'package:strawberry/core/theme/app_theme.dart';
 import 'package:strawberry/features/splash/splash_screen.dart';
 import 'package:strawberry/features/auth/push_notification_service.dart';
 
@@ -34,12 +35,10 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Strawberry',
+      title: 'Strawberry Preschool',
       debugShowCheckedModeBanner: false,
       themeMode: ThemeMode.light,
-      theme: ThemeData.light(useMaterial3: true).copyWith(
-        scaffoldBackgroundColor: const Color(0xFFF6F6FB),
-      ),
+      theme: AppTheme.lightTheme,
       home: const SplashScreen(),
     );
   }

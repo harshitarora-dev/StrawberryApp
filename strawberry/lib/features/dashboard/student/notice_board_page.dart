@@ -1,4 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:strawberry/core/theme/app_colors.dart';
+import 'package:strawberry/core/theme/app_typography.dart';
+import 'package:strawberry/core/theme/app_decorations.dart';
+import 'package:strawberry/core/utils/responsive.dart';
+import 'package:strawberry/core/widgets/app_badge.dart';
+import 'package:strawberry/core/widgets/playschool_animations.dart';
 import 'package:strawberry/features/auth/auth_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -14,14 +20,6 @@ class _NoticeBoardPageState extends State<NoticeBoardPage> {
   List<Map<String, dynamic>> _notices = [];
   bool _loading = true;
   String _selectedCategory = 'All';
-
-  static const Color _bg = Color(0xFFF6F6FB);
-  static const Color _surface = Colors.white;
-  static const Color _primary = Color(0xFFE94464);
-  static const Color _primarySoft = Color(0xFFFFE7EC);
-  static const Color _textDark = Color(0xFF1E1B24);
-  static const Color _textMuted = Color(0xFF8A8794);
-  static const Color _border = Color(0xFFEDEDF4);
 
   @override
   void initState() {
@@ -52,6 +50,21 @@ class _NoticeBoardPageState extends State<NoticeBoardPage> {
     }
   }
 
+  AppBadgeType _getCategoryBadgeType(String category) {
+    switch (category) {
+      case 'Fees':
+        return AppBadgeType.warning;
+      case 'Holiday':
+        return AppBadgeType.info;
+      case 'Event':
+        return AppBadgeType.success;
+      case 'Emergency':
+        return AppBadgeType.danger;
+      default:
+        return AppBadgeType.primary;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final filteredNotices = _selectedCategory == 'All'
@@ -61,175 +74,158 @@ class _NoticeBoardPageState extends State<NoticeBoardPage> {
               .toList();
 
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text(
-          'Notice Board',
-          style: TextStyle(
-            color: _textDark,
-            fontWeight: FontWeight.w800,
-            fontSize: 19,
+        title: Text('Notice Board', style: AppTypography.h2),
+      ),
+      body: Center(
+        child: ResponsiveContentWrapper(
+          maxWidth: 780,
+          child: Column(
+            children: [
+              _buildCategoryFilterRow(),
+              Expanded(
+                child: _loading
+                    ? const Center(
+                        child: CircularProgressIndicator(color: AppColors.primary),
+                      )
+                    : filteredNotices.isEmpty
+                    ? Center(
+                        child: Text(
+                          'No notices available in this category',
+                          style: AppTypography.bodySmall,
+                        ),
+                      )
+                    : RefreshIndicator(
+                        onRefresh: _loadNotices,
+                        color: AppColors.primary,
+                        child: ListView.builder(
+                          padding: const EdgeInsets.all(16),
+                          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                          itemCount: filteredNotices.length,
+                          itemBuilder: (context, index) {
+                            final n = filteredNotices[index];
+                            final title = n['title'] ?? '';
+                            final body = n['body'] ?? '';
+                            final category = n['category'] ?? 'General';
+                            final created = (n['last_sent_at'] ?? n['created_at']) != null
+                                ? (n['last_sent_at'] ?? n['created_at']).toString().split('T').first
+                                : '';
+
+                            return StaggeredEntrance(
+                              index: index,
+                              slideOffset: 20,
+                              child: Container(
+                                margin: const EdgeInsets.only(bottom: 16),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: AppDecorations.radiusLg,
+                                  border: Border.all(color: AppColors.borderSubtle),
+                                  boxShadow: AppDecorations.shadowSm,
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(20.0),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          AppBadge(
+                                            label: category,
+                                            type: _getCategoryBadgeType(category),
+                                          ),
+                                          Text(
+                                            created,
+                                            style: AppTypography.caption,
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 14),
+                                      Text(
+                                        title,
+                                        style: AppTypography.h3.copyWith(fontSize: 16),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        body,
+                                        style: AppTypography.bodyMedium.copyWith(
+                                          color: AppColors.textBody,
+                                          height: 1.45,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+              ),
+            ],
           ),
         ),
-        backgroundColor: _surface,
-        surfaceTintColor: Colors.transparent,
-        foregroundColor: _textDark,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        shape: const Border(bottom: BorderSide(color: _border, width: 1)),
-      ),
-      body: Column(
-        children: [
-          _buildCategoryFilterRow(),
-          Expanded(
-            child: _loading
-                ? const Center(
-                    child: CircularProgressIndicator(color: _primary),
-                  )
-                : filteredNotices.isEmpty
-                ? const Center(
-                    child: Text(
-                      'No notices available',
-                      style: TextStyle(color: _textMuted, fontSize: 14),
-                    ),
-                  )
-                : RefreshIndicator(
-                    onRefresh: _loadNotices,
-                    color: _primary,
-                    child: ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: filteredNotices.length,
-                      itemBuilder: (context, index) {
-                        final n = filteredNotices[index];
-                        final title = n['title'] ?? '';
-                        final body = n['body'] ?? '';
-                        final category = n['category'] ?? 'General';
-                        final created = (n['last_sent_at'] ?? n['created_at']) != null
-                            ? (n['last_sent_at'] ?? n['created_at']).toString().split('T').first
-                            : '';
-
-                        Color catColor = const Color(0xFF3E8EFF);
-                        if (category == 'Fees') catColor = const Color(0xFFF5A623);
-                        if (category == 'Holiday') catColor = const Color(0xFFEF4949);
-                        if (category == 'Event') catColor = const Color(0xFF22B07D);
-
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          decoration: BoxDecoration(
-                            color: _surface,
-                            borderRadius: BorderRadius.circular(18),
-                            border: Border.all(color: _border),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.02),
-                                blurRadius: 8,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(18.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: catColor.withValues(alpha: 0.12),
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Text(
-                                    category,
-                                    style: TextStyle(
-                                      color: catColor,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  title,
-                                  style: const TextStyle(
-                                    color: _textDark,
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  body,
-                                  style: const TextStyle(
-                                    color: _textMuted,
-                                    fontSize: 14,
-                                    height: 1.4,
-                                  ),
-                                ),
-                                const SizedBox(height: 14),
-                                const Divider(color: _border, height: 1),
-                                const SizedBox(height: 10),
-                                Align(
-                                  alignment: Alignment.centerRight,
-                                  child: Text(
-                                    'Posted on: $created',
-                                    style: const TextStyle(
-                                      color: _textMuted,
-                                      fontSize: 11.5,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-          ),
-        ],
       ),
     );
   }
 
   Widget _buildCategoryFilterRow() {
-    final categories = ['All', 'General', 'Fees', 'Holiday', 'Event'];
+    final categories = [
+      {'name': 'All', 'emoji': '🍓'},
+      {'name': 'General', 'emoji': '📌'},
+      {'name': 'Fees', 'emoji': '💰'},
+      {'name': 'Holiday', 'emoji': '🏖️'},
+      {'name': 'Event', 'emoji': '🎪'},
+    ];
     return Container(
-      height: 56,
-      color: _surface,
+      height: 58,
+      color: Colors.white,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         itemCount: categories.length,
         itemBuilder: (context, index) {
-          final cat = categories[index];
+          final cat = categories[index]['name']!;
+          final emoji = categories[index]['emoji']!;
           final isSelected = _selectedCategory == cat;
           return Padding(
             padding: const EdgeInsets.only(right: 8.0),
-            child: ChoiceChip(
-              label: Text(cat),
-              selected: isSelected,
-              selectedColor: _primary,
-              backgroundColor: _bg,
-              labelStyle: TextStyle(
-                color: isSelected ? Colors.white : _textMuted,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                fontSize: 13,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-                side: BorderSide(
-                  color: isSelected ? _primary : _border,
+            child: BouncyTap(
+              onTap: () => setState(() => _selectedCategory = cat),
+              child: ChoiceChip(
+                label: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    FloatingWobble(
+                      verticalOffset: 1.5,
+                      duration: const Duration(milliseconds: 2000),
+                      child: Text(emoji, style: const TextStyle(fontSize: 13)),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(cat),
+                  ],
                 ),
+                selected: isSelected,
+                selectedColor: AppColors.primary,
+                backgroundColor: AppColors.surfaceAlt,
+                labelStyle: AppTypography.button.copyWith(
+                  color: isSelected ? Colors.white : AppColors.textBody,
+                  fontSize: 12.5,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: AppDecorations.radiusFull,
+                  side: BorderSide(
+                    color: isSelected ? AppColors.primary : AppColors.borderSubtle,
+                  ),
+                ),
+                onSelected: (selected) {
+                  if (selected) {
+                    setState(() => _selectedCategory = cat);
+                  }
+                },
               ),
-              onSelected: (selected) {
-                if (selected) {
-                  setState(() => _selectedCategory = cat);
-                }
-              },
             ),
           );
         },

@@ -1,4 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:strawberry/core/theme/app_colors.dart';
+import 'package:strawberry/core/theme/app_typography.dart';
+import 'package:strawberry/core/theme/app_decorations.dart';
+import 'package:strawberry/core/utils/responsive.dart';
+import 'package:strawberry/core/widgets/app_button.dart';
+import 'package:strawberry/core/widgets/playschool_animations.dart';
 import 'package:strawberry/features/auth/auth_service.dart';
 import 'package:strawberry/features/auth/auth_screen.dart';
 import 'package:strawberry/features/dashboard/student/home_screen.dart';
@@ -17,15 +23,6 @@ class _WaitScreenState extends State<WaitScreen> {
   final _authService = AuthService();
   bool _loading = false;
   late bool _isRejected;
-
-  static const Color _bg = Color(0xFFF6F6FB);
-  static const Color _surface = Colors.white;
-  static const Color _primary = Color(0xFFE94464);
-  static const Color _textDark = Color(0xFF1E1B24);
-  static const Color _textMuted = Color(0xFF8A8794);
-  static const Color _amber = Color(0xFFF5A623);
-  static const Color _danger = Color(0xFFEF4949);
-  static const Color _border = Color(0xFFEDEDF4);
 
   @override
   void initState() {
@@ -72,14 +69,11 @@ class _WaitScreenState extends State<WaitScreen> {
       if (!_isRejected) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text(
-              'Your request is still pending approval.',
+            content: Text(
+              'Your request is still pending approval from the administrator.',
+              style: AppTypography.bodySmall.copyWith(color: Colors.white),
             ),
-            backgroundColor: _amber,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+            backgroundColor: AppColors.amberDark,
           ),
         );
       }
@@ -87,12 +81,8 @@ class _WaitScreenState extends State<WaitScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Failed to check status. Please try again.'),
-            backgroundColor: _danger,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+            content: Text('Failed to check status. Please try again.', style: AppTypography.bodySmall.copyWith(color: Colors.white)),
+            backgroundColor: AppColors.danger,
           ),
         );
       }
@@ -114,14 +104,11 @@ class _WaitScreenState extends State<WaitScreen> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text(
-            'Your request has been re-submitted. Please wait for approval.',
+          content: Text(
+            'Your request has been re-submitted for approval.',
+            style: AppTypography.bodySmall.copyWith(color: Colors.white),
           ),
-          backgroundColor: const Color(0xFF22B07D),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          backgroundColor: AppColors.emerald,
         ),
       );
     } catch (e) {
@@ -129,12 +116,8 @@ class _WaitScreenState extends State<WaitScreen> {
         setState(() => _loading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Failed to re-submit request. Please try again.'),
-            backgroundColor: _danger,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+            content: Text('Failed to re-submit request. Please try again.', style: AppTypography.bodySmall.copyWith(color: Colors.white)),
+            backgroundColor: AppColors.danger,
           ),
         );
       }
@@ -153,11 +136,14 @@ class _WaitScreenState extends State<WaitScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 28.0),
-          child: _isRejected ? _buildRejectedView() : _buildPendingView(),
+        child: Center(
+          child: ResponsiveContentWrapper(
+            maxWidth: 480,
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+            child: _isRejected ? _buildRejectedView() : _buildPendingView(),
+          ),
         ),
       ),
     );
@@ -170,92 +156,68 @@ class _WaitScreenState extends State<WaitScreen> {
       children: [
         const Spacer(),
         Center(
-          child: Container(
-            padding: const EdgeInsets.all(28),
-            decoration: BoxDecoration(
-              color: _amber.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.hourglass_empty_rounded,
-              size: 80,
-              color: _amber,
-            ),
-          ),
-        ),
-        const SizedBox(height: 32),
-        const Text(
-          'Pending Approval',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 26,
-            fontWeight: FontWeight.w800,
-            color: _textDark,
-            letterSpacing: 0.1,
-          ),
-        ),
-        const SizedBox(height: 14),
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: _surface,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: _border),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+          child: FloatingWobble(
+            verticalOffset: 6,
+            rotationAngle: 0.04,
+            child: Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                color: AppColors.amberSoft,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: AppColors.amber.withValues(alpha: 0.3),
+                  width: 2,
+                ),
               ),
-            ],
+              child: const Icon(
+                Icons.hourglass_top_rounded,
+                size: 48,
+                color: AppColors.amberDark,
+              ),
+            ),
           ),
-          child: const Text(
-            'Your request has been submitted to the administrator. You will be able to access the student dashboard once approved.',
+        ),
+        const SizedBox(height: 28),
+        Text(
+          'Pending Admin Approval',
+          textAlign: TextAlign.center,
+          style: AppTypography.h1.copyWith(fontSize: 24),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(22),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: AppDecorations.radiusLg,
+            border: Border.all(color: AppColors.borderSubtle),
+            boxShadow: AppDecorations.shadowSm,
+          ),
+          child: Text(
+            'Your account registration has been submitted to the preschool administrator. You will get instant access once your admission profile is verified.',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14.5,
-              color: _textMuted,
+            style: AppTypography.bodyMedium.copyWith(
+              color: AppColors.textMuted,
               height: 1.5,
             ),
           ),
         ),
         const Spacer(),
-        if (_loading)
-          const Center(
-            child: Padding(
-              padding: EdgeInsets.all(16.0),
-              child: CircularProgressIndicator(color: _primary),
-            ),
-          )
-        else ...[
-          ElevatedButton.icon(
-            onPressed: _checkStatus,
-            icon: const Icon(Icons.refresh_rounded),
-            label: const Text(
-              'Check Status',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _primary,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              elevation: 0,
-            ),
-          ),
-          const SizedBox(height: 14),
-          TextButton.icon(
-            onPressed: _logout,
-            icon: const Icon(Icons.logout_rounded),
-            label: const Text('Log Out'),
-            style: TextButton.styleFrom(
-              foregroundColor: _textMuted,
-            ),
-          ),
-        ],
-        const SizedBox(height: 24),
+        AppButton(
+          label: 'Check Status Now',
+          icon: Icons.refresh_rounded,
+          loading: _loading,
+          onPressed: _checkStatus,
+          variant: AppButtonVariant.primary,
+        ),
+        const SizedBox(height: 12),
+        AppButton(
+          label: 'Log Out',
+          icon: Icons.logout_rounded,
+          onPressed: _logout,
+          variant: AppButtonVariant.text,
+        ),
+        const SizedBox(height: 16),
       ],
     );
   }
@@ -268,91 +230,63 @@ class _WaitScreenState extends State<WaitScreen> {
         const Spacer(),
         Center(
           child: Container(
-            padding: const EdgeInsets.all(28),
+            width: 100,
+            height: 100,
             decoration: BoxDecoration(
-              color: _danger.withValues(alpha: 0.10),
+              color: AppColors.dangerSoft,
               shape: BoxShape.circle,
+              border: Border.all(
+                color: AppColors.danger.withValues(alpha: 0.3),
+                width: 2,
+              ),
             ),
             child: const Icon(
               Icons.cancel_rounded,
-              size: 80,
-              color: _danger,
+              size: 48,
+              color: AppColors.danger,
             ),
           ),
         ),
-        const SizedBox(height: 32),
-        const Text(
-          'Request Rejected',
+        const SizedBox(height: 28),
+        Text(
+          'Application Not Approved',
           textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 26,
-            fontWeight: FontWeight.w800,
-            color: _textDark,
-            letterSpacing: 0.1,
-          ),
+          style: AppTypography.h1.copyWith(fontSize: 24),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 12),
         Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(22),
           decoration: BoxDecoration(
-            color: _surface,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: _border),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            color: AppColors.surface,
+            borderRadius: AppDecorations.radiusLg,
+            border: Border.all(color: AppColors.borderSubtle),
+            boxShadow: AppDecorations.shadowSm,
           ),
-          child: const Text(
-            'Unfortunately, your registration request has been rejected by the administrator. You may re-submit your request or contact the school for more information.',
+          child: Text(
+            'Your registration could not be verified at this moment. You can re-submit your verification request or contact the school office.',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14.5,
-              color: _textMuted,
+            style: AppTypography.bodyMedium.copyWith(
+              color: AppColors.textMuted,
               height: 1.5,
             ),
           ),
         ),
         const Spacer(),
-        if (_loading)
-          const Center(
-            child: Padding(
-              padding: EdgeInsets.all(16.0),
-              child: CircularProgressIndicator(color: _primary),
-            ),
-          )
-        else ...[
-          ElevatedButton.icon(
-            onPressed: _reRequestApproval,
-            icon: const Icon(Icons.send_rounded),
-            label: const Text(
-              'Request Again',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _primary,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              elevation: 0,
-            ),
-          ),
-          const SizedBox(height: 14),
-          TextButton.icon(
-            onPressed: _logout,
-            icon: const Icon(Icons.logout_rounded),
-            label: const Text('Log Out'),
-            style: TextButton.styleFrom(
-              foregroundColor: _textMuted,
-            ),
-          ),
-        ],
-        const SizedBox(height: 24),
+        AppButton(
+          label: 'Re-submit Application',
+          icon: Icons.send_rounded,
+          loading: _loading,
+          onPressed: _reRequestApproval,
+          variant: AppButtonVariant.primary,
+        ),
+        const SizedBox(height: 12),
+        AppButton(
+          label: 'Log Out',
+          icon: Icons.logout_rounded,
+          onPressed: _logout,
+          variant: AppButtonVariant.text,
+        ),
+        const SizedBox(height: 16),
       ],
     );
   }

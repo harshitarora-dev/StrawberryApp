@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:strawberry/core/theme/app_colors.dart';
+import 'package:strawberry/core/theme/app_typography.dart';
+import 'package:strawberry/core/theme/app_decorations.dart';
+import 'package:strawberry/core/utils/responsive.dart';
+import 'package:strawberry/core/widgets/playschool_animations.dart';
 import 'package:strawberry/features/auth/auth_service.dart';
 import 'package:strawberry/features/dashboard/student/wait_screen.dart';
 import 'package:strawberry/features/dashboard/student/home_screen.dart';
@@ -26,17 +31,17 @@ class _AuthScreenState extends State<AuthScreen>
     super.initState();
     _animController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 900),
+      duration: const Duration(milliseconds: 700),
     );
     _fadeAnim = CurvedAnimation(
       parent: _animController,
       curve: const Interval(0.0, 0.7, curve: Curves.easeOut),
     );
-    _slideAnim = Tween<Offset>(begin: const Offset(0, 0.25), end: Offset.zero)
+    _slideAnim = Tween<Offset>(begin: const Offset(0, 0.15), end: Offset.zero)
         .animate(
           CurvedAnimation(
             parent: _animController,
-            curve: const Interval(0.2, 1.0, curve: Curves.easeOutCubic),
+            curve: const Interval(0.15, 1.0, curve: Curves.easeOutCubic),
           ),
         );
     _animController.forward();
@@ -133,13 +138,7 @@ class _AuthScreenState extends State<AuthScreen>
 
   @override
   Widget build(BuildContext context) {
-    const Color bgTop = Color(0xFFFFFFFF);
-    const Color bgBottom = Color(0xFFFFF5F6);
-    const Color primary = Color(0xFFE94464);
-    const Color primaryDark = Color(0xFFD32F52);
-    const Color accent = Color(0xFFFFB4A2);
-    const Color textDark = Color(0xFF2D2D2D);
-    const Color textMuted = Color(0xFF9B9B9B);
+    final size = MediaQuery.of(context).size;
 
     return Scaffold(
       body: Container(
@@ -149,204 +148,229 @@ class _AuthScreenState extends State<AuthScreen>
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [bgTop, bgBottom],
+            colors: [Color(0xFFFFFFFF), Color(0xFFFFF4F6)],
           ),
         ),
         child: Stack(
           children: [
-            // Decorative blobs
+            // Decorative background accents
             Positioned(
               top: -60,
               right: -60,
-              child: _blob(180, accent.withValues(alpha: 0.20)),
+              child: _blob(200, AppColors.primaryLight.withValues(alpha: 0.15)),
             ),
             Positioned(
               bottom: -80,
               left: -60,
-              child: _blob(240, primary.withValues(alpha: 0.07)),
+              child: _blob(240, AppColors.primary.withValues(alpha: 0.08)),
             ),
             Positioned(
-              top: MediaQuery.of(context).size.height * 0.35,
+              top: size.height * 0.35,
               right: -30,
-              child: _blob(100, primaryDark.withValues(alpha: 0.06)),
+              child: _blob(100, AppColors.violet.withValues(alpha: 0.06)),
             ),
 
             // Main content
             SafeArea(
               child: Center(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 32.0),
-                  child: FadeTransition(
-                    opacity: _fadeAnim,
-                    child: SlideTransition(
-                      position: _slideAnim,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          // Logo
-                          Center(
-                            child: Container(
-                              width: 110,
-                              height: 110,
-                              padding: const EdgeInsets.all(18),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: const LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [Colors.white, Color(0xFFFFF0F1)],
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: primary.withValues(alpha: 0.22),
-                                    blurRadius: 30,
-                                    spreadRadius: 2,
-                                    offset: const Offset(0, 12),
-                                  ),
-                                ],
-                              ),
-                              child: Image.asset(
-                                'assets/images/logo.png',
-                                fit: BoxFit.contain,
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 32),
-
-                          // App name
-                          ShaderMask(
-                            shaderCallback: (bounds) => const LinearGradient(
-                              colors: [primary, primaryDark],
-                            ).createShader(bounds),
-                            child: const Text(
-                              'Strawberry',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 36,
-                                fontWeight: FontWeight.w800,
-                                color: Colors.white,
-                                letterSpacing: 0.5,
-                                height: 1.1,
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 8),
-
-                          const Text(
-                            'Preschool & Daycare Management',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 13.5,
-                              fontWeight: FontWeight.w500,
-                              color: textMuted,
-                              letterSpacing: 0.3,
-                            ),
-                          ),
-
-                          const SizedBox(height: 56),
-
-                          // Welcome card
-                          Container(
-                            padding: const EdgeInsets.all(28),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(24),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.06),
-                                  blurRadius: 24,
-                                  offset: const Offset(0, 8),
-                                ),
-                              ],
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                const Text(
-                                  'Welcome Back! 👋',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.w700,
-                                    color: textDark,
-                                    letterSpacing: 0.2,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Sign in to access your Strawberry dashboard',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 13.5,
-                                    color: textMuted,
-                                    height: 1.4,
-                                  ),
-                                ),
-
-                                const SizedBox(height: 32),
-
-                                // Google Sign-In Button
-                                _GoogleSignInButton(
-                                  loading: _loading,
-                                  onTap: _signInWithGoogle,
-                                ),
-
-                                // Error message
-                                if (_error != null) ...[
-                                  const SizedBox(height: 16),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 10,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.red.shade50,
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color: Colors.red.shade200,
+                child: ResponsiveContentWrapper(
+                  maxWidth: 460,
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    child: FadeTransition(
+                      opacity: _fadeAnim,
+                      child: SlideTransition(
+                        position: _slideAnim,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // Logo Hero
+                            Center(
+                              child: Stack(
+                                alignment: Alignment.center,
+                                clipBehavior: Clip.none,
+                                children: [
+                                  FloatingWobble(
+                                    verticalOffset: 6,
+                                    rotationAngle: 0.04,
+                                    child: Container(
+                                      width: 104,
+                                      height: 104,
+                                      padding: const EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: Colors.white,
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: AppColors.primary.withValues(alpha: 0.18),
+                                            blurRadius: 28,
+                                            offset: const Offset(0, 10),
+                                          ),
+                                        ],
+                                        border: Border.all(
+                                          color: AppColors.primarySoft,
+                                          width: 2,
+                                        ),
+                                      ),
+                                      child: Image.asset(
+                                        'assets/images/logo.png',
+                                        fit: BoxFit.contain,
                                       ),
                                     ),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.error_outline_rounded,
-                                          color: Colors.red.shade600,
-                                          size: 18,
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          child: Text(
-                                            _error!,
-                                            style: TextStyle(
-                                              color: Colors.red.shade700,
-                                              fontSize: 13,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                                  ),
+                                  const Positioned(
+                                    top: -4,
+                                    right: -8,
+                                    child: PlayfulSparkle(size: 20, color: Colors.amber),
+                                  ),
+                                  const Positioned(
+                                    bottom: 0,
+                                    left: -8,
+                                    child: PlayfulSparkle(size: 14, color: AppColors.sky),
                                   ),
                                 ],
+                              ),
+                            ),
+
+                            const SizedBox(height: 24),
+
+                            // App name
+                            Text(
+                              'Strawberry',
+                              textAlign: TextAlign.center,
+                              style: AppTypography.display.copyWith(
+                                color: AppColors.primaryDark,
+                                fontSize: 32,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+
+                            Text(
+                              'Preschool & Daycare ERP',
+                              textAlign: TextAlign.center,
+                              style: AppTypography.bodySmall.copyWith(
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+
+                            const SizedBox(height: 36),
+
+                            // Welcome Card
+                            Container(
+                              padding: const EdgeInsets.all(28),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: AppDecorations.radiusXl,
+                                boxShadow: AppDecorations.shadowLg,
+                                border: Border.all(
+                                  color: AppColors.borderSubtle,
+                                  width: 1,
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Text(
+                                    'Welcome Parents & Teachers! 🍓',
+                                    textAlign: TextAlign.center,
+                                    style: AppTypography.h1.copyWith(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Sign in to access attendance, fee payments, notice board & campus memories',
+                                    textAlign: TextAlign.center,
+                                    style: AppTypography.bodySmall.copyWith(
+                                      color: AppColors.textMuted,
+                                      height: 1.4,
+                                    ),
+                                  ),
+
+                                  const SizedBox(height: 20),
+
+                                  // Cute Preschool Feature Tags
+                                  Wrap(
+                                    alignment: WrapAlignment.center,
+                                    spacing: 6,
+                                    runSpacing: 6,
+                                    children: [
+                                      _featureTag('📅 Attendance', AppColors.emeraldSoft, AppColors.emeraldDark),
+                                      _featureTag('💳 UPI Fees', AppColors.primarySoft, AppColors.primaryDark),
+                                      _featureTag('🎨 Memories', AppColors.amberSoft, AppColors.amberDark),
+                                      _featureTag('📢 Alerts', AppColors.skySoft, AppColors.skyDark),
+                                    ],
+                                  ),
+
+                                  const SizedBox(height: 24),
+
+                                  // Google Sign-In Button
+                                  _GoogleSignInButton(
+                                    loading: _loading,
+                                    onTap: _signInWithGoogle,
+                                  ),
+
+                                  // Error message
+                                  if (_error != null) ...[
+                                    const SizedBox(height: 16),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 14,
+                                        vertical: 10,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.dangerSoft,
+                                        borderRadius: AppDecorations.radiusSm,
+                                        border: Border.all(
+                                          color: AppColors.danger.withValues(alpha: 0.3),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.error_outline_rounded,
+                                            color: AppColors.danger,
+                                            size: 18,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              _error!,
+                                              style: AppTypography.bodySmall.copyWith(
+                                                color: AppColors.danger,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+
+                            const SizedBox(height: 24),
+
+                            // Privacy note
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.shield_outlined, size: 14, color: AppColors.textFaint),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Secure preschool portal protected with encryption',
+                                  textAlign: TextAlign.center,
+                                  style: AppTypography.caption,
+                                ),
                               ],
                             ),
-                          ),
-
-                          const SizedBox(height: 32),
-
-                          // Privacy note
-                          Text(
-                            'By signing in, you agree to our Terms of Service\nand Privacy Policy.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 11.5,
-                              color: textMuted.withValues(alpha: 0.8),
-                              height: 1.5,
-                            ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -354,6 +378,26 @@ class _AuthScreenState extends State<AuthScreen>
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  static Widget _featureTag(String text, Color bg, Color textCol) {
+    return BouncyTap(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Text(
+          text,
+          style: TextStyle(
+            color: textCol,
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
     );

@@ -663,20 +663,18 @@ class AuthService {
   // ----- Gallery Methods -----
 
   // Upload gallery images (compress to <=450KB) and store URLs
-  Future<List<String>> uploadGalleryImages(List<File> files) async {
+  Future<List<String>> uploadGalleryImages(
+    List<File> files, {
+    String? category,
+    String? title,
+  }) async {
     final List<String> urls = [];
     for (var file in files) {
       try {
         // Compress image
-        print("Starting compression for file: ${file.path}");
         final compressed = await compressImage(file);
-        print(
-          "Compression done. Compressed file size: ${await compressed.length()} bytes",
-        );
-
-        final fileName =
-            '${DateTime.now().millisecondsSinceEpoch}_${file.path.split('/').last}';
-        print("Uploading to Supabase storage with name: $fileName");
+        final rawName = file.path.split('/').last.split('\\').last;
+        final fileName = '${DateTime.now().millisecondsSinceEpoch}_$rawName';
 
         await Supabase.instance.client.storage
             .from('gallery')
@@ -685,14 +683,28 @@ class AuthService {
         final publicUrl = Supabase.instance.client.storage
             .from('gallery')
             .getPublicUrl(fileName);
-        print("Upload successful. Public URL: $publicUrl");
 
-        // Insert record into gallery table
-        await _supabaseClient.from('gallery').insert({
-          'image_url': publicUrl,
-          'uploaded_by': currentUserId,
-          'created_at': DateTime.now().toIso8601String(),
-        });
+        // Try inserting with category/title with fallback
+        try {
+          final insertData = <String, dynamic>{
+            'image_url': publicUrl,
+            'uploaded_by': currentUserId,
+            'created_at': DateTime.now().toIso8601String(),
+          };
+          if (category != null && category.isNotEmpty) {
+            insertData['category'] = category;
+          }
+          if (title != null && title.isNotEmpty) {
+            insertData['title'] = title;
+          }
+          await _supabaseClient.from('gallery').insert(insertData);
+        } catch (_) {
+          await _supabaseClient.from('gallery').insert({
+            'image_url': publicUrl,
+            'uploaded_by': currentUserId,
+            'created_at': DateTime.now().toIso8601String(),
+          });
+        }
         urls.add(publicUrl);
       } catch (e, stackTrace) {
         print("ERROR DURING UPLOAD/COMPRESSION: $e");

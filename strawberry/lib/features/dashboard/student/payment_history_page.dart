@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:strawberry/core/theme/app_colors.dart';
+import 'package:strawberry/core/theme/app_typography.dart';
+import 'package:strawberry/core/theme/app_decorations.dart';
+import 'package:strawberry/core/utils/responsive.dart';
+import 'package:strawberry/core/widgets/app_badge.dart';
 import 'package:strawberry/features/payments/payment_service.dart';
 
 class PaymentHistoryPage extends StatefulWidget {
@@ -15,16 +20,6 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
   final _paymentService = PaymentService();
   bool _loading = true;
   List<Map<String, dynamic>> _payments = [];
-
-  static const Color _bg = Color(0xFFF6F6FB);
-  static const Color _surface = Colors.white;
-  static const Color _primary = Color(0xFFE94464);
-  static const Color _textDark = Color(0xFF1E1B24);
-  static const Color _textMuted = Color(0xFF8A8794);
-  static const Color _border = Color(0xFFEDEDF4);
-  static const Color _success = Color(0xFF22B07D);
-  static const Color _danger = Color(0xFFEF4949);
-  static const Color _pending = Color(0xFFF5A623);
 
   @override
   void initState() {
@@ -58,126 +53,125 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
     return '${months[m]} ${parts[0]}';
   }
 
-  (Color, IconData, String) _statusMeta(String status) {
+  (Color, IconData, String, AppBadgeType) _statusMeta(String status) {
     switch (status) {
       case 'success':
-        return (_success, Icons.check_circle_rounded, 'Paid');
+        return (AppColors.emerald, Icons.check_circle_rounded, 'Paid', AppBadgeType.success);
       case 'failed':
-        return (_danger, Icons.cancel_rounded, 'Failed');
+        return (AppColors.danger, Icons.cancel_rounded, 'Failed', AppBadgeType.danger);
       case 'cancelled':
-        return (_danger, Icons.close_rounded, 'Cancelled');
+        return (AppColors.danger, Icons.close_rounded, 'Cancelled', AppBadgeType.danger);
       case 'submitted':
-        return (_pending, Icons.hourglass_top_rounded, 'Processing');
+        return (AppColors.amberDark, Icons.hourglass_top_rounded, 'Verifying', AppBadgeType.warning);
       default:
-        return (_pending, Icons.schedule_rounded, 'Initiated');
+        return (AppColors.violet, Icons.schedule_rounded, 'Initiated', AppBadgeType.info);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: _bg,
-        elevation: 0,
-        foregroundColor: _textDark,
-        title: const Text(
-          'Payment History',
-          style: TextStyle(fontWeight: FontWeight.w800, color: _textDark),
-        ),
+        title: Text('Payment Receipts', style: AppTypography.h2),
       ),
-      body: RefreshIndicator(
-        color: _primary,
-        onRefresh: _load,
-        child: _loading
-            ? const Center(child: CircularProgressIndicator(color: _primary))
-            : _payments.isEmpty
-                ? ListView(
-                    children: const [
-                      SizedBox(height: 120),
-                      Icon(Icons.receipt_long_rounded, size: 56, color: _textMuted),
-                      SizedBox(height: 12),
-                      Center(
-                        child: Text(
-                          'No payments yet',
-                          style: TextStyle(color: _textMuted, fontWeight: FontWeight.w600),
-                        ),
-                      ),
-                    ],
-                  )
-                : ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-                    itemCount: _payments.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
-                    itemBuilder: (context, i) {
-                      final p = _payments[i];
-                      final (color, icon, label) =
-                          _statusMeta(p['status'] as String? ?? 'initiated');
-                      final createdAt = DateTime.tryParse(p['created_at'] ?? '')?.toLocal();
-                      return Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: _surface,
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(color: _border),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: color.withOpacity(0.12),
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                              child: Icon(icon, color: color, size: 22),
+      body: Center(
+        child: ResponsiveContentWrapper(
+          maxWidth: 680,
+          child: RefreshIndicator(
+            color: AppColors.primary,
+            onRefresh: _load,
+            child: _loading
+                ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                : _payments.isEmpty
+                    ? ListView(
+                        children: [
+                          const SizedBox(height: 120),
+                          Container(
+                            width: 64,
+                            height: 64,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceAlt,
+                              shape: BoxShape.circle,
                             ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    _formatMonthKey(p['month_key'] ?? ''),
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w800,
-                                      color: _textDark,
-                                      fontSize: 14.5,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 3),
-                                  Text(
-                                    '${p['upi_app'] ?? 'UPI'} · ${createdAt != null ? DateFormat('d MMM y, h:mm a').format(createdAt) : ''}',
-                                    style: const TextStyle(fontSize: 12, color: _textMuted),
-                                  ),
-                                ],
-                              ),
+                            child: const Icon(Icons.receipt_long_rounded, size: 32, color: AppColors.textMuted),
+                          ),
+                          const SizedBox(height: 16),
+                          Center(
+                            child: Text(
+                              'No payments recorded yet',
+                              style: AppTypography.bodyMedium.copyWith(color: AppColors.textMuted),
                             ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
+                          ),
+                        ],
+                      )
+                    : ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+                        physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                        itemCount: _payments.length,
+                        separatorBuilder: (context, index) => const SizedBox(height: 12),
+                        itemBuilder: (context, i) {
+                          final p = _payments[i];
+                          final (color, icon, label, badgeType) =
+                              _statusMeta(p['status'] as String? ?? 'initiated');
+                          final createdAt = DateTime.tryParse(p['created_at'] ?? '')?.toLocal();
+                          return Container(
+                            padding: const EdgeInsets.all(18),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: AppDecorations.radiusLg,
+                              border: Border.all(color: AppColors.borderSubtle),
+                              boxShadow: AppDecorations.shadowSm,
+                            ),
+                            child: Row(
                               children: [
-                                Text(
-                                  '₹${(p['amount'] as num?)?.toStringAsFixed(0) ?? '0'}',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w800,
-                                    color: _textDark,
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: color.withValues(alpha: 0.12),
+                                    borderRadius: AppDecorations.radiusSm,
+                                  ),
+                                  child: Icon(icon, color: color, size: 22),
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        _formatMonthKey(p['month_key'] ?? ''),
+                                        style: AppTypography.h3.copyWith(fontSize: 15),
+                                      ),
+                                      const SizedBox(height: 3),
+                                      Text(
+                                        '${p['upi_app'] ?? 'UPI'} · ${createdAt != null ? DateFormat('d MMM y, h:mm a').format(createdAt) : ''}',
+                                        style: AppTypography.caption,
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                const SizedBox(height: 3),
-                                Text(
-                                  label,
-                                  style: TextStyle(
-                                    fontSize: 11.5,
-                                    fontWeight: FontWeight.w700,
-                                    color: color,
-                                  ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      '₹${(p['amount'] as num?)?.toStringAsFixed(0) ?? '0'}',
+                                      style: AppTypography.h3.copyWith(fontSize: 16),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    AppBadge(
+                                      label: label,
+                                      type: badgeType,
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
+                          );
+                        },
+                      ),
+          ),
+        ),
       ),
     );
   }

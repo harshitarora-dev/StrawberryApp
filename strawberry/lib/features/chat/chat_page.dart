@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:strawberry/core/theme/app_colors.dart';
+import 'package:strawberry/core/theme/app_typography.dart';
+import 'package:strawberry/core/theme/app_decorations.dart';
+import 'package:strawberry/core/utils/responsive.dart';
 import 'package:strawberry/features/auth/auth_service.dart';
 
 class ChatPage extends StatefulWidget {
@@ -23,17 +27,7 @@ class _ChatPageState extends State<ChatPage> {
   final ScrollController _scrollController = ScrollController();
   late final Stream<List<Map<String, dynamic>>> _chatStream;
 
-  // Messages we've sent/deleted locally, shown immediately while we wait for
-  // the Realtime stream to confirm them (see _sendMessage / _mergeMessages).
   final List<Map<String, dynamic>> _pendingMessages = [];
-
-  static const Color _bg = Color(0xFFF6F6FB);
-  static const Color _surface = Colors.white;
-  static const Color _primary = Color(0xFFE94464);
-  static const Color _primarySoft = Color(0xFFFFE7EC);
-  static const Color _textDark = Color(0xFF1E1B24);
-  static const Color _textMuted = Color(0xFF8A8794);
-  static const Color _border = Color(0xFFEDEDF4);
 
   @override
   void initState() {
@@ -70,10 +64,6 @@ class _ChatPageState extends State<ChatPage> {
     final receiverId = widget.isAdmin ? widget.studentId : 'admin';
 
     try {
-      // sendMessage now returns the inserted row (with its real id) so we
-      // can show it immediately instead of waiting for the Realtime event
-      // to come back — that round trip is what was making messages only
-      // show up after leaving and reopening the chat.
       final inserted = await _authService.sendMessage(senderId, receiverId, text);
       if (!mounted) return;
       setState(() {
@@ -84,8 +74,8 @@ class _ChatPageState extends State<ChatPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to send message: $e'),
-          backgroundColor: const Color(0xFFEF4949),
+          content: Text('Failed to send message: $e', style: AppTypography.bodySmall.copyWith(color: Colors.white)),
+          backgroundColor: AppColors.danger,
         ),
       );
     }
@@ -99,13 +89,15 @@ class _ChatPageState extends State<ChatPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete message?'),
-        content: const Text('This message will be permanently deleted for both sides.'),
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: AppDecorations.radiusLg),
+        title: Text('Delete message?', style: AppTypography.h3),
+        content: Text('This message will be permanently deleted for both sides.', style: AppTypography.bodySmall),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Cancel', style: AppTypography.button.copyWith(color: AppColors.textMuted))),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete', style: TextStyle(color: Color(0xFFEF4949))),
+            child: Text('Delete', style: AppTypography.button.copyWith(color: AppColors.danger)),
           ),
         ],
       ),
@@ -122,8 +114,8 @@ class _ChatPageState extends State<ChatPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to delete message: $e'),
-          backgroundColor: const Color(0xFFEF4949),
+          content: Text('Failed to delete message: $e', style: AppTypography.bodySmall.copyWith(color: Colors.white)),
+          backgroundColor: AppColors.danger,
         ),
       );
     }
@@ -133,15 +125,18 @@ class _ChatPageState extends State<ChatPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete entire chat?'),
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: AppDecorations.radiusLg),
+        title: Text('Delete entire chat?', style: AppTypography.h3),
         content: Text(
           'All messages with ${widget.studentName} will be permanently deleted. This cannot be undone.',
+          style: AppTypography.bodySmall,
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Cancel', style: AppTypography.button.copyWith(color: AppColors.textMuted))),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete chat', style: TextStyle(color: Color(0xFFEF4949))),
+            child: Text('Delete chat', style: AppTypography.button.copyWith(color: AppColors.danger)),
           ),
         ],
       ),
@@ -155,14 +150,14 @@ class _ChatPageState extends State<ChatPage> {
         _pendingMessages.clear();
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Chat deleted')),
+        SnackBar(content: Text('Chat deleted', style: AppTypography.bodySmall.copyWith(color: Colors.white)), backgroundColor: AppColors.emerald),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to delete chat: $e'),
-          backgroundColor: const Color(0xFFEF4949),
+          content: Text('Failed to delete chat: $e', style: AppTypography.bodySmall.copyWith(color: Colors.white)),
+          backgroundColor: AppColors.danger,
         ),
       );
     }
@@ -171,191 +166,184 @@ class _ChatPageState extends State<ChatPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              widget.isAdmin ? widget.studentName : 'Chat with Admin',
-              style: const TextStyle(
-                color: _textDark,
-                fontWeight: FontWeight.w800,
-                fontSize: 17,
-              ),
+              widget.isAdmin ? widget.studentName : 'Preschool Helpdesk',
+              style: AppTypography.h3.copyWith(fontSize: 16),
             ),
             Text(
-              widget.isAdmin ? 'Student Chat' : 'Online Support',
-              style: const TextStyle(color: _textMuted, fontSize: 11.5),
+              widget.isAdmin ? 'Student Direct Chat' : 'Direct channel to School Admin',
+              style: AppTypography.caption,
             ),
           ],
         ),
-        backgroundColor: _surface,
-        surfaceTintColor: Colors.transparent,
-        foregroundColor: _textDark,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        shape: const Border(bottom: BorderSide(color: _border, width: 1)),
         actions: widget.isAdmin
             ? [
                 IconButton(
-                  icon: const Icon(Icons.delete_outline_rounded, color: _textMuted),
+                  icon: const Icon(Icons.delete_outline_rounded, color: AppColors.textMuted),
                   tooltip: 'Delete entire chat',
                   onPressed: _confirmDeleteChat,
                 ),
               ]
             : null,
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: StreamBuilder<List<Map<String, dynamic>>>(
-              stream: _chatStream,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator(color: _primary),
-                  );
-                }
+      body: Center(
+        child: ResponsiveContentWrapper(
+          maxWidth: 780,
+          child: Column(
+            children: [
+              Expanded(
+                child: StreamBuilder<List<Map<String, dynamic>>>(
+                  stream: _chatStream,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(
+                        child: CircularProgressIndicator(color: AppColors.primary),
+                      );
+                    }
 
-                final streamMessages = snapshot.data ?? const [];
+                    final streamMessages = snapshot.data ?? const [];
 
-                // Merge the confirmed stream data with anything we sent
-                // optimistically that the stream hasn't echoed back yet.
-                final streamIds = streamMessages.map((m) => m['id']).toSet();
-                final stillPending =
-                    _pendingMessages.where((m) => !streamIds.contains(m['id'])).toList();
-                final messages = [...streamMessages, ...stillPending]
-                  ..sort((a, b) {
-                    final ta = DateTime.tryParse(a['created_at'] ?? '') ?? DateTime(0);
-                    final tb = DateTime.tryParse(b['created_at'] ?? '') ?? DateTime(0);
-                    return ta.compareTo(tb);
-                  });
+                    final streamIds = streamMessages.map((m) => m['id']).toSet();
+                    final stillPending =
+                        _pendingMessages.where((m) => !streamIds.contains(m['id'])).toList();
+                    final messages = [...streamMessages, ...stillPending]
+                      ..sort((a, b) {
+                        final ta = DateTime.tryParse(a['created_at'] ?? '') ?? DateTime(0);
+                        final tb = DateTime.tryParse(b['created_at'] ?? '') ?? DateTime(0);
+                        return ta.compareTo(tb);
+                      });
 
-                if (messages.isEmpty) {
-                  return const Center(
-                    child: Text(
-                      'No messages yet. Send a message to start.',
-                      style: TextStyle(color: _textMuted, fontSize: 14),
-                    ),
-                  );
-                }
-
-                _scrollToBottom();
-
-                return ListView.builder(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.all(16),
-                  itemCount: messages.length,
-                  itemBuilder: (context, index) {
-                    final msg = messages[index];
-                    final text = msg['message'] ?? '';
-                    final sender = msg['sender_id'] as String;
-
-                    final isMe = widget.isAdmin
-                        ? (sender == 'admin')
-                        : (sender == widget.studentId);
-
-                    return Align(
-                      alignment: isMe
-                          ? Alignment.centerRight
-                          : Alignment.centerLeft,
-                      child: GestureDetector(
-                      onLongPress: widget.isAdmin ? () => _confirmDeleteMessage(msg) : null,
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(vertical: 4),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isMe ? _primary : _surface,
-                          border: isMe ? null : Border.all(color: _border),
-                          borderRadius: BorderRadius.only(
-                            topLeft: const Radius.circular(16),
-                            topRight: const Radius.circular(16),
-                            bottomLeft: isMe
-                                ? const Radius.circular(16)
-                                : Radius.zero,
-                            bottomRight: isMe
-                                ? Radius.zero
-                                : const Radius.circular(16),
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.03),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
+                    if (messages.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: AppColors.primarySoft,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.chat_bubble_outline_rounded, size: 36, color: AppColors.primary),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Say hello! Type below to start a conversation.',
+                              style: AppTypography.bodySmall,
                             ),
                           ],
                         ),
-                        constraints: BoxConstraints(
-                          maxWidth: MediaQuery.of(context).size.width * 0.75,
-                        ),
-                        child: Text(
-                          text,
-                          style: TextStyle(
-                            color: isMe ? Colors.white : _textDark,
-                            fontSize: 14.5,
-                            fontWeight: isMe ? FontWeight.w600 : FontWeight.w500,
+                      );
+                    }
+
+                    _scrollToBottom();
+
+                    return ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.all(16),
+                      physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                      itemCount: messages.length,
+                      itemBuilder: (context, index) {
+                        final msg = messages[index];
+                        final text = msg['message'] ?? '';
+                        final sender = msg['sender_id'] as String;
+
+                        final isMe = widget.isAdmin
+                            ? (sender == 'admin')
+                            : (sender == widget.studentId);
+
+                        return Align(
+                          alignment: isMe
+                              ? Alignment.centerRight
+                              : Alignment.centerLeft,
+                          child: GestureDetector(
+                            onLongPress: widget.isAdmin ? () => _confirmDeleteMessage(msg) : null,
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(vertical: 5),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                gradient: isMe ? AppColors.primaryGradient : null,
+                                color: isMe ? null : Colors.white,
+                                border: isMe ? null : Border.all(color: AppColors.borderSubtle),
+                                borderRadius: BorderRadius.only(
+                                  topLeft: const Radius.circular(18),
+                                  topRight: const Radius.circular(18),
+                                  bottomLeft: isMe
+                                      ? const Radius.circular(18)
+                                      : const Radius.circular(4),
+                                  bottomRight: isMe
+                                      ? const Radius.circular(4)
+                                      : const Radius.circular(18),
+                                ),
+                                boxShadow: AppDecorations.shadowSm,
+                              ),
+                              constraints: BoxConstraints(
+                                maxWidth: MediaQuery.of(context).size.width * 0.75,
+                              ),
+                              child: Text(
+                                text,
+                                style: AppTypography.bodyMedium.copyWith(
+                                  color: isMe ? Colors.white : AppColors.textDark,
+                                  fontWeight: isMe ? FontWeight.w600 : FontWeight.w500,
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-                      ),
+                        );
+                      },
                     );
                   },
-                );
-              },
-            ),
+                ),
+              ),
+              _buildInputArea(),
+            ],
           ),
-          _buildInputArea(),
-        ],
+        ),
       ),
     );
   }
 
   Widget _buildInputArea() {
     return Container(
-      padding: const EdgeInsets.only(left: 16, right: 16, bottom: 24, top: 12),
-      decoration: const BoxDecoration(
-        color: _surface,
-        border: Border(top: BorderSide(color: _border, width: 1)),
+      padding: const EdgeInsets.only(left: 16, right: 16, bottom: 20, top: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: AppColors.borderSubtle, width: 1)),
       ),
       child: Row(
         children: [
           Expanded(
             child: TextField(
               controller: _messageController,
-              style: const TextStyle(color: _textDark, fontSize: 14.5),
+              style: AppTypography.bodyMedium,
               decoration: InputDecoration(
                 hintText: 'Type your message...',
-                hintStyle: const TextStyle(color: _textMuted, fontSize: 14),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  borderSide: const BorderSide(color: _border),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  borderSide: const BorderSide(color: _border),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  borderSide: const BorderSide(color: _primary, width: 1.5),
-                ),
+                hintStyle: AppTypography.bodySmall,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 18,
                   vertical: 12,
                 ),
                 filled: true,
-                fillColor: _bg,
+                fillColor: AppColors.surfaceAlt,
               ),
               onSubmitted: (_) => _sendMessage(),
             ),
           ),
-          const SizedBox(width: 8),
-          CircleAvatar(
-            radius: 22,
-            backgroundColor: _primary,
+          const SizedBox(width: 10),
+          Container(
+            decoration: BoxDecoration(
+              gradient: AppColors.primaryGradient,
+              shape: BoxShape.circle,
+              boxShadow: AppDecorations.primaryGlow,
+            ),
             child: IconButton(
               icon: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
               onPressed: _sendMessage,

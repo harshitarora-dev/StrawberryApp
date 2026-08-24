@@ -1,22 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:strawberry/features/auth/auth_service.dart';
 
+import 'package:strawberry/core/theme/app_colors.dart';
+import 'package:strawberry/core/theme/app_typography.dart';
+import 'package:strawberry/core/theme/app_decorations.dart';
+
 class _Palette {
-  static const primary = Color(0xFFE94464);
-  static const primaryDark = Color(0xFFD32F52);
-  static const primarySoft = Color(0xFFFFE7EC);
-  static const accentPeach = Color(0xFFFF8FA3);
+  static const primary = AppColors.primary;
+  static const primaryDark = AppColors.primaryDark;
+  static const primarySoft = AppColors.primarySoft;
+  static const accentPeach = AppColors.primaryLight;
 
-  static const bg = Color(0xFFFBF9FA);
-  static const surface = Colors.white;
-  static const border = Color(0xFFF1E4E7);
+  static const bg = AppColors.background;
+  static const surface = AppColors.surface;
+  static const border = AppColors.borderSubtle;
 
-  static const textDark = Color(0xFF2B2730);
-  static const textMuted = Color(0xFF8F8A93);
-  static const textFaint = Color(0xFFB9B3BB);
+  static const textDark = AppColors.textDark;
+  static const textMuted = AppColors.textMuted;
+  static const textFaint = AppColors.textFaint;
 
-  static const success = Color(0xFF3FAE5C);
-  static const danger = Color(0xFFE2504A);
+  static const success = AppColors.emerald;
+  static const danger = AppColors.danger;
 }
 
 class CategoriesAdminPage extends StatefulWidget {

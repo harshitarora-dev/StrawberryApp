@@ -1,20 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:strawberry/features/auth/auth_service.dart';
 
-// ── Design tokens (kept in-sync with admin_dashboard.dart) ──────────────
+import 'package:strawberry/core/theme/app_colors.dart';
+import 'package:strawberry/core/theme/app_typography.dart';
+import 'package:strawberry/core/theme/app_decorations.dart';
+
+// ── Design tokens (unified with AppTheme) ──────────────
 class _P {
-  static const primary = Color(0xFFE94464);
-  static const accentPeach = Color(0xFFFF8FA3);
-  static const amber = Color(0xFFF5A623);
-  static const danger = Color(0xFFEF4949);
+  static const primary = AppColors.primary;
+  static const accentPeach = AppColors.primaryLight;
+  static const amber = AppColors.amber;
+  static const danger = AppColors.danger;
 
-  static const bg = Color(0xFFF6F6FB);
-  static const surface = Colors.white;
-  static const border = Color(0xFFEDEDF4);
+  static const bg = AppColors.background;
+  static const surface = AppColors.surface;
+  static const border = AppColors.borderSubtle;
 
-  static const textDark = Color(0xFF1E1B24);
-  static const textMuted = Color(0xFF8A8794);
-  static const textFaint = Color(0xFFC1BEC8);
+  static const textDark = AppColors.textDark;
+  static const textMuted = AppColors.textMuted;
+  static const textFaint = AppColors.textFaint;
 }
 
 /// A fully self-contained page for managing the allowed-admins list.

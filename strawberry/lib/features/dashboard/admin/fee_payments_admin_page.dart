@@ -3,6 +3,10 @@ import 'package:intl/intl.dart';
 import 'package:strawberry/features/auth/auth_service.dart';
 import 'package:strawberry/features/payments/payment_service.dart';
 
+import 'package:strawberry/core/theme/app_colors.dart';
+import 'package:strawberry/core/theme/app_typography.dart';
+import 'package:strawberry/core/theme/app_decorations.dart';
+
 /// Admin-facing screen that tracks every UPI fee payment attempt logged
 /// by students — across the whole school, newest first. Lets the admin
 /// confirm or reject a payment that isn't already marked "success"
@@ -24,15 +28,15 @@ class _FeePaymentsAdminPageState extends State<FeePaymentsAdminPage> {
   String _filter = 'all'; // all | success | pending | failed
   String _search = '';
 
-  static const Color _bg = Color(0xFFF6F6FB);
-  static const Color _surface = Colors.white;
-  static const Color _primary = Color(0xFFE94464);
-  static const Color _primarySoft = Color(0xFFFFE7EC);
-  static const Color _textDark = Color(0xFF1E1B24);
-  static const Color _textMuted = Color(0xFF8A8794);
-  static const Color _border = Color(0xFFEDEDF4);
-  static const Color _success = Color(0xFF22B07D);
-  static const Color _danger = Color(0xFFEF4949);
+  static const Color _bg = AppColors.background;
+  static const Color _surface = AppColors.surface;
+  static const Color _primary = AppColors.primary;
+  static const Color _primarySoft = AppColors.primarySoft;
+  static const Color _textDark = AppColors.textDark;
+  static const Color _textMuted = AppColors.textMuted;
+  static const Color _border = AppColors.borderSubtle;
+  static const Color _success = AppColors.emerald;
+  static const Color _danger = AppColors.danger;
   static const Color _pending = Color(0xFFF5A623);
 
   @override

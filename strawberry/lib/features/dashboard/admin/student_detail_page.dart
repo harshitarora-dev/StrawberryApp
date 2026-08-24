@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:strawberry/features/auth/auth_service.dart';
 import 'package:strawberry/features/dashboard/admin/student_attendance_history_page.dart';
 
+import 'package:strawberry/core/theme/app_colors.dart';
+
 /// Full-screen admin detail page for a student
 class StudentDetailPage extends StatefulWidget {
   final Map<String, dynamic> student;
@@ -21,18 +23,18 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
   late Map<String, dynamic> _student;
   bool _saving = false;
 
-  // ── Palette (mirrors admin_dashboard tokens) ──────────────────────────
-  static const _primary = Color(0xFFE94464);
-  static const _primarySoft = Color(0xFFFFE7EC);
-  static const _primaryDark = Color(0xFFD32F52);
-  static const _accentPeach = Color(0xFFFF8FA3);
-  static const _bg = Color(0xFFF6F6FB);
-  static const _surface = Colors.white;
-  static const _border = Color(0xFFEDEDF4);
-  static const _textDark = Color(0xFF1E1B24);
-  static const _textMuted = Color(0xFF8A8794);
-  static const _success = Color(0xFF22B07D);
-  static const _danger = Color(0xFFEF4949);
+  // ── Palette (mirrors AppTheme tokens) ──────────────────────────
+  static const _primary = AppColors.primary;
+  static const _primarySoft = AppColors.primarySoft;
+  static const _primaryDark = AppColors.primaryDark;
+  static const _accentPeach = AppColors.primaryLight;
+  static const _bg = AppColors.background;
+  static const _surface = AppColors.surface;
+  static const _border = AppColors.borderSubtle;
+  static const _textDark = AppColors.textDark;
+  static const _textMuted = AppColors.textMuted;
+  static const _success = AppColors.emerald;
+  static const _danger = AppColors.danger;
 
   List<String> _categories = [];
 

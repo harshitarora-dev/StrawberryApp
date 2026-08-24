@@ -3,21 +3,25 @@ import 'package:intl/intl.dart';
 import 'package:strawberry/features/auth/auth_service.dart';
 import 'package:strawberry/features/auth/push_notification_service.dart';
 
+import 'package:strawberry/core/theme/app_colors.dart';
+import 'package:strawberry/core/theme/app_typography.dart';
+import 'package:strawberry/core/theme/app_decorations.dart';
+
 class _Palette {
-  static const primary = Color(0xFF7C6FF0); // Violet theme for Holidays
-  static const primaryDark = Color(0xFF6352E6);
-  static const primarySoft = Color(0xFFEDE9FE);
+  static const primary = AppColors.violet; // Violet theme for Holidays
+  static const primaryDark = AppColors.violetDark;
+  static const primarySoft = AppColors.violetSoft;
 
-  static const bg = Color(0xFFFBF9FA);
-  static const surface = Colors.white;
-  static const border = Color(0xFFF1E4E7);
+  static const bg = AppColors.background;
+  static const surface = AppColors.surface;
+  static const border = AppColors.borderSubtle;
 
-  static const textDark = Color(0xFF2B2730);
-  static const textMuted = Color(0xFF8F8A93);
-  static const textFaint = Color(0xFFB9B3BB);
+  static const textDark = AppColors.textDark;
+  static const textMuted = AppColors.textMuted;
+  static const textFaint = AppColors.textFaint;
 
-  static const success = Color(0xFF3FAE5C);
-  static const danger = Color(0xFFE2504A);
+  static const success = AppColors.emerald;
+  static const danger = AppColors.danger;
 }
 
 class HolidayAdminPage extends StatefulWidget {
@@ -456,24 +460,36 @@ class _HolidayAdminPageState extends State<HolidayAdminPage> {
             final color = isWorkingDay
                 ? _Palette.success
                 : (h['category'] == 'All' ? _Palette.danger : _Palette.primary);
+            final emoji = isWorkingDay ? '✏️' : (h['category'] == 'All' ? '🏖️' : '🎈');
 
             return Container(
               margin: const EdgeInsets.only(bottom: 10),
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: _Palette.surface,
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: _Palette.border),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: Row(
                 children: [
                   Container(
-                    width: 10,
-                    height: 10,
+                    padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: color,
-                      shape: BoxShape.circle,
+                      color: isWorkingDay
+                          ? AppColors.emeraldSoft
+                          : (h['category'] == 'All'
+                              ? AppColors.dangerSoft
+                              : AppColors.violetSoft),
+                      borderRadius: BorderRadius.circular(10),
                     ),
+                    child: Text(emoji, style: const TextStyle(fontSize: 16)),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -481,26 +497,27 @@ class _HolidayAdminPageState extends State<HolidayAdminPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          h['title'] ?? 'Holiday',
+                          h['title'] ?? (isWorkingDay ? 'Working Day' : 'Holiday'),
                           style: const TextStyle(
                             fontWeight: FontWeight.w700,
                             color: _Palette.textDark,
-                            fontSize: 15,
+                            fontSize: 14.5,
                           ),
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          '${h['date']}  ·  Category: ${h['category']}${isWorkingDay ? '  ·  [Working Day Override]' : ''}',
+                          '${DateFormat('EEEE, d MMMM yyyy').format(DateTime.parse(h['date']))} · Category: ${h['category']}',
                           style: const TextStyle(
                             fontSize: 12,
                             color: _Palette.textMuted,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.delete_outline_rounded, color: _Palette.danger),
+                    icon: const Icon(Icons.delete_outline_rounded, color: _Palette.danger, size: 20),
                     onPressed: () => _deleteHoliday(h['id']),
                   ),
                 ],

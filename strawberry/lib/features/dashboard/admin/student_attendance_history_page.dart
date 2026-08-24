@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:strawberry/features/auth/auth_service.dart';
 
+import 'package:strawberry/core/theme/app_colors.dart';
+
 /// Admin-facing attendance history for a single student.
 /// Shows overall stats (present/absent/late/percentage) + a GitHub-style
 /// calendar heatmap the admin can page through month by month.
@@ -23,21 +25,21 @@ class StudentAttendanceHistoryPage extends StatefulWidget {
 class _StudentAttendanceHistoryPageState
     extends State<StudentAttendanceHistoryPage> {
   // ── Palette (mirrors rest of admin panel) ──────────────────────────
-  static const _primary = Color(0xFFE94464);
-  static const _primarySoft = Color(0xFFFFE7EC);
-  static const _primaryDark = Color(0xFFD32F52);
-  static const _accentPeach = Color(0xFFFF8FA3);
-  static const _bg = Color(0xFFF6F6FB);
-  static const _surface = Colors.white;
-  static const _border = Color(0xFFEDEDF4);
-  static const _textDark = Color(0xFF1E1B24);
-  static const _textMuted = Color(0xFF8A8794);
-  static const _success = Color(0xFF22B07D);
-  static const _successSoft = Color(0xFFE4F6E8);
-  static const _danger = Color(0xFFEF4949);
-  static const _dangerSoft = Color(0xFFFBE7E6);
-  static const _amber = Color(0xFFF5A623);
-  static const _amberSoft = Color(0xFFFCF0DD);
+  static const _primary = AppColors.primary;
+  static const _primarySoft = AppColors.primarySoft;
+  static const _primaryDark = AppColors.primaryDark;
+  static const _accentPeach = AppColors.primaryLight;
+  static const _bg = AppColors.background;
+  static const _surface = AppColors.surface;
+  static const _border = AppColors.borderSubtle;
+  static const _textDark = AppColors.textDark;
+  static const _textMuted = AppColors.textMuted;
+  static const _success = AppColors.emerald;
+  static const _successSoft = AppColors.emeraldSoft;
+  static const _danger = AppColors.danger;
+  static const _dangerSoft = AppColors.dangerSoft;
+  static const _amber = AppColors.amber;
+  static const _amberSoft = AppColors.amberSoft;
 
   bool _loading = true;
   String? _error;

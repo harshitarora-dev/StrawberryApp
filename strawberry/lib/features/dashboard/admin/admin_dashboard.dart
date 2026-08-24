@@ -13,29 +13,31 @@ import 'fee_payments_admin_page.dart';
 import 'holiday_admin_page.dart';
 import 'package:strawberry/features/chat/chat_page.dart';
 
+import 'package:strawberry/core/theme/app_colors.dart';
+
 /// ---------------------------------------------------------------------
-/// Design tokens — Strawberry admin panel, modern / light / Gen-Z
+/// Design tokens — Strawberry admin panel (Bridged with AppTheme)
 /// ---------------------------------------------------------------------
 class _Palette {
-  static const primary = Color(0xFFE94464); // strawberry red-pink
-  static const primaryDark = Color(0xFFD32F52);
-  static const primarySoft = Color(0xFFFFE7EC); // pale pink chip/bg
-  static const accentPeach = Color(0xFFFF8FA3);
-  static const leafGreen = Color(0xFF22B07D);
-  static const amber = Color(0xFFF5A623);
-  static const violet = Color(0xFF7C6FF0);
-  static const blueAccent = Color(0xFF3E8EFF);
+  static const primary = AppColors.primary;
+  static const primaryDark = AppColors.primaryDark;
+  static const primarySoft = AppColors.primarySoft;
+  static const accentPeach = AppColors.primaryLight;
+  static const leafGreen = AppColors.emerald;
+  static const amber = AppColors.amber;
+  static const violet = AppColors.violet;
+  static const blueAccent = AppColors.sky;
 
-  static const bg = Color(0xFFF6F6FB); // app background — cool, light
-  static const surface = Colors.white; // cards / sheets
-  static const border = Color(0xFFEDEDF4);
+  static const bg = AppColors.background;
+  static const surface = AppColors.surface;
+  static const border = AppColors.borderSubtle;
 
-  static const textDark = Color(0xFF1E1B24);
-  static const textMuted = Color(0xFF8A8794);
-  static const textFaint = Color(0xFFC1BEC8);
+  static const textDark = AppColors.textDark;
+  static const textMuted = AppColors.textMuted;
+  static const textFaint = AppColors.textFaint;
 
-  static const success = Color(0xFF22B07D);
-  static const danger = Color(0xFFEF4949);
+  static const success = AppColors.emerald;
+  static const danger = AppColors.danger;
 }
 
 class _AdminTextStyles {
@@ -1215,8 +1217,20 @@ class _AdminDashboardState extends State<AdminDashboard> {
   // _buildAdminsPage removed — replaced by ManageAdminsPage StatefulWidget
 
   // ---------------------------------------------------------------------
+  // ---------------------------------------------------------------------
   // Students tab
   // ---------------------------------------------------------------------
+  String _getCategoryEmoji(String category) {
+    final lower = category.toLowerCase();
+    if (lower.contains('playgroup')) return '🧸';
+    if (lower.contains('nursery')) return '🎨';
+    if (lower.contains('lkg')) return '📚';
+    if (lower.contains('ukg')) return '🎓';
+    if (lower.contains('daycare')) return '🌟';
+    if (lower.contains('tution') || lower.contains('tuition')) return '✏️';
+    return '🍓';
+  }
+
   Widget _buildSearchField() {
     return Container(
       decoration: BoxDecoration(
@@ -1351,6 +1365,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
                     children: allKeys.map((type) {
                       final list = grouped[type] ?? [];
+                      final emoji = _getCategoryEmoji(type);
                       return _AdminCard(
                         margin: const EdgeInsets.only(bottom: 12),
                         padding: EdgeInsets.zero,
@@ -1366,7 +1381,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                             title: Row(
                               children: [
                                 Text(
-                                  '$type',
+                                  '$emoji $type',
                                   style: _AdminTextStyles.sectionHeading,
                                 ),
                                 const SizedBox(width: 8),

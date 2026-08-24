@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:strawberry/core/theme/app_colors.dart';
+import 'package:strawberry/core/theme/app_typography.dart';
+import 'package:strawberry/core/theme/app_decorations.dart';
+import 'package:strawberry/core/utils/responsive.dart';
+import 'package:strawberry/core/widgets/app_badge.dart';
+import 'package:strawberry/core/widgets/playschool_animations.dart';
 import 'package:strawberry/features/auth/auth_service.dart';
 
 class AttendancePage extends StatefulWidget {
@@ -19,22 +25,6 @@ class _AttendancePageState extends State<AttendancePage> {
   
   DateTime _visibleMonth = DateTime(DateTime.now().year, DateTime.now().month);
   DateTime _selectedDate = DateTime.now();
-
-  static const Color _bg = Color(0xFFF6F6FB);
-  static const Color _surface = Colors.white;
-  static const Color _primary = Color(0xFFE94464);
-  static const Color _primarySoft = Color(0xFFFFE7EC);
-  static const Color _violet = Color(0xFF7C6FF0);
-  static const Color _violetSoft = Color(0xFFEDE9FE);
-  static const Color _textDark = Color(0xFF1E1B24);
-  static const Color _textMuted = Color(0xFF8A8794);
-  static const Color _border = Color(0xFFEDEDF4);
-  static const Color _success = Color(0xFF22B07D);
-  static const Color _successSoft = Color(0xFFE4F6E8);
-  static const Color _danger = Color(0xFFEF4949);
-  static const Color _dangerSoft = Color(0xFFFBE7E6);
-  static const Color _amber = Color(0xFFF5A623);
-  static const Color _amberSoft = Color(0xFFFCF0DD);
 
   @override
   void initState() {
@@ -171,95 +161,78 @@ class _AttendancePageState extends State<AttendancePage> {
     final monthLabel = DateFormat('MMMM yyyy').format(_visibleMonth);
 
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text(
-          'My Attendance',
-          style: TextStyle(
-            color: _textDark,
-            fontWeight: FontWeight.w800,
-            fontSize: 19,
-          ),
-        ),
-        backgroundColor: _surface,
-        surfaceTintColor: Colors.transparent,
-        foregroundColor: _textDark,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        shape: const Border(bottom: BorderSide(color: _border, width: 1)),
+        title: Text('My Attendance', style: AppTypography.h2),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: _primary))
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
           : RefreshIndicator(
               onRefresh: _loadData,
-              color: _primary,
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                children: [
-                  // 1. Overview Attendance & Percentage Card
-                  _buildPercentageOverviewCard(),
-
-                  const SizedBox(height: 20),
-
-                  // 2. Month Selector Header
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              color: AppColors.primary,
+              child: Center(
+                child: ResponsiveContentWrapper(
+                  maxWidth: 780,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
                     children: [
-                      const Text(
-                        'Monthly Calendar',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: _textDark,
-                        ),
-                      ),
+                      // 1. Overview Attendance & Percentage Card
+                      _buildPercentageOverviewCard(),
+
+                      const SizedBox(height: 20),
+
+                      // 2. Month Selector Header
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          IconButton(
-                            icon: const Icon(Icons.chevron_left_rounded, color: _textDark),
-                            onPressed: () => _changeMonth(-1),
-                          ),
-                          Text(
-                            monthLabel,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: _textDark,
+                          Text('Monthly Register', style: AppTypography.h2),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: AppDecorations.radiusSm,
+                              border: Border.all(color: AppColors.borderSubtle),
                             ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.chevron_right_rounded, color: _textDark),
-                            onPressed: () => _changeMonth(1),
+                            child: Row(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.chevron_left_rounded, size: 20),
+                                  onPressed: () => _changeMonth(-1),
+                                ),
+                                Text(
+                                  monthLabel,
+                                  style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w700),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.chevron_right_rounded, size: 20),
+                                  onPressed: () => _changeMonth(1),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
+
+                      const SizedBox(height: 12),
+
+                      // 3. Calendar Grid (With Attendance & Holiday Highlights)
+                      _buildCalendarGrid(),
+
+                      const SizedBox(height: 20),
+
+                      // 4. Selected Date Detail Card
+                      _buildSelectedDateDetailCard(),
+
+                      const SizedBox(height: 24),
+
+                      // 5. Recent Activity Logs List
+                      Text('Attendance Log History', style: AppTypography.h2),
+                      const SizedBox(height: 12),
+                      _buildAttendanceLogList(),
+                      const SizedBox(height: 24),
                     ],
                   ),
-
-                  const SizedBox(height: 8),
-
-                  // 3. Calendar Grid (With Attendance & Holiday Highlights)
-                  _buildCalendarGrid(),
-
-                  const SizedBox(height: 20),
-
-                  // 4. Selected Date Detail Card
-                  _buildSelectedDateDetailCard(),
-
-                  const SizedBox(height: 24),
-
-                  // 5. Recent Activity Logs List
-                  const Text(
-                    'Attendance Log History',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      color: _textDark,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  _buildAttendanceLogList(),
-                ],
+                ),
               ),
             ),
     );
@@ -268,25 +241,20 @@ class _AttendancePageState extends State<AttendancePage> {
   // ── 1. Attendance Percentage Summary Card ──────────────────────────────
   Widget _buildPercentageOverviewCard() {
     final pctStr = _attendancePercentage.toStringAsFixed(1);
+    final isStar = _attendancePercentage >= 85;
     final color = _attendancePercentage >= 75
-        ? _success
+        ? AppColors.emerald
         : _attendancePercentage >= 50
-            ? _amber
-            : _danger;
+            ? AppColors.amber
+            : AppColors.danger;
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: _surface,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: _border),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: Colors.white,
+        borderRadius: AppDecorations.radiusXl,
+        border: Border.all(color: AppColors.borderSubtle),
+        boxShadow: AppDecorations.shadowSm,
       ),
       child: Column(
         children: [
@@ -296,40 +264,34 @@ class _AttendancePageState extends State<AttendancePage> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Attendance Rate',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: _textMuted,
-                    ),
+                  Row(
+                    children: [
+                      Text(
+                        isStar ? '🌟 Star Attendance' : 'Attendance Rate',
+                        style: AppTypography.caption.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: isStar ? AppColors.amberDark : AppColors.textMuted,
+                        ),
+                      ),
+                      if (isStar) ...[
+                        const SizedBox(width: 4),
+                        const PlayfulSparkle(size: 14, color: Colors.amber),
+                      ],
+                    ],
                   ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
                       Text(
                         '$pctStr%',
-                        style: TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.w900,
-                          color: color,
-                        ),
+                        style: AppTypography.display.copyWith(color: color, fontSize: 32),
                       ),
                       const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: color.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          _attendancePercentage >= 75 ? 'Good' : 'Needs Focus',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: color,
-                          ),
-                        ),
+                      AppBadge(
+                        label: _attendancePercentage >= 85
+                            ? '⭐ Outstanding'
+                            : (_attendancePercentage >= 70 ? '👍 Great' : '🌱 Growing'),
+                        type: _attendancePercentage >= 70 ? AppBadgeType.success : AppBadgeType.warning,
                       ),
                     ],
                   ),
@@ -340,21 +302,22 @@ class _AttendancePageState extends State<AttendancePage> {
                 alignment: Alignment.center,
                 children: [
                   SizedBox(
-                    width: 58,
-                    height: 58,
+                    width: 62,
+                    height: 62,
                     child: CircularProgressIndicator(
                       value: _totalWorkingDaysMarked == 0 ? 0 : _attendancePercentage / 100,
                       strokeWidth: 6,
-                      backgroundColor: _bg,
+                      backgroundColor: AppColors.background,
                       color: color,
                     ),
                   ),
-                  Icon(
-                    _attendancePercentage >= 75
-                        ? Icons.verified_rounded
-                        : Icons.info_rounded,
-                    color: color,
-                    size: 26,
+                  FloatingWobble(
+                    verticalOffset: 2,
+                    duration: const Duration(milliseconds: 2000),
+                    child: Text(
+                      _attendancePercentage >= 85 ? '🌟' : (_attendancePercentage >= 70 ? '🍓' : '🌱'),
+                      style: const TextStyle(fontSize: 22),
+                    ),
                   ),
                 ],
               ),
@@ -362,17 +325,17 @@ class _AttendancePageState extends State<AttendancePage> {
           ),
 
           const SizedBox(height: 16),
-          const Divider(height: 1, color: _border),
+          const Divider(height: 1),
           const SizedBox(height: 16),
 
           // Mini metrics breakdown row
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildMiniMetric('Present', '$_presentCount', _success, _successSoft),
-              _buildMiniMetric('Late', '$_lateCount', _amber, _amberSoft),
-              _buildMiniMetric('Absent', '$_absentCount', _danger, _dangerSoft),
-              _buildMiniMetric('Total Days', '$_totalWorkingDaysMarked', _primary, _primarySoft),
+              _buildMiniMetric('Present', '$_presentCount', AppColors.emerald, AppColors.emeraldSoft, '🟢'),
+              _buildMiniMetric('Late', '$_lateCount', AppColors.amber, AppColors.amberSoft, '🟡'),
+              _buildMiniMetric('Absent', '$_absentCount', AppColors.danger, AppColors.dangerSoft, '🔴'),
+              _buildMiniMetric('Total Days', '$_totalWorkingDaysMarked', AppColors.primary, AppColors.primarySoft, '🎒'),
             ],
           ),
         ],
@@ -380,34 +343,35 @@ class _AttendancePageState extends State<AttendancePage> {
     );
   }
 
-  Widget _buildMiniMetric(String label, String value, Color color, Color bg) {
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Text(
-            value,
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w800,
-              color: color,
+  Widget _buildMiniMetric(String label, String value, Color color, Color bg, String emoji) {
+    return BouncyTap(
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: bg,
+              borderRadius: AppDecorations.radiusSm,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(emoji, style: const TextStyle(fontSize: 10)),
+                const SizedBox(width: 4),
+                Text(
+                  value,
+                  style: AppTypography.h3.copyWith(color: color, fontSize: 14),
+                ),
+              ],
             ),
           ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 11.5,
-            fontWeight: FontWeight.w600,
-            color: _textMuted,
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: AppTypography.caption.copyWith(fontSize: 11),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -420,11 +384,12 @@ class _AttendancePageState extends State<AttendancePage> {
     final weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: _surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _border),
+        color: Colors.white,
+        borderRadius: AppDecorations.radiusLg,
+        border: Border.all(color: AppColors.borderSubtle),
+        boxShadow: AppDecorations.shadowSm,
       ),
       child: Column(
         children: [
@@ -438,10 +403,8 @@ class _AttendancePageState extends State<AttendancePage> {
                 child: Text(
                   d,
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: isSun ? _danger : _textMuted,
+                  style: AppTypography.caption.copyWith(
+                    color: isSun ? AppColors.danger : AppColors.textMuted,
                   ),
                 ),
               );
@@ -476,47 +439,43 @@ class _AttendancePageState extends State<AttendancePage> {
               final isWorkingDayException = hol?['type'] == 'working_day';
               final isHoliday = hol != null && !isWorkingDayException;
 
-              Color cellBg = _bg;
-              Color textColor = _textDark;
+              Color cellBg = AppColors.background;
+              Color textColor = AppColors.textDark;
               Widget? badgeWidget;
 
               if (rec != null) {
                 final status = rec['status'];
                 if (status == 'Present') {
-                  cellBg = _successSoft;
-                  textColor = _success;
-                  badgeWidget = const Icon(Icons.check_circle_rounded, size: 10, color: _success);
+                  cellBg = AppColors.emeraldSoft;
+                  textColor = AppColors.emeraldDark;
+                  badgeWidget = const Icon(Icons.check_circle_rounded, size: 10, color: AppColors.emerald);
                 } else if (status == 'Absent') {
-                  cellBg = _dangerSoft;
-                  textColor = _danger;
-                  badgeWidget = const Icon(Icons.cancel_rounded, size: 10, color: _danger);
+                  cellBg = AppColors.dangerSoft;
+                  textColor = AppColors.danger;
+                  badgeWidget = const Icon(Icons.cancel_rounded, size: 10, color: AppColors.danger);
                 } else if (status == 'Late') {
-                  cellBg = _amberSoft;
-                  textColor = _amber;
-                  badgeWidget = const Icon(Icons.access_time_filled_rounded, size: 10, color: _amber);
+                  cellBg = AppColors.amberSoft;
+                  textColor = AppColors.amberDark;
+                  badgeWidget = const Icon(Icons.access_time_filled_rounded, size: 10, color: AppColors.amber);
                 }
               } else if (isHoliday) {
-                cellBg = _violetSoft;
-                textColor = _violet;
-                badgeWidget = const Text(
+                cellBg = AppColors.violetSoft;
+                textColor = AppColors.violetDark;
+                badgeWidget = Text(
                   'H',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w900,
-                    color: _violet,
-                  ),
+                  style: AppTypography.badge.copyWith(color: AppColors.violet, fontSize: 10),
                 );
               }
 
               return InkWell(
                 onTap: () => setState(() => _selectedDate = dateObj),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: AppDecorations.radiusSm,
                 child: Container(
                   decoration: BoxDecoration(
                     color: cellBg,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: AppDecorations.radiusSm,
                     border: Border.all(
-                      color: isSelected ? _primary : (isHoliday ? _violet.withValues(alpha: 0.3) : _border),
+                      color: isSelected ? AppColors.primary : (isHoliday ? AppColors.violet.withValues(alpha: 0.3) : AppColors.borderSubtle),
                       width: isSelected ? 2.0 : 1.0,
                     ),
                   ),
@@ -525,10 +484,9 @@ class _AttendancePageState extends State<AttendancePage> {
                     children: [
                       Text(
                         '$dayNumber',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: isSelected ? FontWeight.w900 : FontWeight.w700,
-                          color: isSelected ? _primary : textColor,
+                        style: AppTypography.bodySmall.copyWith(
+                          fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                          color: isSelected ? AppColors.primary : textColor,
                         ),
                       ),
                       if (badgeWidget != null)
@@ -562,9 +520,10 @@ class _AttendancePageState extends State<AttendancePage> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: _surface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: _border),
+        color: Colors.white,
+        borderRadius: AppDecorations.radiusLg,
+        border: Border.all(color: AppColors.borderSubtle),
+        boxShadow: AppDecorations.shadowSm,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -572,29 +531,11 @@ class _AttendancePageState extends State<AttendancePage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                formattedTitle,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                  color: _textDark,
-                ),
-              ),
+              Text(formattedTitle, style: AppTypography.h3),
               if (isHoliday)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: _violetSoft,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Text(
-                    'Holiday',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                      color: _violet,
-                    ),
-                  ),
+                const AppBadge(
+                  label: 'Holiday',
+                  type: AppBadgeType.info,
                 ),
             ],
           ),
@@ -604,20 +545,19 @@ class _AttendancePageState extends State<AttendancePage> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: _violetSoft,
-                borderRadius: BorderRadius.circular(12),
+                color: AppColors.violetSoft,
+                borderRadius: AppDecorations.radiusSm,
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.beach_access_rounded, color: _violet, size: 20),
+                  const Icon(Icons.beach_access_rounded, color: AppColors.violet, size: 20),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       '${hol['title'] ?? "Holiday"} — School is closed today.',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: _violet,
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppColors.violetDark,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
@@ -634,23 +574,21 @@ class _AttendancePageState extends State<AttendancePage> {
                           ? Icons.access_time_filled_rounded
                           : Icons.cancel_rounded,
                   color: rec['status'] == 'Present'
-                      ? _success
+                      ? AppColors.emerald
                       : rec['status'] == 'Late'
-                          ? _amber
-                          : _danger,
+                          ? AppColors.amber
+                          : AppColors.danger,
                   size: 22,
                 ),
                 const SizedBox(width: 8),
                 Text(
                   'Status: ${rec['status']}',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w800,
+                  style: AppTypography.h3.copyWith(
                     color: rec['status'] == 'Present'
-                        ? _success
+                        ? AppColors.emerald
                         : rec['status'] == 'Late'
-                            ? _amber
-                            : _danger,
+                            ? AppColors.amber
+                            : AppColors.danger,
                   ),
                 ),
               ],
@@ -660,30 +598,30 @@ class _AttendancePageState extends State<AttendancePage> {
               Row(
                 children: [
                   if (rec['in_time'] != null) ...[
-                    const Icon(Icons.login_rounded, size: 14, color: _textMuted),
+                    const Icon(Icons.login_rounded, size: 14, color: AppColors.textMuted),
                     const SizedBox(width: 4),
                     Text(
                       'Check In: ${_formatTimeString(rec['in_time'])}',
-                      style: const TextStyle(fontSize: 12.5, color: _textDark, fontWeight: FontWeight.w600),
+                      style: AppTypography.bodySmall.copyWith(fontWeight: FontWeight.w600),
                     ),
                   ],
                   if (rec['in_time'] != null && rec['out_time'] != null)
                     const SizedBox(width: 16),
                   if (rec['out_time'] != null) ...[
-                    const Icon(Icons.logout_rounded, size: 14, color: _textMuted),
+                    const Icon(Icons.logout_rounded, size: 14, color: AppColors.textMuted),
                     const SizedBox(width: 4),
                     Text(
                       'Check Out: ${_formatTimeString(rec['out_time'])}',
-                      style: const TextStyle(fontSize: 12.5, color: _textDark, fontWeight: FontWeight.w600),
+                      style: AppTypography.bodySmall.copyWith(fontWeight: FontWeight.w600),
                     ),
                   ],
                 ],
               ),
             ],
           ] else ...[
-            const Text(
+            Text(
               'No attendance record marked for this date.',
-              style: TextStyle(fontSize: 13, color: _textMuted, fontWeight: FontWeight.w500),
+              style: AppTypography.bodySmall,
             ),
           ],
         ],
@@ -694,12 +632,12 @@ class _AttendancePageState extends State<AttendancePage> {
   // ── 5. Attendance Log List ─────────────────────────────────────────────
   Widget _buildAttendanceLogList() {
     if (_attendanceRecords.isEmpty) {
-      return const Center(
+      return Center(
         child: Padding(
-          padding: EdgeInsets.all(24),
+          padding: const EdgeInsets.all(24),
           child: Text(
             'No attendance records found yet.',
-            style: TextStyle(color: _textMuted, fontSize: 13.5),
+            style: AppTypography.bodySmall,
           ),
         ),
       );
@@ -716,14 +654,14 @@ class _AttendancePageState extends State<AttendancePage> {
         final isPresent = status == 'Present';
         final isLate = status == 'Late';
 
-        final color = isPresent ? _success : (isLate ? _amber : _danger);
+        final color = isPresent ? AppColors.emerald : (isLate ? AppColors.amber : AppColors.danger);
 
         return Container(
           margin: const EdgeInsets.only(bottom: 10),
           decoration: BoxDecoration(
-            color: _surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: _border),
+            color: Colors.white,
+            borderRadius: AppDecorations.radiusMd,
+            border: Border.all(color: AppColors.borderSubtle),
           ),
           child: ListTile(
             leading: Container(
@@ -744,18 +682,13 @@ class _AttendancePageState extends State<AttendancePage> {
             ),
             title: Text(
               date,
-              style: const TextStyle(
-                color: _textDark,
-                fontWeight: FontWeight.w700,
-                fontSize: 14.5,
-              ),
+              style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w700),
             ),
             subtitle: Text(
               'Status: $status',
-              style: TextStyle(
+              style: AppTypography.bodySmall.copyWith(
                 color: color,
                 fontWeight: FontWeight.w600,
-                fontSize: 12.5,
               ),
             ),
           ),
