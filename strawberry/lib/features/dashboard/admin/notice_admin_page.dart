@@ -394,54 +394,64 @@ class _NoticeAdminPageState extends State<NoticeAdminPage> {
   }
 
   Widget _buildCreateNoticeTab() {
-    return Form(
-      key: _formKey,
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
-        children: [
-          Text('COMPOSE', style: TextStyle(
-            fontSize: 11.5, fontWeight: FontWeight.w700, color: _Palette.textFaint, letterSpacing: 1.2)),
-          const SizedBox(height: 10),
-          TextFormField(
-            controller: _titleController,
-            style: const TextStyle(color: _Palette.textDark, fontWeight: FontWeight.w600),
-            decoration: _fieldDecoration(label: 'Title', icon: Icons.title_rounded),
-            validator: (v) => v == null || v.isEmpty ? 'Enter title' : null,
-          ),
-          const SizedBox(height: 14),
-          TextFormField(
-            controller: _bodyController,
-            maxLines: 4,
-            style: const TextStyle(color: _Palette.textDark),
-            decoration: _fieldDecoration(label: 'Body', icon: Icons.notes_rounded),
-            validator: (v) => v == null || v.isEmpty ? 'Enter body' : null,
-          ),
-          const SizedBox(height: 22),
-          Text('TARGETING', style: TextStyle(
-            fontSize: 11.5, fontWeight: FontWeight.w700, color: _Palette.textFaint, letterSpacing: 1.2)),
-          const SizedBox(height: 10),
-          DropdownButtonFormField<String>(
-            value: _audience,
-            dropdownColor: _Palette.surface,
-            style: const TextStyle(color: _Palette.textDark, fontSize: 15, fontWeight: FontWeight.w600),
-            decoration: _fieldDecoration(label: 'Audience', icon: Icons.groups_rounded),
-            items: [
-              const DropdownMenuItem<String>(value: 'All', child: Text('All')),
-              ..._categories.map((cat) => DropdownMenuItem<String>(value: cat, child: Text(cat))),
-              const DropdownMenuItem<String>(value: 'Specific', child: Text('Specific Student')),
-            ],
-            onChanged: (v) => setState(() => _audience = v ?? 'All'),
-          ),
-          const SizedBox(height: 14),
-          DropdownButtonFormField<String>(
-            value: _category,
-            dropdownColor: _Palette.surface,
-            style: const TextStyle(color: _Palette.textDark, fontSize: 15, fontWeight: FontWeight.w600),
-            decoration: _fieldDecoration(label: 'Category', icon: Icons.label_rounded),
-            items: const <DropdownMenuItem<String>>[
-              DropdownMenuItem<String>(value: 'General', child: Text('General')),
-              DropdownMenuItem<String>(value: 'Fees', child: Text('Fees Notice')),
-              DropdownMenuItem<String>(value: 'Holiday', child: Text('Holiday Announcement')),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isDesktop = constraints.maxWidth >= 960;
+        final isTablet = constraints.maxWidth >= 600 && constraints.maxWidth < 960;
+        final horizontalPadding = isDesktop ? 32.0 : (isTablet ? 24.0 : 16.0);
+
+        return Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 900),
+            child: Form(
+              key: _formKey,
+              child: ListView(
+                padding: EdgeInsets.fromLTRB(horizontalPadding, 20, horizontalPadding, 32),
+                children: [
+                  Text('COMPOSE', style: TextStyle(
+                    fontSize: 11.5, fontWeight: FontWeight.w700, color: _Palette.textFaint, letterSpacing: 1.2)),
+              const SizedBox(height: 10),
+              TextFormField(
+                controller: _titleController,
+                style: const TextStyle(color: _Palette.textDark, fontWeight: FontWeight.w600),
+                decoration: _fieldDecoration(label: 'Title', icon: Icons.title_rounded),
+                validator: (v) => v == null || v.isEmpty ? 'Enter title' : null,
+              ),
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: _bodyController,
+                maxLines: 4,
+                style: const TextStyle(color: _Palette.textDark),
+                decoration: _fieldDecoration(label: 'Body', icon: Icons.notes_rounded),
+                validator: (v) => v == null || v.isEmpty ? 'Enter body' : null,
+              ),
+              const SizedBox(height: 22),
+              Text('TARGETING', style: TextStyle(
+                fontSize: 11.5, fontWeight: FontWeight.w700, color: _Palette.textFaint, letterSpacing: 1.2)),
+              const SizedBox(height: 10),
+              DropdownButtonFormField<String>(
+                initialValue: _audience,
+                dropdownColor: _Palette.surface,
+                style: const TextStyle(color: _Palette.textDark, fontSize: 15, fontWeight: FontWeight.w600),
+                decoration: _fieldDecoration(label: 'Audience', icon: Icons.groups_rounded),
+                items: [
+                  const DropdownMenuItem<String>(value: 'All', child: Text('All')),
+                  ..._categories.map((cat) => DropdownMenuItem<String>(value: cat, child: Text(cat))),
+                  const DropdownMenuItem<String>(value: 'Specific', child: Text('Specific Student')),
+                ],
+                onChanged: (v) => setState(() => _audience = v ?? 'All'),
+              ),
+              const SizedBox(height: 14),
+              DropdownButtonFormField<String>(
+                initialValue: _category,
+                dropdownColor: _Palette.surface,
+                style: const TextStyle(color: _Palette.textDark, fontSize: 15, fontWeight: FontWeight.w600),
+                decoration: _fieldDecoration(label: 'Category', icon: Icons.label_rounded),
+                items: const <DropdownMenuItem<String>>[
+                  DropdownMenuItem<String>(value: 'General', child: Text('General')),
+                  DropdownMenuItem<String>(value: 'Fees', child: Text('Fees Notice')),
+                  DropdownMenuItem<String>(value: 'Holiday', child: Text('Holiday Announcement')),
               DropdownMenuItem<String>(value: 'Event', child: Text('School Event')),
             ],
             onChanged: (v) => setState(() => _category = v ?? 'General'),
@@ -512,12 +522,16 @@ class _NoticeAdminPageState extends State<NoticeAdminPage> {
                     )
                   : Text(_scheduleType == 'now' ? 'Send Notice Now' : 'Schedule Notice',
                       style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w700)),
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      );
+    },
+  );
+}
 
   Widget _buildScheduleTypeSelector() {
     final options = <Map<String, dynamic>>[
@@ -532,6 +546,7 @@ class _NoticeAdminPageState extends State<NoticeAdminPage> {
       children: options.map((opt) {
         final selected = _scheduleType == opt['value'];
         return ChoiceChip(
+          showCheckmark: false,
           label: Text(opt['label'] as String,
               style: TextStyle(
                   fontSize: 13,
@@ -759,135 +774,172 @@ class _NoticeAdminPageState extends State<NoticeAdminPage> {
     return RefreshIndicator(
       onRefresh: _loadHistory,
       color: _Palette.primary,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: _historyNotices.length,
-        itemBuilder: (context, index) {
-          final notice = _historyNotices[index];
-          final title = notice['title'] ?? '';
-          final body = notice['body'] ?? '';
-          final category = notice['category'] ?? 'General';
-          final audience = notice['target_audience'] ?? '';
-          final dateStr = notice['created_at'] != null
-              ? notice['created_at'].toString().split('T').first
-              : '';
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isDesktop = constraints.maxWidth >= 960;
+          final isTablet = constraints.maxWidth >= 600 && constraints.maxWidth < 960;
+          final horizontalPadding = isDesktop ? 32.0 : (isTablet ? 24.0 : 16.0);
 
-          final categoryColor = _categoryColor(category);
-          final scheduleType = (notice['schedule_type'] ?? 'now') as String;
-          final status = (notice['status'] ?? 'sent') as String;
-          final noticeId = notice['id'] as int;
+          return Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1000),
+              child: ListView.builder(
+                padding: EdgeInsets.fromLTRB(horizontalPadding, 16, horizontalPadding, 32),
+                itemCount: _historyNotices.length,
+                itemBuilder: (context, index) {
+              final notice = _historyNotices[index];
+              final title = notice['title'] ?? '';
+              final body = notice['body'] ?? '';
+              final category = notice['category'] ?? 'General';
+              final audience = notice['target_audience'] ?? '';
+              final dateStr = notice['created_at'] != null
+                  ? notice['created_at'].toString().split('T').first
+                  : '';
+              final scheduleType = notice['schedule_type'] as String? ?? 'now';
+              final status = notice['status'] as String? ?? 'sent';
+              final noticeId = notice['id'] as int;
+              final categoryColor = _categoryColor(category);
 
-          return Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: _Palette.surface,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: _Palette.border),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.03),
-                  blurRadius: 14,
-                  offset: const Offset(0, 6),
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: _Palette.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: _Palette.border),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 6,
-                      crossAxisAlignment: WrapCrossAlignment.center,
+                    Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: categoryColor.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             category,
-                            style: TextStyle(color: categoryColor, fontSize: 11, fontWeight: FontWeight.w700),
-                          ),
-                        ),
-                        _statusChip(scheduleType, status),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        if (status == 'pending')
-                          InkWell(
-                            borderRadius: BorderRadius.circular(20),
-                            onTap: () => _cancelSchedule(noticeId),
-                            child: Container(
-                              margin: const EdgeInsets.only(right: 6),
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(color: _Palette.bg, shape: BoxShape.circle),
-                              child: const Icon(Icons.pause_circle_outline_rounded, color: _Palette.textMuted, size: 18),
+                            style: TextStyle(
+                              color: categoryColor,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
-                        InkWell(
-                          borderRadius: BorderRadius.circular(20),
-                          onTap: () => _deleteNotice(noticeId),
-                          child: Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(color: _Palette.bg, shape: BoxShape.circle),
-                            child: const Icon(Icons.delete_outline_rounded, color: _Palette.danger, size: 18),
+                        ),
+                        const SizedBox(width: 8),
+                        _statusChip(scheduleType, status),
+                        const Spacer(),
+                        if (dateStr.isNotEmpty)
+                          Text(
+                            dateStr,
+                            style: const TextStyle(
+                              color: _Palette.textMuted,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        const SizedBox(width: 4),
+                        PopupMenuButton<String>(
+                          icon: const Icon(Icons.more_vert_rounded, size: 18, color: _Palette.textMuted),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          color: _Palette.surface,
+                          onSelected: (val) {
+                            if (val == 'delete') _deleteNotice(noticeId);
+                            if (val == 'cancel') _cancelSchedule(noticeId);
+                          },
+                          itemBuilder: (_) => [
+                            if (status == 'pending')
+                              const PopupMenuItem(
+                                value: 'cancel',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.cancel_outlined, size: 18, color: _Palette.catFees),
+                                    SizedBox(width: 8),
+                                    Text('Cancel Schedule', style: TextStyle(color: _Palette.catFees, fontWeight: FontWeight.w600)),
+                                  ],
+                                ),
+                              ),
+                            const PopupMenuItem(
+                              value: 'delete',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.delete_outline_rounded, size: 18, color: _Palette.danger),
+                                  SizedBox(width: 8),
+                                  Text('Delete', style: TextStyle(color: _Palette.danger, fontWeight: FontWeight.w600)),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 15.5,
+                        fontWeight: FontWeight.w700,
+                        color: _Palette.textDark,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      body,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: _Palette.textMuted,
+                        height: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        const Icon(Icons.people_alt_rounded, size: 13, color: _Palette.textFaint),
+                        const SizedBox(width: 4),
+                        Text(
+                          audience,
+                          style: const TextStyle(
+                            color: _Palette.textFaint,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
                     ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Text(title,
-                    style: const TextStyle(
-                        color: _Palette.textDark, fontSize: 16, fontWeight: FontWeight.w800)),
-                const SizedBox(height: 5),
-                Text(body,
-                    style: const TextStyle(color: _Palette.textMuted, fontSize: 13.5, height: 1.4)),
-                const SizedBox(height: 14),
-                Container(height: 1, color: _Palette.border),
-                const SizedBox(height: 10),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.groups_rounded, size: 13, color: _Palette.textFaint),
-                        const SizedBox(width: 4),
-                        Text(audience,
-                            style: const TextStyle(color: _Palette.textFaint, fontSize: 11.5, fontWeight: FontWeight.w600)),
-                      ],
-                    ),
-                    Text(dateStr,
-                        style: const TextStyle(color: _Palette.textFaint, fontSize: 11.5, fontWeight: FontWeight.w600)),
-                  ],
-                ),
-                if (status == 'pending' && notice['next_run_at'] != null) ...[
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const Icon(Icons.schedule_rounded, size: 13, color: _Palette.primary),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Next: ${_formatNextRun(notice['next_run_at'].toString())}',
-                        style: const TextStyle(color: _Palette.primary, fontSize: 11.5, fontWeight: FontWeight.w700),
+                    if (scheduleType != 'now' && notice['next_run_at'] != null) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          const Icon(Icons.schedule_rounded, size: 13, color: _Palette.primary),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Next: ${_formatNextRun(notice['next_run_at'].toString())}',
+                            style: const TextStyle(color: _Palette.primary, fontSize: 11.5, fontWeight: FontWeight.w700),
+                          ),
+                        ],
                       ),
                     ],
-                  ),
-                ],
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
+                  ],
+                ),
+              );
+            },
+          ),
+          ),
+        );
+      },
+    ),
+  );
+}
 
   Widget _statusChip(String scheduleType, String status) {
     late Color color;

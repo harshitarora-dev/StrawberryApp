@@ -100,7 +100,7 @@ class _GalleryPageState extends State<GalleryPage> {
 
   @override
   Widget build(BuildContext context) {
-    final columns = Responsive.getGridColumns(context, mobile: 2, tablet: 3, desktop: 4);
+    final columns = Responsive.getGridColumns(context, mobile: 2, tablet: 3, desktop: 4, largeDesktop: 5);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -134,11 +134,13 @@ class _GalleryPageState extends State<GalleryPage> {
         ],
       ),
       body: SafeArea(
-        child: Center(
-          child: ResponsiveContentWrapper(
-            maxWidth: 1000,
-            padding: EdgeInsets.zero,
-            child: Column(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isDesktop = constraints.maxWidth >= 1024;
+            final isTablet = constraints.maxWidth >= 600 && constraints.maxWidth < 1024;
+            final horizontalPadding = isDesktop ? 32.0 : (isTablet ? 24.0 : 16.0);
+
+            return Column(
               children: [
                 // ── Category Filter Bar ─────────────────────────────────
                 _buildCategoryFilterBar(),
@@ -159,7 +161,7 @@ class _GalleryPageState extends State<GalleryPage> {
                               color: AppColors.primary,
                               onRefresh: _loadImages,
                               child: GridView.builder(
-                                padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                                padding: EdgeInsets.fromLTRB(horizontalPadding, 8, horizontalPadding, 24),
                                 physics: const AlwaysScrollableScrollPhysics(
                                   parent: BouncingScrollPhysics(),
                                 ),
@@ -178,8 +180,8 @@ class _GalleryPageState extends State<GalleryPage> {
                             ),
                 ),
               ],
-            ),
-          ),
+            );
+          },
         ),
       ),
     );

@@ -207,6 +207,7 @@ class _FeePaymentsAdminPageState extends State<FeePaymentsAdminPage> {
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: ChoiceChip(
+        showCheckmark: false,
         label: Text(label),
         selected: selected,
         onSelected: (_) => setState(() => _filter = key),
@@ -227,7 +228,6 @@ class _FeePaymentsAdminPageState extends State<FeePaymentsAdminPage> {
 
   @override
   Widget build(BuildContext context) {
-    final items = _filtered;
     return Scaffold(
       backgroundColor: _bg,
       appBar: AppBar(
@@ -244,91 +244,24 @@ class _FeePaymentsAdminPageState extends State<FeePaymentsAdminPage> {
         onRefresh: _load,
         child: _loading
             ? const Center(child: CircularProgressIndicator(color: _primary))
-            : ListView(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      color: _primarySoft,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.account_balance_wallet_rounded, color: _primary, size: 26),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Total Collected via UPI',
-                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _textMuted),
-                              ),
-                              Text(
-                                '₹${_totalCollected.toStringAsFixed(0)}',
-                                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: _textDark),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  TextField(
-                    onChanged: (v) => setState(() => _search = v),
-                    style: const TextStyle(color: _textDark),
-                    decoration: InputDecoration(
-                      hintText: 'Search by student name',
-                      prefixIcon: const Icon(Icons.search_rounded, color: _textMuted),
-                      filled: true,
-                      fillColor: _surface,
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(color: _border),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(color: _primary, width: 1.6),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      _filterChip('all', 'All'),
-                      _filterChip('success', 'Success'),
-                      _filterChip('pending', 'Pending'),
-                      _filterChip('failed', 'Failed'),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  if (items.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 60),
-                      child: Center(
-                        child: Text(
-                          'No payments found',
-                          style: TextStyle(color: _textMuted, fontWeight: FontWeight.w600),
-                        ),
-                      ),
-                    )
-                  else
-                    ...items.map((p) {
-                      final status = p['status'] as String? ?? 'initiated';
-                      final (color, icon, label) = _statusMeta(status);
-                      final createdAt = DateTime.tryParse(p['created_at'] ?? '')?.toLocal();
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(18),
-                          onTap: () => _openActions(p),
-                          child: Container(
-                            padding: const EdgeInsets.all(16),
+            : LayoutBuilder(
+                builder: (context, constraints) {
+                  final isDesktop = constraints.maxWidth >= 960;
+                  final isTablet = constraints.maxWidth >= 600 && constraints.maxWidth < 960;
+                  final horizontalPadding = isDesktop ? 32.0 : (isTablet ? 24.0 : 16.0);
+
+                  return Align(
+                    alignment: Alignment.topCenter,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 1100),
+                      child: ListView(
+                        padding: EdgeInsets.fromLTRB(horizontalPadding, 12, horizontalPadding, 32),
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(18),
                             decoration: BoxDecoration(
-                              color: _surface,
-                              borderRadius: BorderRadius.circular(18),
+                              color: _primarySoft,
+                              borderRadius: BorderRadius.circular(20),
                               border: Border.all(color: _border),
                             ),
                             child: Row(
@@ -336,56 +269,268 @@ class _FeePaymentsAdminPageState extends State<FeePaymentsAdminPage> {
                                 Container(
                                   padding: const EdgeInsets.all(10),
                                   decoration: BoxDecoration(
-                                    color: color.withValues(alpha: 0.12),
+                                    color: Colors.white,
                                     borderRadius: BorderRadius.circular(14),
                                   ),
-                                  child: Icon(icon, color: color, size: 22),
+                                  child: const Icon(Icons.account_balance_wallet_rounded, color: _primary, size: 24),
                                 ),
                                 const SizedBox(width: 14),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text(
-                                        p['student_name'] ?? 'Unknown',
-                                        style: const TextStyle(fontWeight: FontWeight.w800, color: _textDark, fontSize: 14.5),
+                                      const Text(
+                                        'Total Collected via UPI',
+                                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _textMuted),
                                       ),
-                                      const SizedBox(height: 3),
+                                      const SizedBox(height: 2),
                                       Text(
-                                        '${_formatMonthKey(p['month_key'] ?? '')} · ${p['upi_app'] ?? 'UPI'}',
-                                        style: const TextStyle(fontSize: 12, color: _textMuted),
+                                        '₹${_totalCollected.toStringAsFixed(0)}',
+                                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: _textDark),
                                       ),
-                                      if (createdAt != null) ...[
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          DateFormat('d MMM y, h:mm a').format(createdAt),
-                                          style: const TextStyle(fontSize: 11, color: _textMuted),
-                                        ),
-                                      ],
                                     ],
                                   ),
-                                ),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    Text(
-                                      '₹${(p['amount'] as num?)?.toStringAsFixed(0) ?? '0'}',
-                                      style: const TextStyle(fontWeight: FontWeight.w800, color: _textDark),
-                                    ),
-                                    const SizedBox(height: 3),
-                                    Text(
-                                      label,
-                                      style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: color),
-                                    ),
-                                  ],
                                 ),
                               ],
                             ),
                           ),
-                        ),
-                      );
-                    }),
-                ],
+                          const SizedBox(height: 16),
+                          TextField(
+                            onChanged: (v) => setState(() => _search = v),
+                            style: const TextStyle(color: _textDark),
+                            decoration: InputDecoration(
+                              hintText: 'Search by student name...',
+                              prefixIcon: const Icon(Icons.search_rounded, color: _textMuted),
+                              filled: true,
+                              fillColor: _surface,
+                              contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                                borderSide: const BorderSide(color: _border),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                                borderSide: const BorderSide(color: _primary, width: 1.6),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: [
+                                _filterChip('all', 'All'),
+                                _filterChip('success', 'Success'),
+                                _filterChip('pending', 'Pending'),
+                                _filterChip('failed', 'Failed'),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          if (_filtered.isEmpty)
+                            const Padding(
+                              padding: EdgeInsets.only(top: 60),
+                              child: Center(
+                                child: Text(
+                                  'No payments found',
+                                  style: TextStyle(color: _textMuted, fontWeight: FontWeight.w600),
+                                ),
+                              ),
+                            )
+                          else if (isDesktop)
+                            GridView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                crossAxisSpacing: 14,
+                                mainAxisSpacing: 14,
+                                mainAxisExtent: 110,
+                              ),
+                              itemCount: _filtered.length,
+                              itemBuilder: (context, index) {
+                                final p = _filtered[index];
+                                final status = p['status'] as String? ?? 'initiated';
+                                final (color, icon, label) = _statusMeta(status);
+                                final createdAt = DateTime.tryParse(p['created_at'] ?? '')?.toLocal();
+
+                                return InkWell(
+                                  borderRadius: BorderRadius.circular(18),
+                                  onTap: () => _openActions(p),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(14),
+                                    decoration: BoxDecoration(
+                                      color: _surface,
+                                      borderRadius: BorderRadius.circular(18),
+                                      border: Border.all(color: _border),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.02),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 3),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(9),
+                                          decoration: BoxDecoration(
+                                            color: color.withValues(alpha: 0.12),
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          child: Icon(icon, color: color, size: 20),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Text(
+                                                p['student_name'] ?? 'Unknown',
+                                                style: const TextStyle(fontWeight: FontWeight.w800, color: _textDark, fontSize: 13.5),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                '${_formatMonthKey(p['month_key'] ?? '')} · ${p['upi_app'] ?? 'UPI'}',
+                                                style: const TextStyle(fontSize: 11.5, color: _textMuted),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              if (createdAt != null) ...[
+                                                const SizedBox(height: 1),
+                                                Text(
+                                                  DateFormat('d MMM y, h:mm a').format(createdAt),
+                                                  style: const TextStyle(fontSize: 10.5, color: _textMuted),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ],
+                                            ],
+                                          ),
+                                        ),
+                                        Column(
+                                          crossAxisAlignment: CrossAxisAlignment.end,
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Text(
+                                              '₹${(p['amount'] as num?)?.toStringAsFixed(0) ?? '0'}',
+                                              style: const TextStyle(fontWeight: FontWeight.w900, color: _textDark, fontSize: 14),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: color.withValues(alpha: 0.12),
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: Text(
+                                                label,
+                                                style: TextStyle(
+                                                  color: color,
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w800,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            )
+                          else
+                            ..._filtered.map((p) {
+                              final status = p['status'] as String? ?? 'initiated';
+                              final (color, icon, label) = _statusMeta(status);
+                              final createdAt = DateTime.tryParse(p['created_at'] ?? '')?.toLocal();
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(18),
+                                  onTap: () => _openActions(p),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: _surface,
+                                      borderRadius: BorderRadius.circular(18),
+                                      border: Border.all(color: _border),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(10),
+                                          decoration: BoxDecoration(
+                                            color: color.withValues(alpha: 0.12),
+                                            borderRadius: BorderRadius.circular(14),
+                                          ),
+                                          child: Icon(icon, color: color, size: 22),
+                                        ),
+                                        const SizedBox(width: 14),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                p['student_name'] ?? 'Unknown',
+                                                style: const TextStyle(fontWeight: FontWeight.w800, color: _textDark, fontSize: 14.5),
+                                              ),
+                                              const SizedBox(height: 3),
+                                              Text(
+                                                '${_formatMonthKey(p['month_key'] ?? '')} · ${p['upi_app'] ?? 'UPI'}',
+                                                style: const TextStyle(fontSize: 12, color: _textMuted),
+                                              ),
+                                              if (createdAt != null) ...[
+                                                const SizedBox(height: 2),
+                                                Text(
+                                                  DateFormat('d MMM y, h:mm a').format(createdAt),
+                                                  style: const TextStyle(fontSize: 11, color: _textMuted),
+                                                ),
+                                              ],
+                                            ],
+                                          ),
+                                        ),
+                                        Column(
+                                          crossAxisAlignment: CrossAxisAlignment.end,
+                                          children: [
+                                            Text(
+                                              '₹${(p['amount'] as num?)?.toStringAsFixed(0) ?? '0'}',
+                                              style: const TextStyle(fontWeight: FontWeight.w800, color: _textDark),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                              decoration: BoxDecoration(
+                                                color: color.withValues(alpha: 0.12),
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: Text(
+                                                label,
+                                                style: TextStyle(
+                                                  color: color,
+                                                  fontSize: 10.5,
+                                                  fontWeight: FontWeight.w800,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               ),
       ),
     );

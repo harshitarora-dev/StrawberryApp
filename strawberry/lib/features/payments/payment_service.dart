@@ -1,6 +1,5 @@
-import 'dart:io' show Platform;
 import 'dart:math';
-import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
+import 'package:flutter/foundation.dart' show kIsWeb, debugPrint, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -196,7 +195,7 @@ class PaymentService {
   /// (non-Android platform) or something went wrong invoking it — callers
   /// should fall back to the plain `url_launcher` flow in that case.
   Future<Map<String, dynamic>?> _payWithUpiNative(String uri) async {
-    if (kIsWeb || !Platform.isAndroid) return null;
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return null;
     try {
       final result = await _upiChannel.invokeMethod('payWithUpi', {
         'uri': uri,

@@ -77,6 +77,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
   final _authService = AuthService();
 
   int _navIndex = 0;
+  Widget? _activeCustomSubPage;
+  String? _activeSubPageTitle;
 
   List<Map<String, dynamic>> _pendingRequests = [];
   bool _loadingRequests = true;
@@ -162,43 +164,131 @@ class _AdminDashboardState extends State<AdminDashboard> {
   }
 
   Future<void> _logout() async {
-    await _authService.logout();
-    if (!mounted) return;
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const AuthScreen()),
-      (route) => false,
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        titlePadding: const EdgeInsets.fromLTRB(22, 22, 22, 8),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 22, vertical: 8),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 12, 18, 18),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: const BoxDecoration(
+                color: AppColors.dangerSoft,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.logout_rounded, color: AppColors.danger, size: 22),
+            ),
+            const SizedBox(width: 14),
+            const Text(
+              'Confirm Logout',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: _Palette.textDark,
+              ),
+            ),
+          ],
+        ),
+        content: const Text(
+          'Are you sure you want to log out of the Administrator Portal?',
+          style: TextStyle(
+            fontSize: 13.5,
+            color: _Palette.textMuted,
+            height: 1.4,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(
+                color: _Palette.textDark,
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _Palette.danger,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text(
+              'Log Out',
+              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+            ),
+          ),
+        ],
+      ),
     );
+
+    if (shouldLogout == true) {
+      await _authService.logout();
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const AuthScreen()),
+        (route) => false,
+      );
+    }
   }
 
   // ---------------------------------------------------------------------
-  // Navigation helpers — sub pages
+  // Navigation helpers — Unified for Mobile (Push) and Web (Embedded Shell)
   // ---------------------------------------------------------------------
-  // NOTE: AttendanceMarkPage / GalleryAdminPage / NoticeAdminPage already
-  // manage their own Scaffold + AppBar internally (they were previously
-  // used as raw TabBarView children). Pushing them directly — instead of
-  // wrapping in a second Scaffold — avoids nested-Scaffold conflicts that
-  // were causing the back button to crash out of the app.
+  void _openPage(Widget page, {String? title, VoidCallback? onBack}) {
+    final isDesktop = MediaQuery.of(context).size.width >= 960;
+    if (isDesktop) {
+      setState(() {
+        _activeCustomSubPage = page;
+        _activeSubPageTitle = title;
+      });
+    } else {
+      Navigator.of(context)
+          .push(MaterialPageRoute(builder: (_) => page))
+          .then((_) {
+            if (onBack != null) onBack();
+          });
+    }
+  }
+
+  void _closeCustomSubPage() {
+    setState(() {
+      _activeCustomSubPage = null;
+      _activeSubPageTitle = null;
+    });
+  }
+
   void _openAttendancePage() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => AttendanceMarkPage(authService: _authService),
-      ),
+    _openPage(
+      AttendanceMarkPage(authService: _authService),
+      title: 'Mark Attendance',
     );
   }
 
   void _openGalleryPage() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => GalleryAdminPage(authService: _authService),
-      ),
+    _openPage(
+      GalleryAdminPage(authService: _authService),
+      title: 'Photo Gallery',
     );
   }
 
   void _openNoticePage() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => NoticeAdminPage(authService: _authService),
-      ),
+    _openPage(
+      NoticeAdminPage(authService: _authService),
+      title: 'Notice Board Broadcast',
     );
   }
 
@@ -206,51 +296,56 @@ class _AdminDashboardState extends State<AdminDashboard> {
     if (_authService.currentUserEmail != 'dev.harshitcreations@gmail.com') {
       return;
     }
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => ManageAdminsPage(authService: _authService),
-      ),
+    _openPage(
+      ManageAdminsPage(authService: _authService),
+      title: 'Manage Administrators',
     );
   }
 
   void _openFeePaymentsPage() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => FeePaymentsAdminPage(authService: _authService),
-      ),
+    _openPage(
+      FeePaymentsAdminPage(authService: _authService),
+      title: 'Fee Records & UPI Logs',
     );
   }
 
   void _openHolidayPage() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => HolidayAdminPage(authService: _authService),
-      ),
+    _openPage(
+      HolidayAdminPage(authService: _authService),
+      title: 'Holiday Calendar',
     );
   }
 
   void _openReviewPage() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => ReviewAnalyticsPage(authService: _authService),
-      ),
+    _openPage(
+      ReviewAnalyticsPage(authService: _authService),
+      title: 'Review & Analytics',
     );
   }
 
   void _openCategoriesPage() {
-    Navigator.of(context)
-        .push(
-          MaterialPageRoute(
-            builder: (_) => CategoriesAdminPage(authService: _authService),
-          ),
-        )
-        .then((_) {
-          _loadCategories();
-          _loadStudents();
-        });
+    _openPage(
+      CategoriesAdminPage(authService: _authService),
+      title: 'Categories & Grades',
+      onBack: () {
+        _loadCategories();
+        _loadStudents();
+      },
+    );
   }
 
-  void _goToNav(int index) => setState(() => _navIndex = index);
+  void _openAboutPage() {
+    _openPage(
+      const AboutPage(),
+      title: 'About Strawberry',
+    );
+  }
+
+  void _goToNav(int index) => setState(() {
+    _activeCustomSubPage = null;
+    _activeSubPageTitle = null;
+    _navIndex = index;
+  });
 
   // ---------------------------------------------------------------------
   // Approval bottom sheet
@@ -266,6 +361,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      constraints: const BoxConstraints(maxWidth: 580),
       backgroundColor: _Palette.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
@@ -651,53 +747,396 @@ class _AdminDashboardState extends State<AdminDashboard> {
   // ---------------------------------------------------------------------
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      // If we're on any tab other than Home, back should take the admin
-      // back to Home first — not exit the app. Only when already on Home
-      // (nothing left to unwind inside the dashboard) does back behave
-      // normally (pop this route / exit, same as before).
-      canPop: _navIndex == 0,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        if (_navIndex != 0) {
-          setState(() => _navIndex = 0);
-        }
-      },
-      child: Scaffold(
-        backgroundColor: _Palette.bg,
-        body: SafeArea(
-          bottom: false,
-          child: _responsive(
-            IndexedStack(
-              index: _navIndex,
-              children: [
-                _buildHomeTab(),
-                _buildPendingTab(),
-                _buildStudentsTab(),
-                _buildChatInboxTab(),
-                _buildMoreTab(),
-              ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isDesktop = constraints.maxWidth >= 960;
+
+        return PopScope(
+          canPop: _activeCustomSubPage == null && _navIndex == 0,
+          onPopInvokedWithResult: (didPop, result) {
+            if (didPop) return;
+            if (_activeCustomSubPage != null) {
+              _closeCustomSubPage();
+              return;
+            }
+            if (_navIndex != 0) {
+              setState(() => _navIndex = 0);
+            }
+          },
+          child: Scaffold(
+            backgroundColor: _Palette.bg,
+            body: SafeArea(
+              bottom: false,
+              child: isDesktop
+                  ? Row(
+                      children: [
+                        _buildDesktopSidebar(),
+                        Expanded(
+                          child: _activeCustomSubPage != null
+                              ? Column(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                      decoration: const BoxDecoration(
+                                        color: _Palette.surface,
+                                        border: Border(bottom: BorderSide(color: _Palette.border, width: 1.2)),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Material(
+                                            color: _Palette.bg,
+                                            borderRadius: BorderRadius.circular(10),
+                                            child: InkWell(
+                                              onTap: _closeCustomSubPage,
+                                              borderRadius: BorderRadius.circular(10),
+                                              child: Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                                                decoration: BoxDecoration(
+                                                  borderRadius: BorderRadius.circular(10),
+                                                  border: Border.all(color: _Palette.border),
+                                                ),
+                                                child: const Row(
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    Icon(Icons.arrow_back_rounded, size: 16, color: _Palette.textDark),
+                                                    SizedBox(width: 6),
+                                                    Text(
+                                                      'Back to Overview',
+                                                      style: TextStyle(
+                                                        fontSize: 13,
+                                                        fontWeight: FontWeight.w700,
+                                                        color: _Palette.textDark,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          if (_activeSubPageTitle != null) ...[
+                                            const SizedBox(width: 14),
+                                            Container(width: 1, height: 20, color: _Palette.border),
+                                            const SizedBox(width: 14),
+                                            Text(
+                                              _activeSubPageTitle!,
+                                              style: const TextStyle(
+                                                fontSize: 16.5,
+                                                fontWeight: FontWeight.w800,
+                                                color: _Palette.textDark,
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                    Expanded(child: _activeCustomSubPage!),
+                                  ],
+                                )
+                              : IndexedStack(
+                                  index: _navIndex,
+                                  sizing: StackFit.expand,
+                                  children: [
+                                    _buildHomeTab(),
+                                    _buildPendingTab(),
+                                    _buildStudentsTab(),
+                                    _buildChatInboxTab(),
+                                    _buildMoreTab(),
+                                  ],
+                                ),
+                        ),
+                      ],
+                    )
+                  : IndexedStack(
+                      index: _navIndex,
+                      sizing: StackFit.expand,
+                      children: [
+                        _buildHomeTab(),
+                        _buildPendingTab(),
+                        _buildStudentsTab(),
+                        _buildChatInboxTab(),
+                        _buildMoreTab(),
+                      ],
+                    ),
             ),
+            bottomNavigationBar: isDesktop
+                ? null
+                : SafeArea(
+                    child: Container(
+                      alignment: Alignment.center,
+                      height: 72,
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 620),
+                        child: _buildNavBar(),
+                      ),
+                    ),
+                  ),
           ),
-        ),
-        bottomNavigationBar: SafeArea(child: _responsive(_buildNavBar())),
-      ),
+        );
+      },
     );
   }
 
-  /// Keeps content comfortably readable and centered on tablets / foldables /
-  /// desktop-width windows, while behaving exactly like a normal full-width
-  /// layout on phones (the vast majority of admin usage).
-  Widget _responsive(Widget child) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        const maxContentWidth = 680.0;
-        if (constraints.maxWidth <= maxContentWidth) return child;
-        return Align(
-          alignment: Alignment.topCenter,
-          child: SizedBox(width: maxContentWidth, child: child),
-        );
-      },
+  // ---------------------------------------------------------------------
+  // Desktop Navigation Sidebar
+  // ---------------------------------------------------------------------
+  Widget _buildDesktopSidebar() {
+    final navItems = [
+      (Icons.dashboard_rounded, 'Dashboard', 0, 0),
+      (Icons.pending_actions_rounded, 'Admissions', 1, _pendingRequests.length),
+      (Icons.school_rounded, 'Students', 2, 0),
+      (Icons.chat_bubble_rounded, 'Chat Inbox', 3, 0),
+      (Icons.apps_rounded, 'All Tools', 4, 0),
+    ];
+
+    final quickLinks = [
+      (Icons.insights_rounded, 'Review & Analytics', _openReviewPage),
+      (Icons.event_available_rounded, 'Mark Attendance', _openAttendancePage),
+      (Icons.payments_rounded, 'Fee Records', _openFeePaymentsPage),
+      (Icons.campaign_rounded, 'Notice Board', _openNoticePage),
+      (Icons.photo_library_rounded, 'Photo Gallery', _openGalleryPage),
+      (Icons.category_rounded, 'Categories & Grades', _openCategoriesPage),
+      (Icons.storefront_rounded, 'About Strawberry', _openAboutPage),
+    ];
+
+    return Container(
+      width: 270,
+      decoration: const BoxDecoration(
+        color: _Palette.surface,
+        border: Border(
+          right: BorderSide(color: _Palette.border, width: 1.2),
+        ),
+      ),
+      child: Column(
+        children: [
+          // Sidebar Header / Brand
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: _Palette.primarySoft,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Image.asset(
+                    'assets/images/logo.png',
+                    errorBuilder: (_, __, ___) => const Icon(
+                      Icons.school_rounded,
+                      color: _Palette.primary,
+                      size: 24,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Strawberry ERP',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: _Palette.textDark,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                        decoration: BoxDecoration(
+                          color: _Palette.primarySoft,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Text(
+                          'ADMIN PORTAL',
+                          style: TextStyle(
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w800,
+                            color: _Palette.primaryDark,
+                            letterSpacing: 0.4,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1, color: _Palette.border),
+
+          // Scrollable Nav List
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+              children: [
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  child: Text(
+                    'MAIN NAVIGATION',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: _Palette.textMuted,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                ),
+                ...navItems.map((item) {
+                  final active = _navIndex == item.$3;
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 4),
+                    child: Material(
+                      color: active ? _Palette.primarySoft : Colors.transparent,
+                      borderRadius: BorderRadius.circular(12),
+                      child: InkWell(
+                        onTap: () => _goToNav(item.$3),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          child: Row(
+                            children: [
+                              Icon(
+                                item.$1,
+                                size: 20,
+                                color: active ? _Palette.primaryDark : _Palette.textDark,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  item.$2,
+                                  style: TextStyle(
+                                    fontSize: 13.5,
+                                    fontWeight: active ? FontWeight.w700 : FontWeight.w600,
+                                    color: active ? _Palette.primaryDark : _Palette.textDark,
+                                  ),
+                                ),
+                              ),
+                              if (item.$4 > 0)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: _Palette.danger,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    '${item.$4}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+
+                const SizedBox(height: 20),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  child: Text(
+                    'QUICK MODULES',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: _Palette.textMuted,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                ),
+                ...quickLinks.map((ql) {
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 2),
+                    child: Material(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(12),
+                      child: InkWell(
+                        onTap: ql.$3,
+                        borderRadius: BorderRadius.circular(12),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                          child: Row(
+                            children: [
+                              Icon(ql.$1, size: 18, color: _Palette.textMuted),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  ql.$2,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                    color: _Palette.textDark,
+                                  ),
+                                ),
+                              ),
+                              const Icon(Icons.chevron_right_rounded, size: 16, color: _Palette.textFaint),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
+
+          const Divider(height: 1, color: _Palette.border),
+
+          // Sidebar Footer / User & Logout
+          Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                const CircleAvatar(
+                  radius: 18,
+                  backgroundColor: _Palette.primarySoft,
+                  child: Icon(Icons.admin_panel_settings_rounded, color: _Palette.primary, size: 20),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Administrator',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: _Palette.textDark,
+                        ),
+                      ),
+                      Text(
+                        _authService.currentUserEmail ?? 'Admin',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: _Palette.textMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.logout_rounded, color: _Palette.danger, size: 20),
+                  tooltip: 'Logout',
+                  onPressed: _logout,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -718,8 +1157,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
     ];
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       decoration: BoxDecoration(
         color: _Palette.surface,
         borderRadius: BorderRadius.circular(28),
@@ -727,7 +1166,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 24,
-            offset: const Offset(0, 10),
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -741,10 +1180,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
               onTap: () => _goToNav(i),
               borderRadius: BorderRadius.circular(20),
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 220),
+                duration: const Duration(milliseconds: 200),
                 curve: Curves.easeOut,
-                margin: const EdgeInsets.symmetric(horizontal: 3),
-                padding: const EdgeInsets.symmetric(vertical: 10),
+                margin: const EdgeInsets.symmetric(horizontal: 2),
+                padding: const EdgeInsets.symmetric(vertical: 6),
                 decoration: BoxDecoration(
                   color: active ? _Palette.primarySoft : Colors.transparent,
                   borderRadius: BorderRadius.circular(18),
@@ -760,7 +1199,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                           color: active
                               ? _Palette.primaryDark
                               : _Palette.textFaint,
-                          size: 22,
+                          size: 20,
                         ),
                         if (item.badge != null && item.badge! > 0)
                           Positioned(
@@ -794,11 +1233,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       ],
                     ),
                     if (active) ...[
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 2),
                       Text(
                         item.label,
                         style: const TextStyle(
-                          fontSize: 10.5,
+                          fontSize: 10,
                           fontWeight: FontWeight.w700,
                           color: _Palette.primaryDark,
                         ),
@@ -818,169 +1257,835 @@ class _AdminDashboardState extends State<AdminDashboard> {
   // Home tab — overview dashboard
   // ---------------------------------------------------------------------
   Widget _buildHomeTab() {
-    return RefreshIndicator(
-      onRefresh: _loadData,
-      color: _Palette.primary,
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
-        physics: const AlwaysScrollableScrollPhysics(),
-        children: [
-          _buildGreetingHeader(),
-          const SizedBox(height: 26),
-          const Text('Overview', style: _AdminTextStyles.sectionHeading),
-          const SizedBox(height: 12),
-          GridView(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 210,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              mainAxisExtent: 128,
-            ),
-            children: [
-              _StatCard(
-                label: 'Review & Analysis',
-                value: 'Insights',
-                icon: Icons.insights_rounded,
-                color: _Palette.violet,
-                onTap: _openReviewPage,
-              ),
-              _StatCard(
-                label: 'Mark Attendance',
-                value: 'Daily',
-                icon: Icons.event_available_rounded,
-                color: _Palette.leafGreen,
-                onTap: _openAttendancePage,
-              ),
-              _StatCard(
-                label: 'Notices',
-                value: 'Campaign',
-                icon: Icons.campaign_rounded,
-                color: _Palette.amber,
-                onTap: _openNoticePage,
-              ),
-              _StatCard(
-                label: 'Gallery',
-                value: 'Albums',
-                icon: Icons.photo_library_rounded,
-                color: _Palette.blueAccent,
-                onTap: _openGalleryPage,
-              ),
-            ],
-          ),
-          const SizedBox(height: 28),
-          const Text('Quick Actions', style: _AdminTextStyles.sectionHeading),
-          const SizedBox(height: 12),
-          _QuickActionCard(
-            title: 'Pending Requests',
-            subtitle: _loadingRequests
-                ? 'New student approvals'
-                : '${_pendingRequests.length} awaiting approval',
-            icon: Icons.pending_actions_rounded,
-            color: _Palette.amber,
-            onTap: () => _goToNav(1),
-          ),
-          const SizedBox(height: 10),
-          _QuickActionCard(
-            title: 'Total Students',
-            subtitle: _loadingStudents
-                ? 'Registered students'
-                : '${_allStudents.length} registered students',
-            icon: Icons.school_rounded,
-            color: _Palette.leafGreen,
-            onTap: () => _goToNav(2),
-          ),
-          const SizedBox(height: 10),
-          _QuickActionCard(
-            title: 'Active Chats',
-            subtitle: _loadingChats
-                ? 'Ongoing conversations'
-                : '${_chatStudents.length} active chats',
-            icon: Icons.chat_bubble_rounded,
-            color: _Palette.blueAccent,
-            onTap: () => _goToNav(3),
-          ),
-        ],
-      ),
-    );
-  }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isDesktop = constraints.maxWidth >= 960;
+        final isWide = constraints.maxWidth >= 600;
+        final horizontalPadding = isDesktop ? 36.0 : (isWide ? 24.0 : 16.0);
 
-  Widget _buildGreetingHeader() {
+        return RefreshIndicator(
+          onRefresh: _loadData,
+          color: _Palette.primary,
+          child: ListView(
+            padding: EdgeInsets.fromLTRB(horizontalPadding, 20, horizontalPadding, 100),
+            physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+            children: [
+              _buildGreetingHeader(isDesktop),
+              const SizedBox(height: 20),
+              if (isDesktop)
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                        // Left Column: Operations & Admissions
+                        Expanded(
+                          child: Column(
+                            children: [
+                              _buildAdminAdmissionsCard(),
+                              const SizedBox(height: 18),
+                              _buildAdminAttendanceCard(),
+                              const SizedBox(height: 18),
+                              _buildAdminFeeCard(),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 20),
+                        // Right Column: Comms, Media & Tools
+                        Expanded(
+                          child: Column(
+                            children: [
+                              _buildAdminChatsCard(),
+                              const SizedBox(height: 18),
+                              _buildAdminNoticeCard(),
+                              const SizedBox(height: 18),
+                              _buildAdminGalleryToolsCard(),
+                            ],
+                          ),
+                        ),
+                      ],
+                    )
+                  else ...[
+                    _buildAdminAdmissionsCard(),
+                    const SizedBox(height: 16),
+                    _buildAdminAttendanceCard(),
+                    const SizedBox(height: 16),
+                    _buildAdminFeeCard(),
+                    const SizedBox(height: 16),
+                    _buildAdminChatsCard(),
+                    const SizedBox(height: 16),
+                    _buildAdminNoticeCard(),
+                    const SizedBox(height: 16),
+                    _buildAdminGalleryToolsCard(),
+                  ],
+                ],
+              ),
+            );
+          },
+        );
+      }
+
+  Widget _buildGreetingHeader(bool isDesktop) {
     final hour = DateTime.now().hour;
     final greeting = hour < 12
         ? 'Good morning'
         : (hour < 17 ? 'Good afternoon' : 'Good evening');
 
     return Container(
-      padding: const EdgeInsets.all(22),
+      padding: EdgeInsets.symmetric(horizontal: isDesktop ? 26 : 18, vertical: isDesktop ? 22 : 18),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [_Palette.primary, _Palette.accentPeach],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: _Palette.primary.withValues(alpha: 0.28),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
+            color: _Palette.primary.withValues(alpha: 0.25),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
+      child: isDesktop
+          ? Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '$greeting, Admin 👋',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      const Text(
+                        'Preschool Command Center',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.4,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _authService.currentUserEmail ?? 'Admin Access',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.85),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildAdminHeaderPill(
+                      icon: Icons.school_rounded,
+                      label: 'Students',
+                      value: '${_allStudents.length}',
+                    ),
+                    const SizedBox(width: 10),
+                    _buildAdminHeaderPill(
+                      icon: Icons.pending_actions_rounded,
+                      label: 'Pending',
+                      value: '${_pendingRequests.length}',
+                    ),
+                    const SizedBox(width: 10),
+                    _buildAdminHeaderPill(
+                      icon: Icons.chat_bubble_rounded,
+                      label: 'Inquiries',
+                      value: '${_chatStudents.length}',
+                    ),
+                  ],
+                ),
+              ],
+            )
+          : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  '$greeting 👋',
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '$greeting, Admin 👋',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        const Text(
+                          'Command Center',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
+                    ),
+                    InkWell(
+                      onTap: _logout,
+                      borderRadius: BorderRadius.circular(14),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(Icons.logout_rounded, color: Colors.white, size: 18),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Admin Dashboard',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 21,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  "Here's what's happening today",
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w500,
-                  ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildAdminHeaderPill(
+                        icon: Icons.school_rounded,
+                        label: 'Students',
+                        value: '${_allStudents.length}',
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _buildAdminHeaderPill(
+                        icon: Icons.pending_actions_rounded,
+                        label: 'Pending',
+                        value: '${_pendingRequests.length}',
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _buildAdminHeaderPill(
+                        icon: Icons.chat_bubble_rounded,
+                        label: 'Inquiries',
+                        value: '${_chatStudents.length}',
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
+    );
+  }
+
+  Widget _buildAdminHeaderPill({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: Colors.white, size: 14),
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.85),
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
           ),
-          InkWell(
-            onTap: _logout,
-            borderRadius: BorderRadius.circular(16),
-            child: Container(
-              padding: const EdgeInsets.all(11),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.22),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Icon(
-                Icons.logout_rounded,
-                color: Colors.white,
-                size: 20,
-              ),
+          const SizedBox(height: 3),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // --- ADMIN BENTO CARDS ---
+
+  Widget _buildAdminAdmissionsCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: _Palette.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _Palette.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: _Palette.amber.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.pending_actions_rounded, color: _Palette.amber, size: 20),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Admissions (${_pendingRequests.length})',
+                    style: _AdminTextStyles.cardTitle,
+                  ),
+                ],
+              ),
+              InkWell(
+                onTap: () => _goToNav(1),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'View All',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: _Palette.primary),
+                    ),
+                    SizedBox(width: 2),
+                    Icon(Icons.arrow_forward_rounded, size: 14, color: _Palette.primary),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          if (_pendingRequests.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: _Palette.bg,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: _Palette.border),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.check_circle_outline_rounded, color: _Palette.success, size: 20),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'All student admission requests have been reviewed.',
+                      style: TextStyle(fontSize: 12, color: _Palette.textMuted, fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            Column(
+              children: _pendingRequests.take(2).map((req) {
+                final name = req['name'] ?? 'Unknown';
+                final email = req['email'] ?? '';
+                final photoUrl = req['photo_url'] as String?;
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: _Palette.bg,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: _Palette.border),
+                  ),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 18,
+                        backgroundColor: _Palette.primarySoft,
+                        backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
+                        child: photoUrl == null
+                            ? const Icon(Icons.person_rounded, color: _Palette.primary, size: 16)
+                            : null,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              name,
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: _Palette.textDark),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Text(
+                              email,
+                              style: const TextStyle(fontSize: 11, color: _Palette.textMuted),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                      ElevatedButton(
+                        onPressed: () => _openApprovalSheet(req),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _Palette.primary,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        child: const Text('Review', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAdminAttendanceCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: _Palette.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _Palette.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: _Palette.leafGreen.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.event_available_rounded, color: _Palette.leafGreen, size: 20),
+                  ),
+                  const SizedBox(width: 10),
+                  const Text('Attendance Management', style: _AdminTextStyles.cardTitle),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: _Palette.leafGreen.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Text(
+                  'Daily Roster',
+                  style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: _Palette.leafGreen),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _openAttendancePage,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _Palette.primary,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  icon: const Icon(Icons.check_circle_outline_rounded, size: 16),
+                  label: const Text('Mark Daily Attendance', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700)),
+                ),
+              ),
+              const SizedBox(width: 10),
+              OutlinedButton(
+                onPressed: _openHolidayPage,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: _Palette.textDark,
+                  side: const BorderSide(color: _Palette.border),
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('Holidays', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700)),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAdminFeeCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: _Palette.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _Palette.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: _Palette.blueAccent.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.account_balance_wallet_rounded, color: _Palette.blueAccent, size: 20),
+                  ),
+                  const SizedBox(width: 10),
+                  const Text('Fee Records & UPI Logs', style: _AdminTextStyles.cardTitle),
+                ],
+              ),
+              InkWell(
+                onTap: _openFeePaymentsPage,
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('Open Logs', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: _Palette.primary)),
+                    SizedBox(width: 2),
+                    Icon(Icons.arrow_forward_rounded, size: 14, color: _Palette.primary),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Track instant UPI payments, pending student fees & monthly ledger reconciliation.',
+            style: TextStyle(fontSize: 12, color: _Palette.textMuted, fontWeight: FontWeight.w500),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAdminChatsCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: _Palette.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _Palette.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: _Palette.violet.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.chat_bubble_rounded, color: _Palette.violet, size: 20),
+                  ),
+                  const SizedBox(width: 10),
+                  Text('Parent Inquiries (${_chatStudents.length})', style: _AdminTextStyles.cardTitle),
+                ],
+              ),
+              InkWell(
+                onTap: () => _goToNav(3),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('Chat Inbox', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: _Palette.primary)),
+                    SizedBox(width: 2),
+                    Icon(Icons.arrow_forward_rounded, size: 14, color: _Palette.primary),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          if (_chatStudents.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: _Palette.bg,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: _Palette.border),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.chat_outlined, color: _Palette.textMuted, size: 20),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'No active parent chats yet.',
+                      style: TextStyle(fontSize: 12, color: _Palette.textMuted, fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            Column(
+              children: _chatStudents.take(2).map((c) {
+                final name = c['name'] ?? 'Student';
+                final type = c['student_type'] ?? 'Preschool';
+                final uid = c['id'] ?? '';
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: _Palette.bg,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: _Palette.border),
+                  ),
+                  child: InkWell(
+                    onTap: () => _openPage(
+                      ChatPage(studentId: uid, studentName: name, isAdmin: true),
+                      title: 'Chat: $name',
+                    ),
+                    child: Row(
+                      children: [
+                        const CircleAvatar(
+                          radius: 16,
+                          backgroundColor: _Palette.primarySoft,
+                          child: Icon(Icons.person_rounded, color: _Palette.primary, size: 16),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(name, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: _Palette.textDark)),
+                              Text(type, style: const TextStyle(fontSize: 11, color: _Palette.textMuted)),
+                            ],
+                          ),
+                        ),
+                        const Icon(Icons.arrow_forward_ios_rounded, size: 12, color: _Palette.textMuted),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAdminNoticeCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: _Palette.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _Palette.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: _Palette.amber.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.campaign_rounded, color: _Palette.amber, size: 20),
+                  ),
+                  const SizedBox(width: 10),
+                  const Text('Notice Board Broadcast', style: _AdminTextStyles.cardTitle),
+                ],
+              ),
+              InkWell(
+                onTap: _openNoticePage,
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('Manage', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: _Palette.primary)),
+                    SizedBox(width: 2),
+                    Icon(Icons.arrow_forward_rounded, size: 14, color: _Palette.primary),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: _openNoticePage,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: _Palette.textDark,
+              side: const BorderSide(color: _Palette.border),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              minimumSize: const Size(double.infinity, 44),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            icon: const Icon(Icons.add_circle_outline_rounded, size: 16, color: _Palette.primary),
+            label: const Text('Post New Circular / Notice', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAdminGalleryToolsCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: _Palette.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _Palette.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.widgets_outlined, color: _Palette.primary, size: 20),
+              SizedBox(width: 8),
+              Text('Core Management Tools', style: _AdminTextStyles.cardTitle),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: _buildAdminToolTile(
+                  icon: Icons.photo_library_rounded,
+                  label: 'Campus Gallery',
+                  color: _Palette.blueAccent,
+                  onTap: _openGalleryPage,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _buildAdminToolTile(
+                  icon: Icons.insights_rounded,
+                  label: 'Analytics',
+                  color: _Palette.violet,
+                  onTap: _openReviewPage,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _buildAdminToolTile(
+                  icon: Icons.category_rounded,
+                  label: 'Grades',
+                  color: _Palette.leafGreen,
+                  onTap: _openCategoriesPage,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAdminToolTile({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        decoration: BoxDecoration(
+          color: _Palette.bg,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: _Palette.border),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 20),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: _Palette.textDark),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -989,101 +2094,122 @@ class _AdminDashboardState extends State<AdminDashboard> {
   // More tab — remaining tools
   // ---------------------------------------------------------------------
   Widget _buildMoreTab() {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
-      children: [
-        const Text('More Tools', style: _AdminTextStyles.sectionHeading),
-        const SizedBox(height: 4),
-        const Text(
-          'Everything else you need to manage',
-          style: _AdminTextStyles.cardSubtitle,
-        ),
-        const SizedBox(height: 18),
+    final tools = [
+      _QuickActionCard(
+        title: 'Mark Attendance',
+        subtitle: 'Daily student attendance',
+        icon: Icons.event_available_rounded,
+        color: _Palette.leafGreen,
+        onTap: _openAttendancePage,
+      ),
+      _QuickActionCard(
+        title: 'Gallery',
+        subtitle: 'Manage photos & albums',
+        icon: Icons.photo_library_rounded,
+        color: _Palette.blueAccent,
+        onTap: _openGalleryPage,
+      ),
+      _QuickActionCard(
+        title: 'Notices',
+        subtitle: 'Post announcements',
+        icon: Icons.campaign_rounded,
+        color: _Palette.amber,
+        onTap: _openNoticePage,
+      ),
+      _QuickActionCard(
+        title: 'Fee Payments',
+        subtitle: 'Track UPI fee payments',
+        icon: Icons.account_balance_wallet_rounded,
+        color: _Palette.leafGreen,
+        onTap: _openFeePaymentsPage,
+      ),
+      _QuickActionCard(
+        title: 'Holidays',
+        subtitle: 'Configure category holidays & weekends',
+        icon: Icons.event_busy_rounded,
+        color: _Palette.violet,
+        onTap: _openHolidayPage,
+      ),
+      _QuickActionCard(
+        title: 'Manage Categories',
+        subtitle: 'Create, add or remove categories',
+        icon: Icons.category_rounded,
+        color: _Palette.primary,
+        onTap: _openCategoriesPage,
+      ),
+      _QuickActionCard(
+        title: 'Review & Analysis',
+        subtitle: 'Admissions, categories & attendance insights',
+        icon: Icons.insights_rounded,
+        color: _Palette.violet,
+        onTap: _openReviewPage,
+      ),
+      if (_authService.currentUserEmail ==
+          'dev.harshitcreations@gmail.com') ...[
         _QuickActionCard(
-          title: 'Mark Attendance',
-          subtitle: 'Daily student attendance',
-          icon: Icons.event_available_rounded,
-          color: _Palette.leafGreen,
-          onTap: _openAttendancePage,
-        ),
-        const SizedBox(height: 10),
-        _QuickActionCard(
-          title: 'Gallery',
-          subtitle: 'Manage photos & albums',
-          icon: Icons.photo_library_rounded,
-          color: _Palette.blueAccent,
-          onTap: _openGalleryPage,
-        ),
-        const SizedBox(height: 10),
-        _QuickActionCard(
-          title: 'Notices',
-          subtitle: 'Post announcements',
-          icon: Icons.campaign_rounded,
-          color: _Palette.amber,
-          onTap: _openNoticePage,
-        ),
-        const SizedBox(height: 10),
-        _QuickActionCard(
-          title: 'Fee Payments',
-          subtitle: 'Track UPI fee payments',
-          icon: Icons.account_balance_wallet_rounded,
-          color: _Palette.leafGreen,
-          onTap: _openFeePaymentsPage,
-        ),
-        const SizedBox(height: 10),
-        _QuickActionCard(
-          title: 'Holidays',
-          subtitle: 'Configure category holidays & weekends',
-          icon: Icons.event_busy_rounded,
+          title: 'Manage Admins',
+          subtitle: 'Add or review admin access',
+          icon: Icons.admin_panel_settings_rounded,
           color: _Palette.violet,
-          onTap: _openHolidayPage,
+          onTap: _openAdminsPage,
         ),
-        const SizedBox(height: 10),
         _QuickActionCard(
-          title: 'Manage Categories',
-          subtitle: 'Create, add or remove categories',
-          icon: Icons.category_rounded,
+          title: 'Institute Info & Story',
+          subtitle: 'Edit About page, photos & founder journey',
+          icon: Icons.auto_stories_rounded,
           color: _Palette.primary,
-          onTap: _openCategoriesPage,
-        ),
-        const SizedBox(height: 10),
-        _QuickActionCard(
-          title: 'Review & Analysis',
-          subtitle: 'Admissions, categories & attendance insights',
-          icon: Icons.insights_rounded,
-          color: _Palette.violet,
-          onTap: _openReviewPage,
-        ),
-        if (_authService.currentUserEmail ==
-            'dev.harshitcreations@gmail.com') ...[
-          const SizedBox(height: 10),
-          _QuickActionCard(
-            title: 'Manage Admins',
-            subtitle: 'Add or review admin access',
-            icon: Icons.admin_panel_settings_rounded,
-            color: _Palette.violet,
-            onTap: _openAdminsPage,
-          ),
-          const SizedBox(height: 10),
-          _QuickActionCard(
-            title: 'Institute Info & Story',
-            subtitle: 'Edit About page, photos & founder journey',
-            icon: Icons.auto_stories_rounded,
-            color: _Palette.primary,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const AboutPage()),
-            ),
-          ),
-        ],
-        const SizedBox(height: 10),
-        _QuickActionCard(
-          title: 'Log Out',
-          subtitle: 'Sign out of the admin panel',
-          icon: Icons.logout_rounded,
-          color: _Palette.danger,
-          onTap: _logout,
+          onTap: _openAboutPage,
         ),
       ],
+      _QuickActionCard(
+        title: 'Log Out',
+        subtitle: 'Sign out of the admin panel',
+        icon: Icons.logout_rounded,
+        color: _Palette.danger,
+        onTap: _logout,
+      ),
+    ];
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isDesktop = constraints.maxWidth >= 960;
+        final isWide = constraints.maxWidth >= 600;
+        final horizontalPadding = isDesktop ? 32.0 : (isWide ? 24.0 : 16.0);
+
+        return Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1200),
+            child: ListView(
+              padding: EdgeInsets.fromLTRB(horizontalPadding, 20, horizontalPadding, 100),
+              children: [
+                const Text('More Tools', style: _AdminTextStyles.sectionHeading),
+                const SizedBox(height: 4),
+                const Text(
+                  'Everything else you need to manage',
+                  style: _AdminTextStyles.cardSubtitle,
+                ),
+                const SizedBox(height: 18),
+                if (isWide)
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: isDesktop ? 3 : 2,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 14,
+                      mainAxisExtent: 88,
+                    ),
+                    itemCount: tools.length,
+                    itemBuilder: (_, i) => tools[i],
+                  )
+                else
+                  ...tools.expand((t) => [t, const SizedBox(height: 10)]),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -1116,121 +2242,129 @@ class _AdminDashboardState extends State<AdminDashboard> {
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: _loadRequests,
-      color: _Palette.primary,
-      child: ListView.builder(
-        padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
-        itemCount: _pendingRequests.length + 1,
-        itemBuilder: (context, index) {
-          if (index == 0) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 16, left: 4),
-              child: Row(
-                children: [
-                  const Text(
-                    'Pending Requests',
-                    style: _AdminTextStyles.sectionHeading,
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 9,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _Palette.primarySoft,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      '${_pendingRequests.length}',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: _Palette.primaryDark,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isDesktop = constraints.maxWidth >= 960;
+        final isWide = constraints.maxWidth >= 600;
+        final horizontalPadding = isDesktop ? 32.0 : (isWide ? 24.0 : 16.0);
 
-          final request = _pendingRequests[index - 1];
-          final name = request['name'] ?? 'Unknown User';
-          final photoUrl = request['photo_url'] as String?;
-          final reqEmail = request['email'] ?? '';
+        return Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1200),
+            child: RefreshIndicator(
+              onRefresh: _loadRequests,
+              color: _Palette.primary,
+              child: ListView.builder(
+                padding: EdgeInsets.fromLTRB(horizontalPadding, 20, horizontalPadding, 24),
+                itemCount: _pendingRequests.length + 1,
+            itemBuilder: (context, index) {
+              if (index == 0) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 16, left: 4),
+                  child: Row(
+                    children: [
+                      const Text(
+                        'Pending Requests',
+                        style: _AdminTextStyles.sectionHeading,
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 9,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _Palette.primarySoft,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          '${_pendingRequests.length}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: _Palette.primaryDark,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
 
-          return _AdminCard(
-            margin: const EdgeInsets.only(bottom: 12),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 22,
-                    backgroundColor: _Palette.primarySoft,
-                    backgroundImage: photoUrl != null
-                        ? NetworkImage(photoUrl)
-                        : null,
-                    child: photoUrl == null
-                        ? const Icon(
-                            Icons.person_rounded,
-                            color: _Palette.primary,
-                          )
-                        : null,
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(name, style: _AdminTextStyles.cardTitle),
-                        const SizedBox(height: 3),
-                        Text(reqEmail, style: _AdminTextStyles.cardSubtitle),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  ElevatedButton(
-                    onPressed: () => _openApprovalSheet(request),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _Palette.primary,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 18,
-                        vertical: 10,
+              final request = _pendingRequests[index - 1];
+              final name = request['name'] ?? 'Unknown User';
+              final photoUrl = request['photo_url'] as String?;
+              final reqEmail = request['email'] ?? '';
+
+              return _AdminCard(
+                margin: const EdgeInsets.only(bottom: 12),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 22,
+                        backgroundColor: _Palette.primarySoft,
+                        backgroundImage: photoUrl != null
+                            ? NetworkImage(photoUrl)
+                            : null,
+                        child: photoUrl == null
+                            ? const Icon(
+                                Icons.person_rounded,
+                                color: _Palette.primary,
+                              )
+                            : null,
                       ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(name, style: _AdminTextStyles.cardTitle),
+                            const SizedBox(height: 3),
+                            Text(reqEmail, style: _AdminTextStyles.cardSubtitle),
+                          ],
+                        ),
                       ),
-                    ),
-                    child: const Text(
-                      'Review',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13,
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        onPressed: () => _openApprovalSheet(request),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _Palette.primary,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 18,
+                            vertical: 10,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        child: const Text(
+                          'Review',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-          );
-        },
+                ),
+              );
+            },
+          ),
+        ),
       ),
+    );
+      },
     );
   }
 
   // ---------------------------------------------------------------------
-  // Admins page (pushed as a full screen from Home / More)
-  // ---------------------------------------------------------------------
-  // _buildAdminsPage removed — replaced by ManageAdminsPage StatefulWidget
-
-  // ---------------------------------------------------------------------
-  // ---------------------------------------------------------------------
-  // Students tab
+  // Students tab — categorized & searchable
   // ---------------------------------------------------------------------
   String _getCategoryEmoji(String category) {
     final lower = category.toLowerCase();
@@ -1348,183 +2482,183 @@ class _AdminDashboardState extends State<AdminDashboard> {
       }
     }
 
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: _buildSearchField(),
-        ),
-        Expanded(
-          child: RefreshIndicator(
-            onRefresh: _loadStudents,
-            color: _Palette.primary,
-            child: allKeys.isEmpty
-                ? ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    children: [
-                      SizedBox(
-                        height: MediaQuery.of(context).size.height * 0.5,
-                        child: _emptyState(
-                          icon: Icons.search_off_rounded,
-                          iconColor: _Palette.textFaint,
-                          title: 'No Matches',
-                          subtitle: 'Try a different search term',
-                        ),
-                      ),
-                    ],
-                  )
-                : ListView(
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-                    children: allKeys.map((type) {
-                      final list = grouped[type] ?? [];
-                      final emoji = _getCategoryEmoji(type);
-                      return _AdminCard(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        padding: EdgeInsets.zero,
-                        child: Theme(
-                          data: Theme.of(
-                            context,
-                          ).copyWith(dividerColor: Colors.transparent),
-                          child: ExpansionTile(
-                            tilePadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                            ),
-                            childrenPadding: const EdgeInsets.only(bottom: 6),
-                            title: Row(
-                              children: [
-                                Text(
-                                  '$emoji $type',
-                                  style: _AdminTextStyles.sectionHeading,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isDesktop = constraints.maxWidth >= 960;
+        final isWide = constraints.maxWidth >= 600;
+        final horizontalPadding = isDesktop ? 32.0 : (isWide ? 24.0 : 16.0);
+
+        return Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1200),
+            child: Column(
+              children: [
+                Padding(
+                  padding: EdgeInsets.fromLTRB(horizontalPadding, 16, horizontalPadding, 8),
+                  child: _buildSearchField(),
+                ),
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: _loadStudents,
+                    color: _Palette.primary,
+                    child: allKeys.isEmpty
+                        ? ListView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            children: [
+                              SizedBox(
+                                height: MediaQuery.of(context).size.height * 0.5,
+                                child: _emptyState(
+                                  icon: Icons.search_off_rounded,
+                                  iconColor: _Palette.textFaint,
+                                  title: 'No Matches',
+                                  subtitle: 'Try a different search term',
                                 ),
-                                const SizedBox(width: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: _Palette.primarySoft,
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Text(
-                                    '${list.length}',
-                                    style: const TextStyle(
-                                      fontSize: 11.5,
-                                      fontWeight: FontWeight.w700,
-                                      color: _Palette.primaryDark,
+                              ),
+                            ],
+                          )
+                        : ListView(
+                            padding: EdgeInsets.fromLTRB(horizontalPadding, 4, horizontalPadding, 24),
+                            children: allKeys.map((type) {
+                              final list = grouped[type] ?? [];
+                              final emoji = _getCategoryEmoji(type);
+                              return _AdminCard(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                padding: EdgeInsets.zero,
+                                child: Theme(
+                                  data: Theme.of(
+                                    context,
+                                  ).copyWith(dividerColor: Colors.transparent),
+                                  child: ExpansionTile(
+                                    tilePadding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
                                     ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            iconColor: _Palette.primary,
-                            collapsedIconColor: _Palette.textMuted,
-                            children: list.isEmpty
-                                ? [
-                                    const Padding(
-                                      padding: EdgeInsets.symmetric(
-                                        vertical: 16,
-                                      ),
-                                      child: Center(
-                                        child: Text(
-                                          'No students in this category',
-                                          style: TextStyle(
-                                            color: _Palette.textMuted,
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w500,
+                                    childrenPadding: const EdgeInsets.only(bottom: 6),
+                                    title: Row(
+                                      children: [
+                                        Text(
+                                          '$emoji $type',
+                                          style: _AdminTextStyles.sectionHeading,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 2,
                                           ),
-                                        ),
-                                      ),
-                                    ),
-                                  ]
-                                : list.map<Widget>((student) {
-                                    final name = student['name'] ?? 'Student';
-                                    final sPhotoUrl =
-                                        student['photo_url'] as String?;
-                                    return ListTile(
-                                      onTap: () {
-                                        Navigator.of(context)
-                                            .push(
-                                              MaterialPageRoute(
-                                                builder: (_) =>
-                                                    StudentDetailPage(
-                                                      student: student,
-                                                      authService: _authService,
-                                                    ),
-                                              ),
-                                            )
-                                            .then((_) => _loadStudents());
-                                      },
-                                      leading: CircleAvatar(
-                                        radius: 18,
-                                        backgroundColor: _Palette.primarySoft,
-                                        backgroundImage: sPhotoUrl != null
-                                            ? NetworkImage(sPhotoUrl)
-                                            : null,
-                                        child: sPhotoUrl == null
-                                            ? const Icon(
-                                                Icons.person_rounded,
-                                                color: _Palette.primary,
-                                                size: 18,
-                                              )
-                                            : null,
-                                      ),
-                                      title: Text(
-                                        name,
-                                        style: const TextStyle(
-                                          color: _Palette.textDark,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      subtitle: Text(
-                                        student['email'] ?? '',
-                                        style: const TextStyle(
-                                          color: _Palette.textMuted,
-                                          fontSize: 11.5,
-                                        ),
-                                      ),
-                                      trailing: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          const Icon(
-                                            Icons.chevron_right_rounded,
-                                            color: _Palette.textMuted,
-                                            size: 20,
+                                          decoration: BoxDecoration(
+                                            color: _Palette.primarySoft,
+                                            borderRadius: BorderRadius.circular(12),
                                           ),
-                                          IconButton(
-                                            icon: const Icon(
-                                              Icons.chat_bubble_rounded,
-                                              color: _Palette.primary,
-                                              size: 20,
+                                          child: Text(
+                                            '${list.length}',
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w700,
+                                              color: _Palette.primaryDark,
                                             ),
-                                            onPressed: () {
-                                              Navigator.of(context)
-                                                  .push(
-                                                    MaterialPageRoute(
-                                                      builder: (_) => ChatPage(
-                                                        studentId:
-                                                            student['id']
-                                                                as String,
-                                                        studentName: name,
-                                                        isAdmin: true,
-                                                      ),
-                                                    ),
-                                                  )
-                                                  .then((_) => _loadChats());
-                                            },
                                           ),
-                                        ],
-                                      ),
-                                    );
-                                  }).toList(),
+                                        ),
+                                      ],
+                                    ),
+                                    children: list.isEmpty
+                                        ? [
+                                            const Padding(
+                                              padding: EdgeInsets.all(16),
+                                              child: Text(
+                                                'No students in this category yet',
+                                                style: TextStyle(
+                                                  fontSize: 13,
+                                                  color: _Palette.textMuted,
+                                                ),
+                                              ),
+                                            ),
+                                          ]
+                                        : list.map((student) {
+                                            final sName = student['name'] ?? 'Student';
+                                            final pName = (student['parent_name'] as String?)?.trim() ?? '';
+                                            final pPhone = (student['parent_phone'] as String?)?.trim() ?? '';
+                                            final sEmail = (student['email'] as String?)?.trim() ?? '';
+                                            final sPhone = (student['phone'] as String?)?.trim() ?? '';
+                                            final photo = student['photo_url'] as String?;
+
+                                            String subtitleText;
+                                            if (pName.isNotEmpty && pPhone.isNotEmpty) {
+                                              subtitleText = 'Parent: $pName • $pPhone';
+                                            } else if (pName.isNotEmpty) {
+                                              subtitleText = 'Parent: $pName';
+                                            } else if (pPhone.isNotEmpty) {
+                                              subtitleText = 'Phone: $pPhone';
+                                            } else if (sPhone.isNotEmpty) {
+                                              subtitleText = 'Phone: $sPhone';
+                                            } else if (sEmail.isNotEmpty) {
+                                              subtitleText = sEmail;
+                                            } else {
+                                              subtitleText = 'Enrolled in ${student['student_type'] ?? 'Class'}';
+                                            }
+
+                                            return ListTile(
+                                              contentPadding:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: 16,
+                                                vertical: 2,
+                                              ),
+                                              leading: CircleAvatar(
+                                                radius: 19,
+                                                backgroundColor: _Palette.primarySoft,
+                                                backgroundImage: photo != null
+                                                    ? NetworkImage(photo)
+                                                    : null,
+                                                child: photo == null
+                                                    ? const Icon(
+                                                        Icons.person_rounded,
+                                                        color: _Palette.primary,
+                                                        size: 20,
+                                                      )
+                                                    : null,
+                                              ),
+                                              title: Text(
+                                                sName,
+                                                style: const TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: _Palette.textDark,
+                                                ),
+                                              ),
+                                              subtitle: Text(
+                                                subtitleText,
+                                                style: const TextStyle(
+                                                  fontSize: 12,
+                                                  color: _Palette.textMuted,
+                                                ),
+                                              ),
+                                              trailing: const Icon(
+                                                Icons.chevron_right_rounded,
+                                                color: _Palette.textFaint,
+                                              ),
+                                              onTap: () {
+                                                _openPage(
+                                                  StudentDetailPage(
+                                                    student: student,
+                                                    authService: _authService,
+                                                  ),
+                                                  title: student['name'] ?? 'Student Profile',
+                                                );
+                                              },
+                                            );
+                                          }).toList(),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
                           ),
-                        ),
-                      );
-                    }).toList(),
                   ),
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
+        );
+      },
     );
   }
 
@@ -1549,90 +2683,109 @@ class _AdminDashboardState extends State<AdminDashboard> {
             child: _emptyState(
               icon: Icons.chat_bubble_outline_rounded,
               iconColor: _Palette.textFaint,
-              title: 'No Active Chats',
-              subtitle: 'Students will appear here when they send messages',
+              title: 'No Conversations',
+              subtitle: 'Chats from parents will appear here',
             ),
           ),
         ),
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: _loadChats,
-      color: _Palette.primary,
-      child: ListView.builder(
-        padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
-        itemCount: _chatStudents.length + 1,
-        itemBuilder: (context, index) {
-          if (index == 0) {
-            return const Padding(
-              padding: EdgeInsets.only(bottom: 16, left: 4),
-              child: Text('Chats', style: _AdminTextStyles.sectionHeading),
-            );
-          }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isDesktop = constraints.maxWidth >= 960;
+        final isWide = constraints.maxWidth >= 600;
+        final horizontalPadding = isDesktop ? 32.0 : (isWide ? 24.0 : 16.0);
 
-          final student = _chatStudents[index - 1];
-          final name = student['name'] ?? 'Unknown Student';
-          final type = student['student_type'] ?? 'Regular';
+        return Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1200),
+            child: RefreshIndicator(
+              onRefresh: _loadChats,
+              color: _Palette.primary,
+              child: ListView.builder(
+                padding: EdgeInsets.fromLTRB(horizontalPadding, 20, horizontalPadding, 24),
+                itemCount: _chatStudents.length + 1,
+                itemBuilder: (context, index) {
+                  if (index == 0) {
+                    return const Padding(
+                      padding: EdgeInsets.only(bottom: 16, left: 4),
+                      child: Text('Chats', style: _AdminTextStyles.sectionHeading),
+                    );
+                  }
 
-          return _AdminCard(
-            margin: const EdgeInsets.only(bottom: 12),
-            onTap: () {
-              Navigator.of(context)
-                  .push(
-                    MaterialPageRoute(
-                      builder: (_) => ChatPage(
-                        studentId: student['id'] as String,
-                        studentName: name,
-                        isAdmin: true,
+                  final student = _chatStudents[index - 1];
+                  final name = student['name'] ?? 'Unknown Student';
+                  final type = student['student_type'] ?? 'Regular';
+
+                  return _AdminCard(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    onTap: () {
+                      _openPage(
+                        ChatPage(
+                          studentId: student['id'] as String,
+                          studentName: name,
+                          isAdmin: true,
+                        ),
+                        title: 'Chat: $name',
+                        onBack: _loadChats,
+                      );
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(2.5),
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                colors: [_Palette.primary, _Palette.accentPeach],
+                              ),
+                            ),
+                            child: CircleAvatar(
+                              radius: 20,
+                              backgroundColor: Colors.white,
+                              backgroundImage: (student['photo_url'] != null &&
+                                      (student['photo_url'] as String).isNotEmpty)
+                                  ? NetworkImage(student['photo_url'])
+                                  : null,
+                              child: (student['photo_url'] == null ||
+                                      (student['photo_url'] as String).isEmpty)
+                                  ? const Icon(
+                                      Icons.chat_bubble_rounded,
+                                      color: _Palette.primary,
+                                      size: 18,
+                                    )
+                                  : null,
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(name, style: _AdminTextStyles.cardTitle),
+                                const SizedBox(height: 3),
+                                Text(type, style: _AdminTextStyles.cardSubtitle),
+                              ],
+                            ),
+                          ),
+                          const Icon(
+                            Icons.chevron_right_rounded,
+                            color: _Palette.textFaint,
+                          ),
+                        ],
                       ),
                     ),
-                  )
-                  .then((_) => _loadChats());
-            },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [_Palette.primary, _Palette.accentPeach],
-                      ),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const CircleAvatar(
-                      radius: 20,
-                      backgroundColor: Colors.white,
-                      child: Icon(
-                        Icons.chat_bubble_rounded,
-                        color: _Palette.primary,
-                        size: 18,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(name, style: _AdminTextStyles.cardTitle),
-                        const SizedBox(height: 3),
-                        Text(type, style: _AdminTextStyles.cardSubtitle),
-                      ],
-                    ),
-                  ),
-                  const Icon(
-                    Icons.chevron_right_rounded,
-                    color: _Palette.textFaint,
-                  ),
-                ],
+                  );
+                },
               ),
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -1739,82 +2892,6 @@ class _AdminCard extends StatelessWidget {
   }
 }
 
-/// Stat / metric card used on the home overview grid.
-class _StatCard extends StatelessWidget {
-  final String label;
-  final String value;
-  final IconData icon;
-  final Color color;
-  final VoidCallback? onTap;
-
-  const _StatCard({
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.color,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(22),
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: _Palette.surface,
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: _Palette.border),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(9),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(13),
-              ),
-              child: Icon(icon, color: color, size: 19),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 21,
-                fontWeight: FontWeight.w800,
-                color: _Palette.textDark,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: _Palette.textMuted,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 /// Quick action row card — icon, title, subtitle, chevron.
 class _QuickActionCard extends StatelessWidget {
   final String title;
@@ -1837,7 +2914,7 @@ class _QuickActionCard extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
           color: _Palette.surface,
           borderRadius: BorderRadius.circular(20),
@@ -1853,7 +2930,7 @@ class _QuickActionCard extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [color, color.withValues(alpha: 0.7)],
@@ -1864,17 +2941,29 @@ class _QuickActionCard extends StatelessWidget {
               ),
               child: Icon(icon, color: Colors.white, size: 20),
             ),
-            const SizedBox(width: 14),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: _AdminTextStyles.cardTitle),
+                  Text(
+                    title,
+                    style: _AdminTextStyles.cardTitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   const SizedBox(height: 2),
-                  Text(subtitle, style: _AdminTextStyles.cardSubtitle),
+                  Text(
+                    subtitle,
+                    style: _AdminTextStyles.cardSubtitle,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ],
               ),
             ),
+            const SizedBox(width: 4),
             const Icon(Icons.chevron_right_rounded, color: _Palette.textFaint),
           ],
         ),

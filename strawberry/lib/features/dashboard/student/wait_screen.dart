@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:strawberry/core/theme/app_colors.dart';
 import 'package:strawberry/core/theme/app_typography.dart';
 import 'package:strawberry/core/theme/app_decorations.dart';
-import 'package:strawberry/core/utils/responsive.dart';
 import 'package:strawberry/core/widgets/app_button.dart';
 import 'package:strawberry/core/widgets/playschool_animations.dart';
 import 'package:strawberry/features/auth/auth_service.dart';
@@ -139,10 +138,13 @@ class _WaitScreenState extends State<WaitScreen> {
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: Center(
-          child: ResponsiveContentWrapper(
-            maxWidth: 480,
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
-            child: _isRejected ? _buildRejectedView() : _buildPendingView(),
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 520),
+              child: _isRejected ? _buildRejectedView() : _buildPendingView(),
+            ),
           ),
         ),
       ),

@@ -120,23 +120,55 @@ class _HolidayAdminPageState extends State<HolidayAdminPage> {
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: _Palette.primary))
-          : Column(
-              children: [
-                _buildMonthSelector(),
-                _buildCategoryFilters(),
-                Expanded(
-                  child: ListView(
-                    padding: const EdgeInsets.all(16),
-                    children: [
-                      _buildCalendarGrid(),
-                      const SizedBox(height: 20),
-                      _buildHolidayList(),
-                      const SizedBox(height: 80),
-                    ],
+          : LayoutBuilder(
+              builder: (context, constraints) {
+                final isDesktop = constraints.maxWidth >= 900;
+                final isTablet = constraints.maxWidth >= 600 && constraints.maxWidth < 900;
+                final horizontalPadding = isDesktop ? 32.0 : (isTablet ? 24.0 : 16.0);
+
+          return Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1100),
+              child: Column(
+                children: [
+                  _buildMonthSelector(),
+                  _buildCategoryFilters(),
+                  Expanded(
+                    child: ListView(
+                      padding: EdgeInsets.fromLTRB(horizontalPadding, 16, horizontalPadding, 80),
+                      children: isDesktop
+                          ? [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    flex: 5,
+                                    child: _buildCalendarGrid(),
+                                  ),
+                                  const SizedBox(width: 20),
+                                  Expanded(
+                                    flex: 5,
+                                    child: _buildHolidayList(),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 80),
+                            ]
+                          : [
+                              _buildCalendarGrid(),
+                              const SizedBox(height: 20),
+                              _buildHolidayList(),
+                              const SizedBox(height: 80),
+                            ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
+          );
+        },
+      ),
     );
   }
 
@@ -672,7 +704,7 @@ class _AddHolidaySheetState extends State<_AddHolidaySheet> with SingleTickerPro
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
-            value: _selectedCategory,
+            initialValue: _selectedCategory,
             decoration: const InputDecoration(labelText: 'Category'),
             items: [
               if (_tabController.index == 0)

@@ -1,8 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:strawberry/features/auth/auth_service.dart';
-import 'dart:io';
 
 import 'package:strawberry/core/theme/app_colors.dart';
 import 'package:strawberry/core/theme/app_decorations.dart';
@@ -84,6 +84,7 @@ class _GalleryAdminPageState extends State<GalleryAdminPage> {
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      constraints: const BoxConstraints(maxWidth: 600),
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
@@ -150,6 +151,7 @@ class _GalleryAdminPageState extends State<GalleryAdminPage> {
                     children: _categoryFilters.where((c) => c.name != 'All').map((cat) {
                       final isSelected = selectedCat == cat.name;
                       return ChoiceChip(
+                        showCheckmark: false,
                         label: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -280,10 +282,28 @@ class _GalleryAdminPageState extends State<GalleryAdminPage> {
                                     margin: const EdgeInsets.only(right: 8),
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(10),
-                                      image: DecorationImage(
-                                        image: FileImage(File(pickedFiles[i].path)),
-                                        fit: BoxFit.cover,
-                                      ),
+                                      color: AppColors.surfaceAlt,
+                                    ),
+                                    clipBehavior: Clip.antiAlias,
+                                    child: FutureBuilder<Uint8List>(
+                                      future: pickedFiles[i].readAsBytes(),
+                                      builder: (context, snapshot) {
+                                        if (snapshot.hasData) {
+                                          return Image.memory(
+                                            snapshot.data!,
+                                            fit: BoxFit.cover,
+                                            width: 70,
+                                            height: 70,
+                                          );
+                                        }
+                                        return const Center(
+                                          child: SizedBox(
+                                            width: 16,
+                                            height: 16,
+                                            child: CircularProgressIndicator(strokeWidth: 2),
+                                          ),
+                                        );
+                                      },
                                     ),
                                   ),
                                   Positioned(
@@ -318,7 +338,7 @@ class _GalleryAdminPageState extends State<GalleryAdminPage> {
                         : () async {
                             Navigator.pop(ctx);
                             await _processUpload(
-                              pickedFiles.map((x) => File(x.path)).toList(),
+                              pickedFiles,
                               category: selectedCat,
                               title: titleController.text.trim(),
                             );
@@ -344,7 +364,7 @@ class _GalleryAdminPageState extends State<GalleryAdminPage> {
     );
   }
 
-  Future<void> _processUpload(List<File> files, {required String category, String? title}) async {
+  Future<void> _processUpload(List<dynamic> files, {required String category, String? title}) async {
     setState(() => _loading = true);
     try {
       await widget.authService.uploadGalleryImages(
@@ -452,7 +472,7 @@ class _GalleryAdminPageState extends State<GalleryAdminPage> {
 
   @override
   Widget build(BuildContext context) {
-    final columns = Responsive.getGridColumns(context, mobile: 2, tablet: 3, desktop: 4);
+    final columns = Responsive.getGridColumns(context, mobile: 2, tablet: 3, desktop: 4, largeDesktop: 5);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -485,52 +505,60 @@ class _GalleryAdminPageState extends State<GalleryAdminPage> {
         ),
       ),
       body: SafeArea(
-        child: Center(
-          child: ResponsiveContentWrapper(
-            maxWidth: 1000,
-            padding: EdgeInsets.zero,
-            child: Column(
-              children: [
-                // ── Category Filter Bar ─────────────────────────────────
-                _buildCategoryFilterBar(),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isDesktop = constraints.maxWidth >= 1024;
+            final isTablet = constraints.maxWidth >= 600 && constraints.maxWidth < 1024;
+            final horizontalPadding = isDesktop ? 32.0 : (isTablet ? 24.0 : 16.0);
 
-                // ── Photo Grid / State ─────────────────────────────────
-                Expanded(
-                  child: _loading
-                      ? const Center(
-                          child: CircularProgressIndicator(color: AppColors.primary),
-                        )
-                      : _filteredImages.isEmpty
-                          ? AppEmptyState(
-                              icon: Icons.photo_library_outlined,
-                              title: 'No Photos in $_selectedCategory',
-                              subtitle: 'Tap "Upload Photos" to add campus memories to this album.',
+            return Align(
+              alignment: Alignment.topCenter,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1280),
+                child: Column(
+                  children: [
+                    // ── Category Filter Bar ─────────────────────────────────
+                    _buildCategoryFilterBar(),
+
+                    // ── Photo Grid / State ─────────────────────────────────
+                    Expanded(
+                      child: _loading
+                          ? const Center(
+                              child: CircularProgressIndicator(color: AppColors.primary),
                             )
-                          : RefreshIndicator(
-                              color: AppColors.primary,
-                              onRefresh: _loadGallery,
-                              child: GridView.builder(
-                                padding: const EdgeInsets.fromLTRB(16, 8, 16, 90),
-                                physics: const AlwaysScrollableScrollPhysics(
-                                  parent: BouncingScrollPhysics(),
+                          : _filteredImages.isEmpty
+                              ? AppEmptyState(
+                                  icon: Icons.photo_library_outlined,
+                                  title: 'No Photos in $_selectedCategory',
+                                  subtitle: 'Tap "Upload Photos" to add campus memories to this album.',
+                                )
+                              : RefreshIndicator(
+                                  color: AppColors.primary,
+                                  onRefresh: _loadGallery,
+                                  child: GridView.builder(
+                                    padding: EdgeInsets.fromLTRB(horizontalPadding, 8, horizontalPadding, 90),
+                                    physics: const AlwaysScrollableScrollPhysics(
+                                      parent: BouncingScrollPhysics(),
+                                    ),
+                                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: columns,
+                                      crossAxisSpacing: 14,
+                                      mainAxisSpacing: 14,
+                                      childAspectRatio: 0.88,
+                                    ),
+                                    itemCount: _filteredImages.length,
+                                    itemBuilder: (context, index) {
+                                      final img = _filteredImages[index];
+                                      return _buildAdminPhotoCard(img);
+                                    },
+                                  ),
                                 ),
-                                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: columns,
-                                  crossAxisSpacing: 14,
-                                  mainAxisSpacing: 14,
-                                  childAspectRatio: 0.88,
-                                ),
-                                itemCount: _filteredImages.length,
-                                itemBuilder: (context, index) {
-                                  final img = _filteredImages[index];
-                                  return _buildAdminPhotoCard(img);
-                                },
-                              ),
-                            ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         ),
       ),
     );

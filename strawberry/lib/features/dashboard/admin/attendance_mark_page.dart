@@ -513,6 +513,404 @@ class _AttendanceMarkPageState extends State<AttendanceMarkPage> {
     );
   }
 
+  Widget _buildDatePickerCard() {
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: _pickDate,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        decoration: BoxDecoration(
+          color: _Palette.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: _Palette.border),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 14,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: _Palette.primarySoft,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.calendar_today_rounded,
+                  color: _Palette.primary, size: 18),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Attendance Date',
+                      style: TextStyle(
+                          fontSize: 11.5,
+                          color: _Palette.textMuted,
+                          fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 2),
+                  Text(
+                    _selectedDate == null
+                        ? 'Select a date'
+                        : DateFormat('dd MMM yyyy').format(_selectedDate!),
+                    style: const TextStyle(
+                      fontSize: 15.5,
+                      color: _Palette.textDark,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded, color: _Palette.textFaint),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategoryPickerCard() {
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: _selectedDate == null ? null : _selectCategory,
+      child: Opacity(
+        opacity: _selectedDate == null ? 0.6 : 1.0,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+          decoration: BoxDecoration(
+            color: _Palette.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: _Palette.border),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 14,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: _Palette.primarySoft,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.class_rounded,
+                    color: _Palette.primary, size: 18),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Student Category',
+                        style: TextStyle(
+                            fontSize: 11.5,
+                            color: _Palette.textMuted,
+                            fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 2),
+                    Text(
+                      _selectedCategory == null
+                          ? (_selectedDate == null ? 'Select date first' : 'Select a category')
+                          : _selectedCategory!,
+                      style: TextStyle(
+                        fontSize: 15.5,
+                        color: _selectedCategory == null ? _Palette.textMuted : _Palette.textDark,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded, color: _Palette.textFaint),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSummaryHeader(List<Map<String, dynamic>> filteredStudents) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _CountChip(
+                label: 'Present',
+                count: _counts.present,
+                color: _Palette.success,
+                bg: _Palette.successSoft,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _CountChip(
+                label: 'Absent',
+                count: _counts.absent,
+                color: _Palette.danger,
+                bg: _Palette.dangerSoft,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _CountChip(
+                label: 'Late',
+                count: _counts.late,
+                color: _Palette.amber,
+                bg: _Palette.amberSoft,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        InkWell(
+          onTap: () {
+            bool anyHaveTimes = filteredStudents.any((s) => _inTimes[s['id']] != null);
+            setState(() {
+              for (var s in filteredStudents) {
+                final id = s['id'] as String;
+                final status = _attendanceStatus[id] ?? 'Present';
+                if (status == 'Present' || status == 'Late') {
+                  _toggleTimesForStudent(id, !anyHaveTimes, s['student_type'] as String? ?? 'Other');
+                }
+              }
+            });
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+            decoration: BoxDecoration(
+              color: _Palette.primarySoft.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: _Palette.border),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.auto_awesome_rounded, size: 16, color: _Palette.primary),
+                const SizedBox(width: 8),
+                Text(
+                  filteredStudents.any((s) => _inTimes[s['id']] != null)
+                      ? 'Clear times for all students'
+                      : 'Set default times for all Present/Late',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: _Palette.primaryDark,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStudentCard(Map<String, dynamic> student) {
+    final id = student['id'] as String;
+    final name = student['name'] as String? ?? 'Student';
+    final type = student['student_type'] as String? ?? 'Unknown';
+    final photo = student['photo_url'] as String?;
+    final status = _attendanceStatus[id] ?? 'Present';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: _Palette.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _Palette.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: _Palette.primarySoft,
+                backgroundImage: photo != null ? NetworkImage(photo) : null,
+                child: photo == null
+                    ? const Icon(Icons.person_rounded, color: _Palette.primary, size: 20)
+                    : null,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(name,
+                        style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: _Palette.textDark)),
+                    const SizedBox(height: 2),
+                    Text(type,
+                        style: const TextStyle(
+                            fontSize: 12.5,
+                            color: _Palette.textMuted,
+                            fontWeight: FontWeight.w500)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _StatusSegmented(
+            value: status,
+            onChanged: (val) {
+              setState(() {
+                _attendanceStatus[id] = val;
+                if (val == 'Absent') {
+                  _inTimes[id] = null;
+                  _outTimes[id] = null;
+                }
+              });
+            },
+          ),
+          if (status == 'Present' || status == 'Late') ...[
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8.0),
+              child: Divider(color: _Palette.border, height: 1),
+            ),
+            Row(
+              children: [
+                SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: Checkbox(
+                    value: _inTimes[id] != null,
+                    activeColor: _Palette.primary,
+                    onChanged: (val) {
+                      setState(() {
+                        _toggleTimesForStudent(id, val ?? false, type);
+                      });
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        final val = _inTimes[id] == null;
+                        _toggleTimesForStudent(id, val, type);
+                      });
+                    },
+                    child: const Text(
+                      'Specify check-in/out times',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: _Palette.textDark,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            if (_inTimes[id] != null && _outTimes[id] != null) ...[
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: InkWell(
+                      onTap: () => _selectTime(context, id, true, type),
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                        decoration: BoxDecoration(
+                          color: _Palette.bg,
+                          border: Border.all(color: _Palette.border),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.login_rounded, size: 14, color: _Palette.success),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'In Time',
+                                    style: TextStyle(fontSize: 10, color: _Palette.textMuted, fontWeight: FontWeight.w600),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    _inTimes[id]!.format(context),
+                                    style: const TextStyle(fontSize: 13, color: _Palette.textDark, fontWeight: FontWeight.w700),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: InkWell(
+                      onTap: () => _selectTime(context, id, false, type),
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                        decoration: BoxDecoration(
+                          color: _Palette.bg,
+                          border: Border.all(color: _Palette.border),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.logout_rounded, size: 14, color: _Palette.danger),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Out Time',
+                                    style: TextStyle(fontSize: 10, color: _Palette.textMuted, fontWeight: FontWeight.w600),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    _outTimes[id]!.format(context),
+                                    style: const TextStyle(fontSize: 13, color: _Palette.textDark, fontWeight: FontWeight.w700),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final filteredStudents = _students.where((s) =>
@@ -532,221 +930,96 @@ class _AttendanceMarkPageState extends State<AttendanceMarkPage> {
         scrolledUnderElevation: 0,
         shape: const Border(bottom: BorderSide(color: _Palette.border, width: 1)),
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator(color: _Palette.primary))
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Date picker button
-                      InkWell(
-                        borderRadius: BorderRadius.circular(16),
-                        onTap: _pickDate,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-                          decoration: BoxDecoration(
-                            color: _Palette.surface,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: _Palette.border),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.03),
-                                blurRadius: 14,
-                                offset: const Offset(0, 6),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: _Palette.primarySoft,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: const Icon(Icons.calendar_today_rounded,
-                                    color: _Palette.primary, size: 18),
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text('Attendance Date',
-                                        style: TextStyle(
-                                            fontSize: 11.5,
-                                            color: _Palette.textMuted,
-                                            fontWeight: FontWeight.w600)),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      _selectedDate == null
-                                          ? 'Select a date'
-                                          : DateFormat('dd MMM yyyy').format(_selectedDate!),
-                                      style: const TextStyle(
-                                        fontSize: 15.5,
-                                        color: _Palette.textDark,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const Icon(Icons.chevron_right_rounded, color: _Palette.textFaint),
-                            ],
-                          ),
-                        ),
+      bottomNavigationBar: (_selectedDate != null &&
+              _selectedCategory != null &&
+              filteredStudents.isNotEmpty)
+          ? Container(
+              padding: EdgeInsets.fromLTRB(
+                16, 12, 16, MediaQuery.of(context).padding.bottom + 12,
+              ),
+              decoration: const BoxDecoration(
+                color: _Palette.surface,
+                border: Border(top: BorderSide(color: _Palette.border)),
+              ),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 600),
+                  child: SizedBox(
+                    height: 52,
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _saving ? null : _saveAttendance,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _Palette.primary,
+                        disabledBackgroundColor:
+                            _Palette.primary.withValues(alpha: 0.6),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16)),
                       ),
-                      const SizedBox(height: 12),
-
-                      // Category picker button (shows selection state)
-                      InkWell(
-                        borderRadius: BorderRadius.circular(16),
-                        onTap: _selectedDate == null ? null : _selectCategory,
-                        child: Opacity(
-                          opacity: _selectedDate == null ? 0.6 : 1.0,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-                            decoration: BoxDecoration(
-                              color: _Palette.surface,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: _Palette.border),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.03),
-                                  blurRadius: 14,
-                                  offset: const Offset(0, 6),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: _Palette.primarySoft,
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: const Icon(Icons.class_rounded,
-                                      color: _Palette.primary, size: 18),
-                                ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Text('Student Category',
-                                          style: TextStyle(
-                                              fontSize: 11.5,
-                                              color: _Palette.textMuted,
-                                              fontWeight: FontWeight.w600)),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        _selectedCategory == null
-                                            ? (_selectedDate == null ? 'Select date first' : 'Select a category')
-                                            : _selectedCategory!,
-                                        style: TextStyle(
-                                          fontSize: 15.5,
-                                          color: _selectedCategory == null ? _Palette.textMuted : _Palette.textDark,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const Icon(Icons.chevron_right_rounded, color: _Palette.textFaint),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-
-                      // Quick summary row
-                      if (_selectedDate != null && _selectedCategory != null && filteredStudents.isNotEmpty) ...[
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _CountChip(
-                                label: 'Present',
-                                count: _counts.present,
-                                color: _Palette.success,
-                                bg: _Palette.successSoft,
+                      child: _saving
+                          ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2.4,
                               ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: _CountChip(
-                                label: 'Absent',
-                                count: _counts.absent,
-                                color: _Palette.danger,
-                                bg: _Palette.dangerSoft,
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: _CountChip(
-                                label: 'Late',
-                                count: _counts.late,
-                                color: _Palette.amber,
-                                bg: _Palette.amberSoft,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        InkWell(
-                          onTap: () {
-                            bool anyHaveTimes = filteredStudents.any((s) => _inTimes[s['id']] != null);
-                            setState(() {
-                              for (var s in filteredStudents) {
-                                final id = s['id'] as String;
-                                final status = _attendanceStatus[id] ?? 'Present';
-                                if (status == 'Present' || status == 'Late') {
-                                  _toggleTimesForStudent(id, !anyHaveTimes, s['student_type'] as String? ?? 'Other');
-                                }
-                              }
-                            });
-                          },
-                          borderRadius: BorderRadius.circular(12),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                            decoration: BoxDecoration(
-                              color: _Palette.primarySoft.withValues(alpha: 0.5),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: _Palette.border),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.auto_awesome_rounded, size: 16, color: _Palette.primary),
-                                const SizedBox(width: 8),
-                                Text(
-                                  filteredStudents.any((s) => _inTimes[s['id']] != null)
-                                      ? 'Clear times for all students'
-                                      : 'Set default times for all Present/Late',
-                                  style: const TextStyle(
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.w700,
-                                    color: _Palette.primaryDark,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
+                            )
+                          : const Text('Save Attendance',
+                              style: TextStyle(
+                                  fontSize: 15.5, fontWeight: FontWeight.w700)),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 8),
+              ),
+            )
+          : null,
+      body: _loading
+          ? const Center(child: CircularProgressIndicator(color: _Palette.primary))
+          : LayoutBuilder(
+              builder: (context, constraints) {
+                final isDesktop = constraints.maxWidth >= 960;
+                final isTablet =
+                    constraints.maxWidth >= 600 && constraints.maxWidth < 960;
+                final isWide = constraints.maxWidth >= 600;
+                final horizontalPadding =
+                    isDesktop ? 32.0 : (isTablet ? 24.0 : 16.0);
 
-                Expanded(
-                  child: (_selectedDate == null || _selectedCategory == null)
-                      ? Center(
+                return Align(
+                  alignment: Alignment.topCenter,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1100),
+                    child: ListView(
+                      padding: EdgeInsets.fromLTRB(
+                          horizontalPadding, 16, horizontalPadding, 24),
+                      children: [
+                    if (isWide)
+                      Row(
+                        children: [
+                          Expanded(child: _buildDatePickerCard()),
+                          const SizedBox(width: 14),
+                          Expanded(child: _buildCategoryPickerCard()),
+                        ],
+                      )
+                    else ...[
+                      _buildDatePickerCard(),
+                      const SizedBox(height: 12),
+                      _buildCategoryPickerCard(),
+                    ],
+                    _buildHolidayBanner(),
+                    if (_selectedDate != null &&
+                        _selectedCategory != null &&
+                        filteredStudents.isNotEmpty) ...[
+                      const SizedBox(height: 14),
+                      _buildSummaryHeader(filteredStudents),
+                      const SizedBox(height: 14),
+                      ...filteredStudents.map((student) => _buildStudentCard(student)),
+                    ] else if (_selectedDate == null || _selectedCategory == null)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 48),
+                        child: Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
@@ -756,277 +1029,60 @@ class _AttendanceMarkPageState extends State<AttendanceMarkPage> {
                                   color: _Palette.primarySoft,
                                   shape: BoxShape.circle,
                                 ),
-                                child: const Icon(Icons.event_available_rounded, size: 46, color: _Palette.primary),
+                                child: const Icon(Icons.event_available_rounded,
+                                    size: 46, color: _Palette.primary),
                               ),
                               const SizedBox(height: 18),
                               const Text('Setup Attendance',
                                   style: TextStyle(
-                                      fontSize: 17, color: _Palette.textDark, fontWeight: FontWeight.w800)),
+                                      fontSize: 17,
+                                      color: _Palette.textDark,
+                                      fontWeight: FontWeight.w800)),
                               const SizedBox(height: 6),
                               Text(
                                   _selectedDate == null
                                       ? 'Choose a date to begin'
                                       : 'Select student category next',
                                   style: const TextStyle(
-                                      fontSize: 13.5, color: _Palette.textMuted, fontWeight: FontWeight.w500)),
+                                      fontSize: 13.5,
+                                      color: _Palette.textMuted,
+                                      fontWeight: FontWeight.w500)),
                             ],
                           ),
-                        )
-                      : filteredStudents.isEmpty
-                          ? Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(22),
-                                    decoration: BoxDecoration(
-                                      color: _Palette.textFaint.withValues(alpha: 0.1),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(Icons.groups_rounded, size: 46, color: _Palette.textFaint),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Text('No Students in $_selectedCategory',
-                                      style: const TextStyle(
-                                          fontSize: 16.5, color: _Palette.textDark, fontWeight: FontWeight.w700)),
-                                ],
-                              ),
-                            )
-                          : ListView.builder(
-                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                              itemCount: filteredStudents.length,
-                              itemBuilder: (context, index) {
-                                final student = filteredStudents[index];
-                                final id = student['id'] as String;
-                                final name = student['name'] as String? ?? 'Student';
-                                final type = student['student_type'] as String? ?? 'Unknown';
-                                final status = _attendanceStatus[id] ?? 'Present';
-
-                                return Container(
-                                  margin: const EdgeInsets.only(bottom: 10),
-                                  padding: const EdgeInsets.all(14),
-                                  decoration: BoxDecoration(
-                                    color: _Palette.surface,
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(color: _Palette.border),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withValues(alpha: 0.03),
-                                        blurRadius: 12,
-                                        offset: const Offset(0, 5),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          const CircleAvatar(
-                                            radius: 19,
-                                            backgroundColor: _Palette.bg,
-                                            child: Icon(Icons.person_rounded, color: _Palette.textMuted, size: 18),
-                                          ),
-                                          const SizedBox(width: 12),
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Text(name,
-                                                    style: const TextStyle(
-                                                        fontSize: 15,
-                                                        fontWeight: FontWeight.w700,
-                                                        color: _Palette.textDark)),
-                                                const SizedBox(height: 2),
-                                                Text(type,
-                                                    style: const TextStyle(
-                                                        fontSize: 12.5,
-                                                        color: _Palette.textMuted,
-                                                        fontWeight: FontWeight.w500)),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 12),
-                                      _StatusSegmented(
-                                        value: status,
-                                        onChanged: (val) {
-                                          setState(() {
-                                            _attendanceStatus[id] = val;
-                                            if (val == 'Absent') {
-                                              _inTimes[id] = null;
-                                              _outTimes[id] = null;
-                                            }
-                                          });
-                                        },
-                                      ),
-                                      if (status == 'Present' || status == 'Late') ...[
-                                        const Padding(
-                                          padding: EdgeInsets.symmetric(vertical: 8.0),
-                                          child: Divider(color: _Palette.border, height: 1),
-                                        ),
-                                        Row(
-                                          children: [
-                                            SizedBox(
-                                              width: 24,
-                                              height: 24,
-                                              child: Checkbox(
-                                                value: _inTimes[id] != null,
-                                                activeColor: _Palette.primary,
-                                                onChanged: (val) {
-                                                  setState(() {
-                                                    _toggleTimesForStudent(id, val ?? false, type);
-                                                  });
-                                                },
-                                              ),
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Expanded(
-                                              child: GestureDetector(
-                                                onTap: () {
-                                                  setState(() {
-                                                    final val = _inTimes[id] == null;
-                                                    _toggleTimesForStudent(id, val, type);
-                                                  });
-                                                },
-                                                child: const Text(
-                                                  'Specify check-in/out times',
-                                                  style: TextStyle(
-                                                    fontSize: 13,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: _Palette.textDark,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        if (_inTimes[id] != null && _outTimes[id] != null) ...[
-                                          const SizedBox(height: 10),
-                                          Row(
-                                            children: [
-                                              Expanded(
-                                                child: InkWell(
-                                                  onTap: () => _selectTime(context, id, true, type),
-                                                  borderRadius: BorderRadius.circular(10),
-                                                  child: Container(
-                                                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
-                                                    decoration: BoxDecoration(
-                                                      color: _Palette.bg,
-                                                      border: Border.all(color: _Palette.border),
-                                                      borderRadius: BorderRadius.circular(10),
-                                                    ),
-                                                    child: Row(
-                                                      children: [
-                                                        const Icon(Icons.login_rounded, size: 14, color: _Palette.success),
-                                                        const SizedBox(width: 8),
-                                                        Expanded(
-                                                          child: Column(
-                                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                                            children: [
-                                                              const Text(
-                                                                'In Time',
-                                                                style: TextStyle(fontSize: 10, color: _Palette.textMuted, fontWeight: FontWeight.w600),
-                                                              ),
-                                                              const SizedBox(height: 2),
-                                                              Text(
-                                                                _inTimes[id]!.format(context),
-                                                                style: const TextStyle(fontSize: 13, color: _Palette.textDark, fontWeight: FontWeight.w700),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                              const SizedBox(width: 10),
-                                              Expanded(
-                                                child: InkWell(
-                                                  onTap: () => _selectTime(context, id, false, type),
-                                                  borderRadius: BorderRadius.circular(10),
-                                                  child: Container(
-                                                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
-                                                    decoration: BoxDecoration(
-                                                      color: _Palette.bg,
-                                                      border: Border.all(color: _Palette.border),
-                                                      borderRadius: BorderRadius.circular(10),
-                                                    ),
-                                                    child: Row(
-                                                      children: [
-                                                        const Icon(Icons.logout_rounded, size: 14, color: _Palette.danger),
-                                                        const SizedBox(width: 8),
-                                                        Expanded(
-                                                          child: Column(
-                                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                                            children: [
-                                                              const Text(
-                                                                'Out Time',
-                                                                style: TextStyle(fontSize: 10, color: _Palette.textMuted, fontWeight: FontWeight.w600),
-                                                              ),
-                                                              const SizedBox(height: 2),
-                                                              Text(
-                                                                _outTimes[id]!.format(context),
-                                                                style: const TextStyle(fontSize: 13, color: _Palette.textDark, fontWeight: FontWeight.w700),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      ],
-                                    ],
-                                  ),
-                                );
-                              },
-                            ),
-                ),
-
-                // Save button
-                if (_selectedDate != null && _selectedCategory != null && filteredStudents.isNotEmpty)
-                  Container(
-                    padding: EdgeInsets.fromLTRB(
-                      16, 12, 16, MediaQuery.of(context).padding.bottom + 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _Palette.surface,
-                      border: const Border(top: BorderSide(color: _Palette.border)),
-                    ),
-                    child: SizedBox(
-                      height: 52,
-                      child: ElevatedButton(
-                        onPressed: _saving ? null : _saveAttendance,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _Palette.primary,
-                          disabledBackgroundColor: _Palette.primary.withValues(alpha: 0.6),
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         ),
-                        child: _saving
-                            ? const SizedBox(
-                                width: 22,
-                                height: 22,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2.4,
+                      )
+                    else if (filteredStudents.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 48),
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(22),
+                                decoration: BoxDecoration(
+                                  color: _Palette.textFaint.withValues(alpha: 0.1),
+                                  shape: BoxShape.circle,
                                 ),
-                              )
-                            : const Text('Save Attendance',
-                                style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w700)),
+                                child: const Icon(Icons.groups_rounded,
+                                    size: 46, color: _Palette.textFaint),
+                              ),
+                              const SizedBox(height: 16),
+                              Text('No Students in $_selectedCategory',
+                                  style: const TextStyle(
+                                      fontSize: 16.5,
+                                      color: _Palette.textDark,
+                                      fontWeight: FontWeight.w700)),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-              ],
-            ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
     );
   }
 }

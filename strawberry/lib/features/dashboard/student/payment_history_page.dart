@@ -3,7 +3,6 @@ import 'package:intl/intl.dart';
 import 'package:strawberry/core/theme/app_colors.dart';
 import 'package:strawberry/core/theme/app_typography.dart';
 import 'package:strawberry/core/theme/app_decorations.dart';
-import 'package:strawberry/core/utils/responsive.dart';
 import 'package:strawberry/core/widgets/app_badge.dart';
 import 'package:strawberry/features/payments/payment_service.dart';
 
@@ -75,10 +74,13 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
       appBar: AppBar(
         title: Text('Payment Receipts', style: AppTypography.h2),
       ),
-      body: Center(
-        child: ResponsiveContentWrapper(
-          maxWidth: 680,
-          child: RefreshIndicator(
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isDesktop = constraints.maxWidth >= 960;
+          final isTablet = constraints.maxWidth >= 600 && constraints.maxWidth < 960;
+          final horizontalPadding = isDesktop ? 32.0 : (isTablet ? 24.0 : 16.0);
+
+          return RefreshIndicator(
             color: AppColors.primary,
             onRefresh: _load,
             child: _loading
@@ -107,7 +109,7 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
                         ],
                       )
                     : ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+                        padding: EdgeInsets.fromLTRB(horizontalPadding, 16, horizontalPadding, 32),
                         physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
                         itemCount: _payments.length,
                         separatorBuilder: (context, index) => const SizedBox(height: 12),
@@ -127,14 +129,14 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
                             child: Row(
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.all(10),
+                                  padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
                                     color: color.withValues(alpha: 0.12),
-                                    borderRadius: AppDecorations.radiusSm,
+                                    shape: BoxShape.circle,
                                   ),
-                                  child: Icon(icon, color: color, size: 22),
+                                  child: Icon(icon, color: color, size: 24),
                                 ),
-                                const SizedBox(width: 14),
+                                const SizedBox(width: 16),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -170,8 +172,8 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
                           );
                         },
                       ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }

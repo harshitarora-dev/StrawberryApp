@@ -1,23 +1,41 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' show TimeOfDay;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:io';
 import 'dart:async';
+import 'package:image_picker/image_picker.dart' show XFile;
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:strawberry/features/auth/push_notification_service.dart';
 
 class AuthService {
-  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  FirebaseAuth? get _firebaseAuth {
+    try {
+      return FirebaseAuth.instance;
+    } catch (_) {
+      return null;
+    }
+  }
+  static const String _webClientId =
+      '246316625668-m9fe5m33tjhhril3cpv2uhempcsai3ot.apps.googleusercontent.com';
+
   final GoogleSignIn _googleSignIn = GoogleSignIn(
-    scopes: ['email', 'profile'],
+    clientId: kIsWeb ? _webClientId : null,
+    scopes: ['email'],
   );
   final SupabaseClient _supabaseClient = Supabase.instance.client;
 
-  // Sign in with Google — native Android account picker (no Chrome redirect)
+  // Sign in with Google — native Android account picker on mobile, standard popup on web
   Future<UserCredential?> signInWithGoogle() async {
     try {
-      // Trigger native Google Sign-In account picker
+      if (kIsWeb && _firebaseAuth != null) {
+        final GoogleAuthProvider googleProvider = GoogleAuthProvider();
+        googleProvider.addScope('email');
+        return await _firebaseAuth!.signInWithPopup(googleProvider);
+      }
+
+      // Mobile: Trigger native Google Sign-In account picker
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) {
         // User cancelled the sign-in
@@ -35,11 +53,14 @@ class AuthService {
       );
 
       // Sign in to Firebase with the Google credential
-      return await _firebaseAuth.signInWithCredential(credential);
+      return await _firebaseAuth?.signInWithCredential(credential);
     } on Exception catch (e) {
       final msg = e.toString().toLowerCase();
       // Silently handle user cancellation
-      if (msg.contains('cancel') || msg.contains('sign_in_canceled')) {
+      if (msg.contains('cancel') ||
+          msg.contains('sign_in_canceled') ||
+          msg.contains('popup_closed_by_user') ||
+          msg.contains('canceled-by-user')) {
         return null;
       }
       rethrow;
@@ -48,25 +69,55 @@ class AuthService {
 
   // Checks if a user is currently logged in via Firebase
   bool isLoggedIn() {
-    return _firebaseAuth.currentUser != null;
+    try {
+      return _firebaseAuth?.currentUser != null;
+    } catch (_) {
+      return false;
+    }
   }
 
   // Get current user ID (Firebase UID string)
-  String? get currentUserId => _firebaseAuth.currentUser?.uid;
+  String? get currentUserId {
+    try {
+      return _firebaseAuth?.currentUser?.uid;
+    } catch (_) {
+      return null;
+    }
+  }
 
   // Get current user display name from Google
-  String? get currentUserDisplayName => _firebaseAuth.currentUser?.displayName;
+  String? get currentUserDisplayName {
+    try {
+      return _firebaseAuth?.currentUser?.displayName;
+    } catch (_) {
+      return null;
+    }
+  }
 
   // Get current user email
-  String? get currentUserEmail => _firebaseAuth.currentUser?.email;
+  String? get currentUserEmail {
+    try {
+      return _firebaseAuth?.currentUser?.email;
+    } catch (_) {
+      return null;
+    }
+  }
 
   // Get current user photo URL
-  String? get currentUserPhotoUrl => _firebaseAuth.currentUser?.photoURL;
+  String? get currentUserPhotoUrl {
+    try {
+      return _firebaseAuth?.currentUser?.photoURL;
+    } catch (_) {
+      return null;
+    }
+  }
 
   // Log out of Firebase and Google session
   Future<void> logout() async {
-    await _googleSignIn.signOut(); // clears Google session so picker shows next time
-    await _firebaseAuth.signOut();
+    try {
+      await _googleSignIn.signOut();
+      await _firebaseAuth?.signOut();
+    } catch (_) {}
   }
 
   // Fetches the user profile from Supabase database matching Firebase UID
@@ -246,8 +297,7 @@ class AuthService {
   Future<List<Map<String, dynamic>>> getAllStudents() async {
     final response = await _supabaseClient
         .from('profiles')
-        .select(
-            'id, name, email, photo_url, student_type, fees, fees_paid_months, created_at')
+        .select()
         .eq('role', 'student')
         .eq('status', 'approved');
     return List<Map<String, dynamic>>.from(response as List);
@@ -509,6 +559,30 @@ class AuthService {
     await _supabaseClient.from('student_categories').delete().eq('name', name);
   }
 
+  // Submit prospective parent admission enquiry
+  Future<void> submitAdmissionEnquiry({
+    required String parentName,
+    required String phone,
+    String? childName,
+    String? childAge,
+    String? program,
+    String? message,
+  }) async {
+    try {
+      await _supabaseClient.from('admission_enquiries').insert({
+        'parent_name': parentName,
+        'phone': phone,
+        'child_name': childName ?? '',
+        'child_age': childAge ?? '',
+        'program': program ?? '',
+        'message': message ?? '',
+        'created_at': DateTime.now().toIso8601String(),
+      });
+    } catch (_) {
+      // Table may not exist yet or offline; gracefully handle
+    }
+  }
+
   // ----- Student/Admin Removal Methods -----
 
   // Remove a student (Primary Admin only)
@@ -662,23 +736,38 @@ class AuthService {
 
   // ----- Gallery Methods -----
 
-  // Upload gallery images (compress to <=450KB) and store URLs
+  // Upload gallery images (compress to <=450KB on native, direct bytes on web) and store URLs
   Future<List<String>> uploadGalleryImages(
-    List<File> files, {
+    List<dynamic> files, {
     String? category,
     String? title,
   }) async {
     final List<String> urls = [];
     for (var file in files) {
       try {
-        // Compress image
-        final compressed = await compressImage(file);
-        final rawName = file.path.split('/').last.split('\\').last;
+        Uint8List bytes;
+        String rawName;
+
+        if (file is XFile) {
+          bytes = await file.readAsBytes();
+          rawName = file.name;
+        } else if (file is File) {
+          if (!kIsWeb) {
+            final compressed = await compressImage(file);
+            bytes = await compressed.readAsBytes();
+          } else {
+            bytes = await file.readAsBytes();
+          }
+          rawName = file.path.split('/').last.split('\\').last;
+        } else {
+          continue;
+        }
+
         final fileName = '${DateTime.now().millisecondsSinceEpoch}_$rawName';
 
         await Supabase.instance.client.storage
             .from('gallery')
-            .uploadBinary(fileName, await compressed.readAsBytes());
+            .uploadBinary(fileName, bytes);
 
         final publicUrl = Supabase.instance.client.storage
             .from('gallery')
@@ -707,8 +796,8 @@ class AuthService {
         }
         urls.add(publicUrl);
       } catch (e, stackTrace) {
-        print("ERROR DURING UPLOAD/COMPRESSION: $e");
-        print(stackTrace);
+        debugPrint("ERROR DURING UPLOAD/COMPRESSION: $e");
+        debugPrint(stackTrace.toString());
         rethrow;
       }
     }
@@ -717,25 +806,30 @@ class AuthService {
 
   // Helper to compress image using flutter_image_compress to <=450KB
   Future<File> compressImage(File file) async {
+    if (kIsWeb) return file;
     const maxSize = 450 * 1024; // 450KB
     var quality = 95;
     File? compressedFile = file;
-    while (true) {
-      final result = await FlutterImageCompress.compressAndGetFile(
-        file.absolute.path,
-        '${file.path}_compressed.jpg',
-        quality: quality,
-      );
-      if (result == null) break;
-      final asFile = File(result.path); // XFile → File (v2.x returns XFile)
-      final bytes = await asFile.length();
-      if (bytes <= maxSize || quality <= 30) {
-        compressedFile = asFile;
-        break;
+    try {
+      while (true) {
+        final result = await FlutterImageCompress.compressAndGetFile(
+          file.absolute.path,
+          '${file.path}_compressed.jpg',
+          quality: quality,
+        );
+        if (result == null) break;
+        final asFile = File(result.path); // XFile → File (v2.x returns XFile)
+        final bytes = await asFile.length();
+        if (bytes <= maxSize || quality <= 30) {
+          compressedFile = asFile;
+          break;
+        }
+        quality -= 10;
       }
-      quality -= 10;
+    } catch (_) {
+      return file;
     }
-    return compressedFile!;
+    return compressedFile ?? file;
   }
 
   // Fetch gallery images

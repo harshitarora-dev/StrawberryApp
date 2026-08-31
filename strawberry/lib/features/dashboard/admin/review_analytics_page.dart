@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
@@ -537,16 +537,26 @@ class _ReviewAnalyticsPageState extends State<ReviewAnalyticsPage> {
   }
 
   // ── Download the Excel file — lets the user pick a visible location ──
-  // NOTE: FileSaver.saveFile() on Android silently writes to the app's
-  // PRIVATE folder (Android/data/<package>/files/), which is hidden from
-  // the Files app / Downloads on most phones (blocked outright on Android
-  // 11+). saveAs() instead opens the native "Save As" picker so the user
-  // chooses a real, visible folder (e.g. Downloads) themselves.
+  // ── Download the Excel file — lets the user pick a visible location ──
   Future<void> _downloadMonthExcel() async {
     if (_exporting) return;
     setState(() => _exporting = true);
     try {
       final (:bytes, :fileName) = await _buildMonthExcel();
+
+      if (kIsWeb) {
+        await FileSaver.instance.saveFile(
+          name: fileName,
+          bytes: bytes,
+          ext: 'xlsx',
+          mimeType: MimeType.microsoftExcel,
+        );
+        if (!mounted) return;
+        setState(() => _exporting = false);
+        _showSnack('$fileName.xlsx downloaded successfully', success: true);
+        return;
+      }
+
       final savedPath = await FileSaver.instance.saveAs(
         name: fileName,
         bytes: bytes,
@@ -574,6 +584,30 @@ class _ReviewAnalyticsPageState extends State<ReviewAnalyticsPage> {
     setState(() => _exporting = true);
     try {
       final (:bytes, :fileName) = await _buildMonthExcel();
+
+      if (kIsWeb) {
+        final result = await SharePlus.instance.share(
+          ShareParams(
+            files: [
+              XFile.fromData(
+                bytes,
+                mimeType:
+                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                name: '$fileName.xlsx',
+              ),
+            ],
+            subject: '$fileName Attendance Report',
+            text: 'Attendance report for $fileName',
+          ),
+        );
+        if (!mounted) return;
+        setState(() => _exporting = false);
+        if (result.status == ShareResultStatus.success && mounted) {
+          _showSnack('$fileName.xlsx shared successfully', success: true);
+        }
+        return;
+      }
+
       // Share plugins on Android & iOS need a real file path, so we write
       // the bytes to the app's temp directory first, then hand that off
       // to the native share sheet.
@@ -654,17 +688,19 @@ class _ReviewAnalyticsPageState extends State<ReviewAnalyticsPage> {
                     _downloadMonthExcel();
                   },
                 ),
-                const SizedBox(height: 10),
-                _ExportOptionTile(
-                  icon: Icons.share_rounded,
-                  iconColor: _primaryDark,
-                  title: 'Share',
-                  subtitle: 'Send via WhatsApp, Email, Drive, etc.',
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    _shareMonthExcel();
-                  },
-                ),
+                if (!kIsWeb) ...[
+                  const SizedBox(height: 10),
+                  _ExportOptionTile(
+                    icon: Icons.share_rounded,
+                    iconColor: _primaryDark,
+                    title: 'Share',
+                    subtitle: 'Send via WhatsApp, Email, Drive, etc.',
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      _shareMonthExcel();
+                    },
+                  ),
+                ],
               ],
             ),
           ),
@@ -702,8 +738,8 @@ class _ReviewAnalyticsPageState extends State<ReviewAnalyticsPage> {
                   )
                 : IconButton(
                     icon: const Icon(Icons.file_download_rounded, color: _primaryDark),
-                    tooltip: 'Download or share this month as Excel',
-                    onPressed: _loading ? null : _showExportOptions,
+                    tooltip: kIsWeb ? 'Download this month as Excel' : 'Download or share this month as Excel',
+                    onPressed: _loading ? null : (kIsWeb ? _downloadMonthExcel : _showExportOptions),
                   ),
           ),
         ],
@@ -715,19 +751,60 @@ class _ReviewAnalyticsPageState extends State<ReviewAnalyticsPage> {
               : RefreshIndicator(
                   onRefresh: _loadAll,
                   color: _primary,
-                  child: ListView(
-                    padding: const EdgeInsets.fromLTRB(16, 18, 16, 40),
-                    children: [
-                      _buildOverviewCards(),
-                      const SizedBox(height: 26),
-                      _buildCategoryBreakdown(),
-                      const SizedBox(height: 26),
-                      _buildDateSelector(),
-                      const SizedBox(height: 12),
-                      _buildDateBreakdown(),
-                      const SizedBox(height: 26),
-                      _buildMonthTrend(),
-                    ],
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final isDesktop = constraints.maxWidth >= 900;
+                      final isTablet = constraints.maxWidth >= 600 && constraints.maxWidth < 900;
+                      final horizontalPadding = isDesktop ? 32.0 : (isTablet ? 24.0 : 16.0);
+
+                      return Align(
+                        alignment: Alignment.topCenter,
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 1100),
+                          child: ListView(
+                            padding: EdgeInsets.fromLTRB(horizontalPadding, 18, horizontalPadding, 40),
+                            children: isDesktop
+                                ? [
+                                    Row(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Expanded(
+                                          flex: 5,
+                                          child: Column(
+                                            children: [
+                                              _buildOverviewCards(),
+                                              const SizedBox(height: 20),
+                                              _buildCategoryBreakdown(),
+                                              const SizedBox(height: 20),
+                                              _buildDateSelector(),
+                                              const SizedBox(height: 12),
+                                              _buildDateBreakdown(),
+                                            ],
+                                          ),
+                                        ),
+                                        const SizedBox(width: 20),
+                                        Expanded(
+                                          flex: 5,
+                                          child: _buildMonthTrend(),
+                                        ),
+                                      ],
+                                    ),
+                                  ]
+                                : [
+                                    _buildOverviewCards(),
+                                    const SizedBox(height: 26),
+                                    _buildCategoryBreakdown(),
+                                    const SizedBox(height: 26),
+                                    _buildDateSelector(),
+                                    const SizedBox(height: 12),
+                                    _buildDateBreakdown(),
+                                    const SizedBox(height: 26),
+                                    _buildMonthTrend(),
+                                  ],
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
     );

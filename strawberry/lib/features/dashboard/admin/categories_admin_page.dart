@@ -319,45 +319,37 @@ class _CategoriesAdminPageState extends State<CategoriesAdminPage> {
                   : RefreshIndicator(
                       onRefresh: _loadCategories,
                       color: _Palette.primary,
-                      child: ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
-                        itemCount: _categories.length,
-                        itemBuilder: (context, index) {
-                          final cat = _categories[index];
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 10),
-                            decoration: BoxDecoration(
-                              color: _Palette.surface,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: _Palette.border),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.01),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: ListTile(
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                              leading: CircleAvatar(
-                                backgroundColor: _Palette.primarySoft,
-                                child: const Icon(Icons.folder_open_rounded, color: _Palette.primary, size: 20),
-                              ),
-                              title: Text(
-                                cat,
-                                style: const TextStyle(
-                                  color: _Palette.textDark,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 15.5,
-                                ),
-                              ),
-                              trailing: IconButton(
-                                icon: const Icon(Icons.delete_outline_rounded, color: _Palette.danger, size: 20),
-                                onPressed: () => _deleteCategory(cat),
-                              ),
-                            ),
-                          );
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final isDesktop = constraints.maxWidth >= 960;
+                          final isTablet = constraints.maxWidth >= 600 && constraints.maxWidth < 960;
+                          final horizontalPadding = isDesktop ? 32.0 : (isTablet ? 24.0 : 16.0);
+                          final columns = constraints.maxWidth >= 1200 ? 3 : (constraints.maxWidth >= 600 ? 2 : 1);
+
+                          return columns > 1
+                              ? GridView.builder(
+                                  padding: EdgeInsets.fromLTRB(horizontalPadding, 16, horizontalPadding, 90),
+                                  physics: const AlwaysScrollableScrollPhysics(),
+                                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: columns,
+                                    crossAxisSpacing: 14,
+                                    mainAxisSpacing: 12,
+                                    mainAxisExtent: 76,
+                                  ),
+                                  itemCount: _categories.length,
+                                  itemBuilder: (context, index) {
+                                    final cat = _categories[index];
+                                    return _buildCategoryTile(cat);
+                                  },
+                                )
+                              : ListView.builder(
+                                  padding: EdgeInsets.fromLTRB(horizontalPadding, 16, horizontalPadding, 90),
+                                  itemCount: _categories.length,
+                                  itemBuilder: (context, index) {
+                                    final cat = _categories[index];
+                                    return _buildCategoryTile(cat);
+                                  },
+                                );
                         },
                       ),
                     ),
@@ -369,6 +361,43 @@ class _CategoriesAdminPageState extends State<CategoriesAdminPage> {
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildCategoryTile(String cat) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: _Palette.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _Palette.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.01),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        leading: CircleAvatar(
+          backgroundColor: _Palette.primarySoft,
+          child: const Icon(Icons.folder_open_rounded, color: _Palette.primary, size: 20),
+        ),
+        title: Text(
+          cat,
+          style: const TextStyle(
+            color: _Palette.textDark,
+            fontWeight: FontWeight.w700,
+            fontSize: 15.5,
+          ),
+        ),
+        trailing: IconButton(
+          icon: const Icon(Icons.delete_outline_rounded, color: _Palette.danger, size: 20),
+          onPressed: () => _deleteCategory(cat),
+        ),
       ),
     );
   }

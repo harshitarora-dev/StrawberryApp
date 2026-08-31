@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:strawberry/core/theme/app_colors.dart';
@@ -36,8 +37,8 @@ class _EditAboutPageState extends State<EditAboutPage> {
   String _schoolImageUrl = '';
   String _founderImageUrl = '';
 
-  File? _newSchoolImageFile;
-  File? _newFounderImageFile;
+  XFile? _newSchoolImageFile;
+  XFile? _newFounderImageFile;
 
   bool _saving = false;
 
@@ -107,9 +108,9 @@ class _EditAboutPageState extends State<EditAboutPage> {
       if (picked != null) {
         setState(() {
           if (isSchoolImage) {
-            _newSchoolImageFile = File(picked.path);
+            _newSchoolImageFile = picked;
           } else {
-            _newFounderImageFile = File(picked.path);
+            _newFounderImageFile = picked;
           }
         });
       }
@@ -208,7 +209,7 @@ class _EditAboutPageState extends State<EditAboutPage> {
   Widget _buildImageSelector({
     required String title,
     required String currentUrl,
-    required File? newFile,
+    required XFile? newFile,
     required VoidCallback onPick,
     required VoidCallback onRemove,
   }) {
@@ -232,7 +233,9 @@ class _EditAboutPageState extends State<EditAboutPage> {
                   width: 90,
                   height: 90,
                   child: newFile != null
-                      ? Image.file(newFile, fit: BoxFit.cover)
+                      ? (kIsWeb
+                          ? Image.network(newFile.path, fit: BoxFit.cover)
+                          : Image.file(File(newFile.path), fit: BoxFit.cover))
                       : currentUrl.isNotEmpty
                           ? Image.network(
                               currentUrl,
@@ -302,11 +305,14 @@ class _EditAboutPageState extends State<EditAboutPage> {
             ),
         ],
       ),
-      body: Center(
-        child: ResponsiveContentWrapper(
-          maxWidth: 680,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: ListView(
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isDesktop = constraints.maxWidth >= 960;
+          final isTablet = constraints.maxWidth >= 640 && constraints.maxWidth < 960;
+          final horizontalPadding = isDesktop ? 32.0 : (isTablet ? 24.0 : 16.0);
+
+          return ListView(
+            padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 16),
             physics: const BouncingScrollPhysics(),
             children: [
               // Notice banner
@@ -400,33 +406,32 @@ class _EditAboutPageState extends State<EditAboutPage> {
               TextField(
                 controller: _founderTitleCtrl,
                 decoration: const InputDecoration(
-                  labelText: 'Designation / Title',
+                  labelText: 'Founder Designation / Title',
                   prefixIcon: Icon(Icons.badge_rounded, color: AppColors.primary),
                 ),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: _founderJourneyCtrl,
-                maxLines: 6,
+                maxLines: 5,
                 decoration: const InputDecoration(
-                  labelText: 'Founder\'s Vision & Journey Story',
+                  labelText: 'Founder\'s Message & Journey',
                   alignLabelWithHint: true,
                 ),
               ),
 
-              // Section 3: Developer Attribution
-              _buildSectionHeader('Developer Attribution', Icons.code_rounded),
+              // Section 3: Developer Credits & System Info
+              _buildSectionHeader('System Credits', Icons.code_rounded),
               TextField(
                 controller: _developerCreditCtrl,
-                maxLines: 2,
                 decoration: const InputDecoration(
-                  labelText: 'Developer Credit & Inquiries',
-                  prefixIcon: Icon(Icons.favorite_rounded, color: AppColors.primary),
+                  labelText: 'Developer / Technical Credits',
+                  prefixIcon: Icon(Icons.terminal_rounded, color: AppColors.primary),
                 ),
               ),
 
-              // Section 4: Contact & Location Info
-              _buildSectionHeader('Contact & Campus Location', Icons.contact_support_rounded),
+              // Section 4: Contact & Campus Location
+              _buildSectionHeader('Contact & Campus Location', Icons.location_on_rounded),
               TextField(
                 controller: _contactEmailCtrl,
                 decoration: const InputDecoration(
@@ -465,8 +470,8 @@ class _EditAboutPageState extends State<EditAboutPage> {
 
               const SizedBox(height: 24),
             ],
-          ),
-        ),
+          );
+        },
       ),
     );
   }

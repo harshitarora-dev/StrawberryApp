@@ -1,10 +1,10 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:strawberry/core/theme/app_colors.dart';
 import 'package:strawberry/core/theme/app_typography.dart';
 import 'package:strawberry/core/theme/app_decorations.dart';
 import 'package:strawberry/core/upi_config.dart';
-import 'package:strawberry/core/utils/responsive.dart';
 import 'package:strawberry/core/widgets/app_button.dart';
 import 'package:strawberry/features/auth/auth_service.dart';
 import 'package:strawberry/features/payments/payment_service.dart';
@@ -89,6 +89,38 @@ class _PayFeesPageState extends State<PayFeesPage> {
       cursor = DateTime(cursor.year, cursor.month + 1, 1);
     }
     return months;
+  }
+
+  List<String> get _payableMonths {
+    final paid = List<String>.from(widget.profile['fees_paid_months'] ?? []);
+    final start = _startMonth;
+    final now = DateTime.now();
+    final advanceLimit = DateTime(now.year, now.month + 3, 1);
+
+    final months = <String>[];
+    var cursor = start;
+    while (!cursor.isAfter(advanceLimit)) {
+      final key = '${cursor.year}-${cursor.month.toString().padLeft(2, '0')}';
+      if (!paid.contains(key)) {
+        months.add(key);
+      }
+      cursor = DateTime(cursor.year, cursor.month + 1, 1);
+    }
+    return months;
+  }
+
+  bool _isAdvanceMonth(String key) {
+    final now = DateTime.now();
+    final currentKey = '${now.year}-${now.month.toString().padLeft(2, '0')}';
+    return key.compareTo(currentKey) > 0;
+  }
+
+  String _formatMonthLabel(String key) {
+    final formatted = _formatMonthKey(key);
+    if (_isAdvanceMonth(key)) {
+      return '$formatted (Advance)';
+    }
+    return formatted;
   }
 
   String _formatMonthKey(String key) {
@@ -176,58 +208,148 @@ class _PayFeesPageState extends State<PayFeesPage> {
     }
   }
 
-  Widget _buildUpiCopyCard({required double amount}) {
+  Widget _buildUpiQrCard({required double amount}) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.primarySoft.withValues(alpha: 0.4),
-        borderRadius: AppDecorations.radiusMd,
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+        color: Colors.white,
+        borderRadius: AppDecorations.radiusLg,
+        border: Border.all(color: AppColors.borderSubtle),
+        boxShadow: AppDecorations.shadowSm,
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                'School Payee Details',
-                style: AppTypography.caption.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primaryDark,
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: const BoxDecoration(
+                  color: AppColors.primarySoft,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.qr_code_scanner_rounded,
+                  color: AppColors.primary,
+                  size: 18,
                 ),
               ),
+              const SizedBox(width: 8),
               Text(
-                '₹${amount.toStringAsFixed(0)}',
+                'Scan & Pay via UPI',
                 style: AppTypography.bodyMedium.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primaryDark,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textDark,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
-          Text(
-            'Name: ${UpiConfig.payeeName}',
-            style: AppTypography.bodySmall.copyWith(color: AppColors.textDark),
-          ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 14),
+
+          // Official UPI QR Code Container
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.borderSubtle, width: 1.5),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Image.asset(
+                'assets/images/upi_qr.png',
+                width: 170,
+                height: 170,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  width: 170,
+                  height: 170,
+                  color: AppColors.surfaceAlt,
+                  child: const Center(
+                    child: Icon(Icons.qr_code_2_rounded, size: 80, color: AppColors.textMuted),
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 14),
+
+          // Payee Name & Amount
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColors.primarySoft.withValues(alpha: 0.35),
+              borderRadius: AppDecorations.radiusSm,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Payee Name',
+                      style: AppTypography.caption.copyWith(color: AppColors.textMuted, fontSize: 11),
+                    ),
+                    Text(
+                      UpiConfig.payeeName,
+                      style: AppTypography.bodySmall.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textDark,
+                      ),
+                    ),
+                  ],
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      'Amount',
+                      style: AppTypography.caption.copyWith(color: AppColors.textMuted, fontSize: 11),
+                    ),
+                    Text(
+                      '₹${amount.toStringAsFixed(0)}',
+                      style: AppTypography.bodyMedium.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.primaryDark,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          // Copyable UPI ID Box
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceAlt,
               borderRadius: AppDecorations.radiusSm,
               border: Border.all(color: AppColors.borderSubtle),
             ),
             child: Row(
               children: [
+                const Icon(Icons.account_balance_rounded, size: 16, color: AppColors.primary),
+                const SizedBox(width: 8),
                 Expanded(
-                  child: Text(
+                  child: SelectableText(
                     UpiConfig.vpa,
-                    style: AppTypography.bodyMedium.copyWith(
+                    style: AppTypography.bodySmall.copyWith(
                       fontWeight: FontWeight.w700,
                       color: AppColors.primary,
-                      letterSpacing: 0.5,
+                      letterSpacing: 0.4,
                     ),
                   ),
                 ),
@@ -235,7 +357,7 @@ class _PayFeesPageState extends State<PayFeesPage> {
                   onTap: _copyUpiId,
                   borderRadius: BorderRadius.circular(6),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
                       color: AppColors.primary,
                       borderRadius: BorderRadius.circular(6),
@@ -243,13 +365,14 @@ class _PayFeesPageState extends State<PayFeesPage> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.copy_rounded, size: 14, color: Colors.white),
+                        const Icon(Icons.copy_rounded, size: 13, color: Colors.white),
                         const SizedBox(width: 4),
                         Text(
                           'Copy',
                           style: AppTypography.caption.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
+                            fontSize: 11.5,
                           ),
                         ),
                       ],
@@ -259,9 +382,26 @@ class _PayFeesPageState extends State<PayFeesPage> {
               ],
             ),
           ),
+
+          const SizedBox(height: 12),
+
+          // Compatible Apps line
+          Text(
+            'Scan with GPay • PhonePe • Paytm • BHIM • CRED',
+            textAlign: TextAlign.center,
+            style: AppTypography.caption.copyWith(
+              color: AppColors.textMuted,
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ],
       ),
     );
+  }
+
+  Widget _buildUpiCopyCard({required double amount}) {
+    return _buildUpiQrCard(amount: amount);
   }
 
   void _showNoUpiAppDialog({
@@ -279,34 +419,31 @@ class _PayFeesPageState extends State<PayFeesPage> {
           children: [
             Container(
               padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: AppColors.amberSoft,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.phonelink_erase_rounded, color: AppColors.amberDark, size: 24),
+              child: const Icon(Icons.qr_code_2_rounded, color: AppColors.amberDark, size: 24),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Text('No UPI App Detected', style: AppTypography.h3),
+              child: Text('Pay via QR or UPI ID', style: AppTypography.h3),
             ),
           ],
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'We couldn\'t find a UPI app (Google Pay, PhonePe, Paytm) installed on this device.',
-              style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
-            ),
-            const SizedBox(height: 14),
-            Text(
-              'You can copy the School\'s UPI ID below and pay from another phone or device:',
-              style: AppTypography.bodySmall.copyWith(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 10),
-            _buildUpiCopyCard(amount: amount),
-          ],
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Scan this QR code with any UPI app on another phone, or copy the UPI ID below:',
+                style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+              ),
+              const SizedBox(height: 12),
+              _buildUpiQrCard(amount: amount),
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -418,20 +555,24 @@ class _PayFeesPageState extends State<PayFeesPage> {
   }
 
   void _showReportManualPaymentModal() {
-    final unpaid = _unpaidMonths;
-    if (unpaid.isEmpty) {
+    final payable = _payableMonths;
+    if (payable.isEmpty) {
       _snack('All fees are already cleared!');
       return;
     }
 
-    String month = _selectedMonth ?? unpaid.first;
-    final manualAmountController = TextEditingController(text: _amountController.text);
+    String month = _selectedMonth ?? payable.first;
+    final initialAmt = _amountController.text.isNotEmpty
+        ? _amountController.text
+        : (_monthlyFee > 0 ? _monthlyFee.toStringAsFixed(0) : '');
+    final manualAmountController = TextEditingController(text: initialAmt);
     final utrController = TextEditingController();
     bool submitting = false;
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      constraints: const BoxConstraints(maxWidth: 580),
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -470,21 +611,21 @@ class _PayFeesPageState extends State<PayFeesPage> {
               ),
               const SizedBox(height: 6),
               Text(
-                'Paid via UPI ID directly, scanned QR, or from another device? Submit details for School Admin verification.',
+                'Paid via UPI ID directly, scanned QR, or from another device? Select the fee month and submit details for School Admin verification.',
                 style: AppTypography.caption.copyWith(color: AppColors.textMuted),
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: month,
+                initialValue: month,
                 decoration: const InputDecoration(
                   labelText: 'Fee Month',
                   prefixIcon: Icon(Icons.calendar_month_rounded, color: AppColors.primary),
                 ),
-                items: unpaid
+                items: payable
                     .map(
                       (m) => DropdownMenuItem(
                         value: m,
-                        child: Text(_formatMonthKey(m)),
+                        child: Text(_formatMonthLabel(m)),
                       ),
                     )
                     .toList(),
@@ -617,9 +758,10 @@ class _PayFeesPageState extends State<PayFeesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final payable = _payableMonths;
     final unpaid = _unpaidMonths;
-    if (_selectedMonth == null || !unpaid.contains(_selectedMonth)) {
-      _selectedMonth = unpaid.isNotEmpty ? unpaid.first : null;
+    if (_selectedMonth == null || !payable.contains(_selectedMonth)) {
+      _selectedMonth = payable.isNotEmpty ? payable.first : null;
     }
 
     return Scaffold(
@@ -639,190 +781,386 @@ class _PayFeesPageState extends State<PayFeesPage> {
           ),
         ],
       ),
-      body: Center(
-        child: ResponsiveContentWrapper(
-          maxWidth: 600,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: ListView(
-            physics: const BouncingScrollPhysics(),
-            children: [
-              // Monthly Fee Header Card
-              Container(
-                padding: const EdgeInsets.all(22),
-                decoration: BoxDecoration(
-                  gradient: AppColors.primaryGradient,
-                  borderRadius: AppDecorations.radiusXl,
-                  boxShadow: AppDecorations.primaryGlow,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isDesktop = constraints.maxWidth >= 920;
+          final isTablet = constraints.maxWidth >= 640 && constraints.maxWidth < 920;
+          final horizontalPadding = isDesktop ? 32.0 : (isTablet ? 24.0 : 16.0);
+
+          return Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1100),
+              child: ListView(
+                padding: EdgeInsets.symmetric(
+                  horizontal: horizontalPadding,
+                  vertical: 16,
                 ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.account_balance_wallet_rounded,
-                        color: Colors.white,
-                        size: 28,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Monthly Tuition Fee',
-                            style: AppTypography.caption.copyWith(color: Colors.white.withValues(alpha: 0.85)),
+                physics: const BouncingScrollPhysics(),
+                children: isDesktop
+                    ? [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              flex: 5,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Monthly Fee Header Card
+                                  Container(
+                                    padding: const EdgeInsets.all(22),
+                                    decoration: BoxDecoration(
+                                      gradient: AppColors.primaryGradient,
+                                      borderRadius: AppDecorations.radiusXl,
+                                      boxShadow: AppDecorations.primaryGlow,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white.withValues(alpha: 0.2),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: const Icon(
+                                            Icons.account_balance_wallet_rounded,
+                                            color: Colors.white,
+                                            size: 28,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 16),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'Monthly Tuition Fee',
+                                                style: AppTypography.caption.copyWith(color: Colors.white.withValues(alpha: 0.85)),
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                '₹${_monthlyFee.toStringAsFixed(0)} / month',
+                                                style: AppTypography.h1.copyWith(color: Colors.white, fontSize: 24),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 20),
+                                  if (unpaid.isEmpty) ...[
+                                    Container(
+                                      padding: const EdgeInsets.all(18),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: AppDecorations.radiusLg,
+                                        border: Border.all(color: AppColors.borderSubtle),
+                                        boxShadow: AppDecorations.shadowSm,
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          const Icon(Icons.celebration_rounded, color: AppColors.emerald, size: 28),
+                                          const SizedBox(width: 14),
+                                          Expanded(
+                                            child: Text(
+                                              'All current monthly fees are cleared! No pending dues.',
+                                              style: AppTypography.bodyMedium.copyWith(
+                                                color: AppColors.emeraldDark,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 18),
+                                  ],
+                                  if (payable.isNotEmpty) ...[
+                                    Text(
+                                      unpaid.isEmpty ? 'Pay Upcoming / Advance Month' : 'Select Fee Month',
+                                      style: AppTypography.h3,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    DropdownButtonFormField<String>(
+                                      initialValue: _selectedMonth,
+                                      dropdownColor: Colors.white,
+                                      style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600),
+                                      decoration: const InputDecoration(
+                                        prefixIcon: Icon(Icons.calendar_month_rounded, color: AppColors.primary),
+                                      ),
+                                      items: payable
+                                          .map(
+                                            (m) => DropdownMenuItem(
+                                              value: m,
+                                              child: Text(_formatMonthLabel(m)),
+                                            ),
+                                          )
+                                          .toList(),
+                                      onChanged: (v) => setState(() => _selectedMonth = v),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text('Payment Amount (₹)', style: AppTypography.h3),
+                                    const SizedBox(height: 8),
+                                    TextField(
+                                      controller: _amountController,
+                                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                      style: AppTypography.h2,
+                                      decoration: InputDecoration(
+                                        prefixText: '₹ ',
+                                        prefixStyle: AppTypography.h2.copyWith(color: AppColors.primary),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 20),
+                                    if (!kIsWeb) ...[
+                                      AppButton(
+                                        label: _paying ? 'Opening UPI App...' : 'Pay Instant via UPI',
+                                        icon: Icons.bolt_rounded,
+                                        loading: _paying,
+                                        onPressed: _paying ? null : _startPayment,
+                                        variant: AppButtonVariant.primary,
+                                        height: 52,
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Center(
+                                        child: Text(
+                                          'Compatible with Google Pay, PhonePe, Paytm & BHIM UPI',
+                                          textAlign: TextAlign.center,
+                                          style: AppTypography.caption,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 24),
+                            Expanded(
+                              flex: 5,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  if (payable.isNotEmpty) ...[
+                                    _buildUpiCopyCard(amount: _amount ?? _monthlyFee),
+                                    const SizedBox(height: 16),
+                                    AppButton(
+                                      label: 'Already Paid? Submit Confirmation',
+                                      icon: Icons.check_circle_outline_rounded,
+                                      onPressed: _showReportManualPaymentModal,
+                                      variant: AppButtonVariant.outline,
+                                      height: 48,
+                                    ),
+                                    const SizedBox(height: 14),
+                                  ],
+                                  AppButton(
+                                    label: 'View Payment Receipts',
+                                    icon: Icons.receipt_long_rounded,
+                                    onPressed: () => Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) => PaymentHistoryPage(studentId: widget.profile['id']),
+                                      ),
+                                    ),
+                                    variant: AppButtonVariant.outline,
+                                    height: 48,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 32),
+                      ]
+                    : [
+                        // Monthly Fee Header Card
+                        Container(
+                          padding: const EdgeInsets.all(22),
+                          decoration: BoxDecoration(
+                            gradient: AppColors.primaryGradient,
+                            borderRadius: AppDecorations.radiusXl,
+                            boxShadow: AppDecorations.primaryGlow,
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '₹${_monthlyFee.toStringAsFixed(0)} / month',
-                            style: AppTypography.h1.copyWith(color: Colors.white, fontSize: 24),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.2),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.account_balance_wallet_rounded,
+                                  color: Colors.white,
+                                  size: 28,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Monthly Tuition Fee',
+                                      style: AppTypography.caption.copyWith(color: Colors.white.withValues(alpha: 0.85)),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '₹${_monthlyFee.toStringAsFixed(0)} / month',
+                                      style: AppTypography.h1.copyWith(color: Colors.white, fontSize: 24),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        if (unpaid.isEmpty) ...[
+                          Container(
+                            padding: const EdgeInsets.all(18),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: AppDecorations.radiusLg,
+                              border: Border.all(color: AppColors.borderSubtle),
+                              boxShadow: AppDecorations.shadowSm,
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.celebration_rounded, color: AppColors.emerald, size: 28),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Text(
+                                    'All current monthly fees are cleared! No pending dues.',
+                                    style: AppTypography.bodyMedium.copyWith(
+                                      color: AppColors.emeraldDark,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 18),
                         ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
 
-              const SizedBox(height: 24),
-
-              if (unpaid.isEmpty) ...[
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: AppDecorations.radiusLg,
-                    border: Border.all(color: AppColors.borderSubtle),
-                    boxShadow: AppDecorations.shadowSm,
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.celebration_rounded, color: AppColors.emerald, size: 28),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Text(
-                          'All monthly fees are cleared! No pending dues.',
-                          style: AppTypography.bodyMedium.copyWith(
-                            color: AppColors.emeraldDark,
-                            fontWeight: FontWeight.w700,
+                        if (payable.isNotEmpty) ...[
+                          Text(
+                            unpaid.isEmpty ? 'Pay Upcoming / Advance Month' : 'Select Fee Month',
+                            style: AppTypography.h3,
                           ),
+                          const SizedBox(height: 8),
+                          DropdownButtonFormField<String>(
+                            initialValue: _selectedMonth,
+                            dropdownColor: Colors.white,
+                            style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600),
+                            decoration: const InputDecoration(
+                              prefixIcon: Icon(Icons.calendar_month_rounded, color: AppColors.primary),
+                            ),
+                            items: payable
+                                .map(
+                                  (m) => DropdownMenuItem(
+                                    value: m,
+                                    child: Text(_formatMonthLabel(m)),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (v) => setState(() => _selectedMonth = v),
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          Text('Payment Amount (₹)', style: AppTypography.h3),
+                          const SizedBox(height: 8),
+                          TextField(
+                            controller: _amountController,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            style: AppTypography.h2,
+                            decoration: InputDecoration(
+                              prefixText: '₹ ',
+                              prefixStyle: AppTypography.h2.copyWith(color: AppColors.primary),
+                            ),
+                          ),
+
+                          const SizedBox(height: 24),
+
+                          if (!kIsWeb) ...[
+                            AppButton(
+                              label: _paying ? 'Opening UPI App...' : 'Pay Instant via UPI',
+                              icon: Icons.bolt_rounded,
+                              loading: _paying,
+                              onPressed: _paying ? null : _startPayment,
+                              variant: AppButtonVariant.primary,
+                              height: 52,
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            Center(
+                              child: Text(
+                                'Compatible with Google Pay, PhonePe, Paytm & BHIM UPI',
+                                textAlign: TextAlign.center,
+                                style: AppTypography.caption,
+                              ),
+                            ),
+
+                            const SizedBox(height: 24),
+
+                            Row(
+                              children: [
+                                const Expanded(child: Divider(color: AppColors.borderSubtle)),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  child: Text(
+                                    'OR PAY VIA UPI ID / QR',
+                                    style: AppTypography.caption.copyWith(
+                                      color: AppColors.textMuted,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ),
+                                const Expanded(child: Divider(color: AppColors.borderSubtle)),
+                              ],
+                            ),
+
+                            const SizedBox(height: 16),
+                          ],
+
+                          _buildUpiCopyCard(amount: _amount ?? _monthlyFee),
+
+                          const SizedBox(height: 16),
+
+                          AppButton(
+                            label: 'Already Paid? Submit Confirmation',
+                            icon: Icons.check_circle_outline_rounded,
+                            onPressed: _showReportManualPaymentModal,
+                            variant: AppButtonVariant.outline,
+                            height: 48,
+                          ),
+
+                          const SizedBox(height: 14),
+                        ],
+
+                        AppButton(
+                          label: 'View Payment Receipts',
+                          icon: Icons.receipt_long_rounded,
+                          onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => PaymentHistoryPage(studentId: widget.profile['id']),
+                            ),
+                          ),
+                          variant: AppButtonVariant.outline,
+                          height: 48,
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              ] else ...[
-                Text('Select Fee Month', style: AppTypography.h3),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<String>(
-                  value: _selectedMonth,
-                  dropdownColor: Colors.white,
-                  style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600),
-                  decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.calendar_month_rounded, color: AppColors.primary),
-                  ),
-                  items: unpaid
-                      .map(
-                        (m) => DropdownMenuItem(
-                          value: m,
-                          child: Text(_formatMonthKey(m)),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (v) => setState(() => _selectedMonth = v),
-                ),
 
-                const SizedBox(height: 20),
-
-                Text('Payment Amount (₹)', style: AppTypography.h3),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _amountController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  style: AppTypography.h2,
-                  decoration: InputDecoration(
-                    prefixText: '₹ ',
-                    prefixStyle: AppTypography.h2.copyWith(color: AppColors.primary),
-                  ),
-                ),
-
-                const SizedBox(height: 28),
-
-                AppButton(
-                  label: _paying ? 'Opening UPI App...' : 'Pay Instant via UPI',
-                  icon: Icons.bolt_rounded,
-                  loading: _paying,
-                  onPressed: _paying ? null : _startPayment,
-                  variant: AppButtonVariant.primary,
-                  height: 52,
-                ),
-
-                const SizedBox(height: 12),
-
-                Center(
-                  child: Text(
-                    'Compatible with Google Pay, PhonePe, Paytm & BHIM UPI',
-                    textAlign: TextAlign.center,
-                    style: AppTypography.caption,
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                Row(
-                  children: [
-                    const Expanded(child: Divider(color: AppColors.borderSubtle)),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Text(
-                        'OR PAY VIA UPI ID / QR',
-                        style: AppTypography.caption.copyWith(
-                          color: AppColors.textMuted,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ),
-                    const Expanded(child: Divider(color: AppColors.borderSubtle)),
-                  ],
-                ),
-
-                const SizedBox(height: 16),
-
-                _buildUpiCopyCard(amount: _amount ?? _monthlyFee),
-
-                const SizedBox(height: 12),
-
-                AppButton(
-                  label: 'Already Paid? Submit Confirmation',
-                  icon: Icons.check_circle_outline_rounded,
-                  onPressed: _showReportManualPaymentModal,
-                  variant: AppButtonVariant.outline,
-                  height: 48,
-                ),
-              ],
-
-              const SizedBox(height: 28),
-
-              AppButton(
-                label: 'View Payment Receipts',
-                icon: Icons.receipt_long_rounded,
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => PaymentHistoryPage(studentId: widget.profile['id']),
-                  ),
-                ),
-                variant: AppButtonVariant.outline,
-                height: 48,
+                        const SizedBox(height: 32),
+                      ],
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }

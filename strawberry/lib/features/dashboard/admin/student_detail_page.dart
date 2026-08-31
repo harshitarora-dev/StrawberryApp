@@ -63,13 +63,45 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
   // ── Mark month as paid ──────────────────────────────────────────────
   Future<void> _showMarkFeeDialog() async {
     final now = DateTime.now();
-    // Show last 24 months as options
-    final months = List.generate(24, (i) {
-      final d = DateTime(now.year, now.month - i, 1);
-      return '${d.year}-${d.month.toString().padLeft(2, '0')}';
-    });
+    DateTime startMonth;
+    final createdAtStr = _student['created_at'] as String?;
+    if (createdAtStr != null && createdAtStr.isNotEmpty) {
+      final parsed = DateTime.tryParse(createdAtStr);
+      if (parsed != null) {
+        startMonth = DateTime(parsed.year, parsed.month, 1);
+      } else {
+        startMonth = DateTime(now.year, now.month, 1);
+      }
+    } else {
+      startMonth = DateTime(now.year, now.month, 1);
+    }
 
-    String? selected;
+    // Allow from admission month up to next month (advance payment)
+    final endMonth = DateTime(now.year, now.month + 1, 1);
+
+    final List<String> allEligibleMonths = [];
+    DateTime cur = endMonth;
+    while (!cur.isBefore(startMonth)) {
+      final key = '${cur.year}-${cur.month.toString().padLeft(2, '0')}';
+      allEligibleMonths.add(key);
+      cur = DateTime(cur.year, cur.month - 1, 1);
+    }
+
+    // Only show months that haven't been paid yet
+    final availableMonths = allEligibleMonths
+        .where((m) => !_paidMonths.contains(m))
+        .toList();
+
+    if (availableMonths.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          _snack('All fees are already marked as paid up to date!', success: true),
+        );
+      }
+      return;
+    }
+
+    String? selected = availableMonths.first;
     await showDialog<void>(
       context: context,
       builder: (ctx) {
@@ -122,7 +154,7 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
                       filled: true,
                       fillColor: _bg,
                     ),
-                    items: months
+                    items: availableMonths
                         .map(
                           (m) => DropdownMenuItem(
                             value: m,
@@ -661,7 +693,7 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
 
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 120),
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [

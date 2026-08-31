@@ -91,25 +91,24 @@ class _SplashScreenState extends State<SplashScreen>
 
     if (!mounted) return;
 
-    final authService = AuthService();
-    final loggedIn = authService.isLoggedIn();
-
-    if (!mounted) return;
-
-    if (!loggedIn) {
-      Navigator.of(
-        context,
-      ).pushReplacement(MaterialPageRoute(builder: (_) => const AuthScreen()));
-      return;
-    }
-
     try {
+      final authService = AuthService();
+      final loggedIn = authService.isLoggedIn();
+
+      if (!mounted) return;
+
+      if (!loggedIn) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const AuthScreen()),
+        );
+        return;
+      }
+
       Map<String, dynamic>? profile = await authService.getCurrentProfile();
 
       if (!mounted) return;
 
       if (profile == null) {
-        // Logged in but no profile yet — create one using Google info automatically
         profile = await authService.createProfile();
         if (!mounted) return;
       }
@@ -136,19 +135,17 @@ class _SplashScreenState extends State<SplashScreen>
           );
         }
       } else {
-        // Unknown status — force logout
         await authService.logout();
         if (!mounted) return;
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const AuthScreen()),
         );
       }
-
-    } catch (e) {
-      // In case of error, fall back to AuthScreen
-      Navigator.of(
-        context,
-      ).pushReplacement(MaterialPageRoute(builder: (_) => const AuthScreen()));
+    } catch (_) {
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const AuthScreen()),
+      );
     }
   }
 

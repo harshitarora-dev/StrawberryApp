@@ -28,7 +28,6 @@ class _StudentAttendanceHistoryPageState
   static const _primary = AppColors.primary;
   static const _primarySoft = AppColors.primarySoft;
   static const _primaryDark = AppColors.primaryDark;
-  static const _accentPeach = AppColors.primaryLight;
   static const _bg = AppColors.background;
   static const _surface = AppColors.surface;
   static const _border = AppColors.borderSubtle;
@@ -420,19 +419,58 @@ class _StudentAttendanceHistoryPageState
               : RefreshIndicator(
                   onRefresh: _load,
                   color: _primary,
-                  child: ListView(
-                    padding: const EdgeInsets.fromLTRB(16, 18, 16, 40),
-                    children: [
-                      _buildSummaryCards(),
-                      const SizedBox(height: 22),
-                      _buildPercentageRing(),
-                      const SizedBox(height: 26),
-                      _buildCalendarHeader(),
-                      const SizedBox(height: 12),
-                      _buildCalendarGrid(),
-                      const SizedBox(height: 16),
-                      _buildLegend(),
-                    ],
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final isDesktop = constraints.maxWidth >= 900;
+                      final isTablet = constraints.maxWidth >= 600 && constraints.maxWidth < 900;
+                      final horizontalPadding = isDesktop ? 32.0 : (isTablet ? 24.0 : 16.0);
+
+                      return ListView(
+                        padding: EdgeInsets.fromLTRB(horizontalPadding, 18, horizontalPadding, 40),
+                        children: isDesktop
+                            ? [
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      flex: 5,
+                                      child: Column(
+                                        children: [
+                                          _buildSummaryCards(),
+                                          const SizedBox(height: 20),
+                                          _buildPercentageRing(),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 20),
+                                    Expanded(
+                                      flex: 5,
+                                      child: Column(
+                                        children: [
+                                          _buildCalendarHeader(),
+                                          const SizedBox(height: 12),
+                                          _buildCalendarGrid(),
+                                          const SizedBox(height: 16),
+                                          _buildLegend(),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ]
+                            : [
+                                _buildSummaryCards(),
+                                const SizedBox(height: 22),
+                                _buildPercentageRing(),
+                                const SizedBox(height: 26),
+                                _buildCalendarHeader(),
+                                const SizedBox(height: 12),
+                                _buildCalendarGrid(),
+                                const SizedBox(height: 16),
+                                _buildLegend(),
+                              ],
+                      );
+                    },
                   ),
                 ),
     );
@@ -477,73 +515,136 @@ class _StudentAttendanceHistoryPageState
   }
 
   Widget _buildPercentageRing() {
+    final pct = _percentage.clamp(0, 100);
+    final pctStr = pct.toStringAsFixed(pct.truncateToDouble() == pct ? 0 : 1);
+    final isGood = pct >= 75;
+    final isAverage = pct >= 50 && pct < 75;
+    final color = _totalMarked == 0
+        ? _textMuted
+        : (isGood
+            ? _success
+            : (isAverage ? _amber : _danger));
+    final bgSoft = _totalMarked == 0
+        ? _bg
+        : (isGood
+            ? _successSoft
+            : (isAverage ? _amberSoft : _dangerSoft));
+    final statusLabel = _totalMarked == 0
+        ? 'No Records'
+        : (isGood ? 'Good Attendance' : (isAverage ? 'Moderate' : 'Needs Attention'));
+
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [_primary, _accentPeach],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(24),
+        color: _surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _border),
         boxShadow: [
           BoxShadow(
-            color: _primary.withValues(alpha: 0.25),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 76,
-            height: 76,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                CircularProgressIndicator(
-                  value: _totalMarked == 0 ? 0 : (_percentage / 100).clamp(0, 1),
-                  strokeWidth: 7,
-                  backgroundColor: Colors.white.withValues(alpha: 0.25),
-                  valueColor: const AlwaysStoppedAnimation(Colors.white),
+          Row(
+            children: [
+              Container(
+                width: 58,
+                height: 58,
+                decoration: BoxDecoration(
+                  color: bgSoft,
+                  shape: BoxShape.circle,
                 ),
-                Text(
-                  '${_percentage.toStringAsFixed(0)}%',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                  ),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    SizedBox(
+                      width: 52,
+                      height: 52,
+                      child: CircularProgressIndicator(
+                        value: _totalMarked == 0 ? 0 : (pct / 100).clamp(0, 1),
+                        strokeWidth: 5,
+                        backgroundColor: color.withValues(alpha: 0.15),
+                        valueColor: AlwaysStoppedAnimation<Color>(color),
+                        strokeCap: StrokeCap.round,
+                      ),
+                    ),
+                    Text(
+                      '$pctStr%',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: color,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Text(
+                          'Overall Attendance',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: _textDark,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: bgSoft,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            statusLabel,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: color,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _totalMarked == 0
+                          ? 'No attendance records marked yet'
+                          : '$_presentCount Present · $_absentCount Absent${_lateCount > 0 ? ' · $_lateCount Late' : ''} (out of $_totalMarked days)',
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        color: _textMuted,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 18),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Overall Attendance',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 15.5,
-                      fontWeight: FontWeight.w800),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _totalMarked == 0
-                      ? 'No attendance marked yet'
-                      : 'Present + Late out of $_totalMarked marked day${_totalMarked == 1 ? '' : 's'}',
-                  style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.85),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500),
-                ),
-              ],
+          if (_totalMarked > 0) ...[
+            const SizedBox(height: 14),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: LinearProgressIndicator(
+                value: (pct / 100).clamp(0, 1),
+                minHeight: 6,
+                backgroundColor: color.withValues(alpha: 0.12),
+                valueColor: AlwaysStoppedAnimation<Color>(color),
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );

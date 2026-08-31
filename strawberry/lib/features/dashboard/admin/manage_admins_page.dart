@@ -324,8 +324,16 @@ class _ManageAdminsPageState extends State<ManageAdminsPage> {
           : RefreshIndicator(
               onRefresh: _loadAdmins,
               color: _P.primary,
-              child: _admins.isEmpty
-                  ? ListView(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final isDesktop = constraints.maxWidth >= 960;
+                  final isTablet = constraints.maxWidth >= 600 && constraints.maxWidth < 960;
+                  final horizontalPadding = isDesktop ? 32.0 : (isTablet ? 24.0 : 16.0);
+                  final columns = constraints.maxWidth >= 1200 ? 3 : (constraints.maxWidth >= 600 ? 2 : 1);
+
+                  if (_admins.isEmpty) {
+                    return ListView(
+                      padding: EdgeInsets.fromLTRB(horizontalPadding, 16, horizontalPadding, 90),
                       children: const [
                         SizedBox(height: 120),
                         Center(
@@ -343,92 +351,108 @@ class _ManageAdminsPageState extends State<ManageAdminsPage> {
                           ),
                         ),
                       ],
-                    )
-                  : ListView.builder(
-                      padding:
-                          const EdgeInsets.fromLTRB(16, 16, 16, 90),
-                      itemCount: _admins.length,
-                      itemBuilder: (context, index) {
-                        final email = _admins[index];
-                        final isPrimary = email == _primaryEmail;
+                    );
+                  }
 
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          decoration: BoxDecoration(
-                            color: _P.surface,
-                            borderRadius: BorderRadius.circular(18),
-                            border: Border.all(color: _P.border),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.04),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
+                  return columns > 1
+                      ? GridView.builder(
+                          padding: EdgeInsets.fromLTRB(horizontalPadding, 16, horizontalPadding, 90),
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: columns,
+                            crossAxisSpacing: 14,
+                            mainAxisSpacing: 12,
+                            mainAxisExtent: 82,
                           ),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 8),
-                            child: Row(
-                              children: [
-                                CircleAvatar(
-                                  radius: 22,
-                                  backgroundColor: isPrimary
-                                      ? _P.amber.withValues(alpha: 0.15)
-                                      : _P.bg,
-                                  child: Icon(
-                                    Icons.admin_panel_settings_rounded,
-                                    color: isPrimary
-                                        ? _P.amber
-                                        : _P.textMuted,
-                                  ),
-                                ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(email,
-                                          style: const TextStyle(
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.w700,
-                                              color: _P.textDark)),
-                                      const SizedBox(height: 3),
-                                      Text(
-                                        isPrimary
-                                            ? 'Primary Administrator'
-                                            : 'Co-Administrator',
-                                        style: TextStyle(
-                                          color: isPrimary
-                                              ? _P.amber
-                                              : _P.textMuted,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                if (isPrimary)
-                                  const Icon(Icons.verified_rounded,
-                                      color: _P.amber, size: 20),
-                                if (!isPrimary && isPrimaryAdmin)
-                                  IconButton(
-                                    icon: const Icon(
-                                        Icons.delete_outline_rounded,
-                                        color: _P.danger,
-                                        size: 20),
-                                    onPressed: () =>
-                                        _removeAdmin(email),
-                                  ),
-                              ],
-                            ),
-                          ),
+                          itemCount: _admins.length,
+                          itemBuilder: (context, index) {
+                            final email = _admins[index];
+                            final isPrimary = email == _primaryEmail;
+                            return _buildAdminCard(email, isPrimary, isPrimaryAdmin);
+                          },
+                        )
+                      : ListView.builder(
+                          padding: EdgeInsets.fromLTRB(horizontalPadding, 16, horizontalPadding, 90),
+                          itemCount: _admins.length,
+                          itemBuilder: (context, index) {
+                            final email = _admins[index];
+                            final isPrimary = email == _primaryEmail;
+                            return _buildAdminCard(email, isPrimary, isPrimaryAdmin);
+                          },
                         );
-                      },
-                    ),
+                },
+              ),
             ),
+    );
+  }
+
+  Widget _buildAdminCard(String email, bool isPrimary, bool isPrimaryAdmin) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: _P.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _P.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 22,
+              backgroundColor: isPrimary
+                  ? _P.amber.withValues(alpha: 0.15)
+                  : _P.bg,
+              child: Icon(
+                Icons.admin_panel_settings_rounded,
+                color: isPrimary ? _P.amber : _P.textMuted,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(email,
+                      style: const TextStyle(
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w700,
+                          color: _P.textDark),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis),
+                  const SizedBox(height: 3),
+                  Text(
+                    isPrimary
+                        ? 'Primary Administrator'
+                        : 'Co-Administrator',
+                    style: TextStyle(
+                      color: isPrimary ? _P.amber : _P.textMuted,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (isPrimary)
+              const Icon(Icons.verified_rounded, color: _P.amber, size: 20),
+            if (!isPrimary && isPrimaryAdmin)
+              IconButton(
+                icon: const Icon(Icons.delete_outline_rounded,
+                    color: _P.danger, size: 20),
+                onPressed: () => _removeAdmin(email),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }

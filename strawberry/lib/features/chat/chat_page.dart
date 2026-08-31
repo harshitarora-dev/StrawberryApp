@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:strawberry/core/theme/app_colors.dart';
 import 'package:strawberry/core/theme/app_typography.dart';
 import 'package:strawberry/core/theme/app_decorations.dart';
-import 'package:strawberry/core/utils/responsive.dart';
 import 'package:strawberry/features/auth/auth_service.dart';
 
 class ChatPage extends StatefulWidget {
@@ -183,17 +182,34 @@ class _ChatPageState extends State<ChatPage> {
         ),
         actions: widget.isAdmin
             ? [
-                IconButton(
-                  icon: const Icon(Icons.delete_outline_rounded, color: AppColors.textMuted),
-                  tooltip: 'Delete entire chat',
-                  onPressed: _confirmDeleteChat,
+                Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: Center(
+                    child: TextButton.icon(
+                      icon: const Icon(Icons.delete_sweep_rounded, color: AppColors.danger, size: 18),
+                      label: const Text(
+                        'Clear Chat',
+                        style: TextStyle(
+                          color: AppColors.danger,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      style: TextButton.styleFrom(
+                        backgroundColor: AppColors.danger.withValues(alpha: 0.08),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      ),
+                      onPressed: _confirmDeleteChat,
+                    ),
+                  ),
                 ),
               ]
             : null,
       ),
       body: Center(
-        child: ResponsiveContentWrapper(
-          maxWidth: 780,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 900),
           child: Column(
             children: [
               Expanded(
@@ -225,7 +241,7 @@ class _ChatPageState extends State<ChatPage> {
                           children: [
                             Container(
                               padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
+                              decoration: const BoxDecoration(
                                 color: AppColors.primarySoft,
                                 shape: BoxShape.circle,
                               ),
@@ -250,53 +266,18 @@ class _ChatPageState extends State<ChatPage> {
                       itemCount: messages.length,
                       itemBuilder: (context, index) {
                         final msg = messages[index];
-                        final text = msg['message'] ?? '';
                         final sender = msg['sender_id'] as String;
 
                         final isMe = widget.isAdmin
                             ? (sender == 'admin')
                             : (sender == widget.studentId);
 
-                        return Align(
-                          alignment: isMe
-                              ? Alignment.centerRight
-                              : Alignment.centerLeft,
-                          child: GestureDetector(
-                            onLongPress: widget.isAdmin ? () => _confirmDeleteMessage(msg) : null,
-                            child: Container(
-                              margin: const EdgeInsets.symmetric(vertical: 5),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                              decoration: BoxDecoration(
-                                gradient: isMe ? AppColors.primaryGradient : null,
-                                color: isMe ? null : Colors.white,
-                                border: isMe ? null : Border.all(color: AppColors.borderSubtle),
-                                borderRadius: BorderRadius.only(
-                                  topLeft: const Radius.circular(18),
-                                  topRight: const Radius.circular(18),
-                                  bottomLeft: isMe
-                                      ? const Radius.circular(18)
-                                      : const Radius.circular(4),
-                                  bottomRight: isMe
-                                      ? const Radius.circular(4)
-                                      : const Radius.circular(18),
-                                ),
-                                boxShadow: AppDecorations.shadowSm,
-                              ),
-                              constraints: BoxConstraints(
-                                maxWidth: MediaQuery.of(context).size.width * 0.75,
-                              ),
-                              child: Text(
-                                text,
-                                style: AppTypography.bodyMedium.copyWith(
-                                  color: isMe ? Colors.white : AppColors.textDark,
-                                  fontWeight: isMe ? FontWeight.w600 : FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ),
+                        return _ChatBubbleItem(
+                          key: ValueKey(msg['id'] ?? index),
+                          msg: msg,
+                          isMe: isMe,
+                          isAdmin: widget.isAdmin,
+                          onDelete: () => _confirmDeleteMessage(msg),
                         );
                       },
                     );
@@ -314,7 +295,7 @@ class _ChatPageState extends State<ChatPage> {
   Widget _buildInputArea() {
     return Container(
       padding: const EdgeInsets.only(left: 16, right: 16, bottom: 20, top: 12),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(top: BorderSide(color: AppColors.borderSubtle, width: 1)),
       ),
@@ -350,6 +331,108 @@ class _ChatPageState extends State<ChatPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ChatBubbleItem extends StatefulWidget {
+  final Map<String, dynamic> msg;
+  final bool isMe;
+  final bool isAdmin;
+  final VoidCallback onDelete;
+
+  const _ChatBubbleItem({
+    super.key,
+    required this.msg,
+    required this.isMe,
+    required this.isAdmin,
+    required this.onDelete,
+  });
+
+  @override
+  State<_ChatBubbleItem> createState() => _ChatBubbleItemState();
+}
+
+class _ChatBubbleItemState extends State<_ChatBubbleItem> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = widget.msg['message'] ?? '';
+
+    return Align(
+      alignment: widget.isMe ? Alignment.centerRight : Alignment.centerLeft,
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
+        child: GestureDetector(
+          onLongPress: widget.isAdmin ? widget.onDelete : null,
+          onSecondaryTap: widget.isAdmin ? widget.onDelete : null,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              if (widget.isAdmin && widget.isMe && _isHovered)
+                Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: IconButton(
+                    icon: const Icon(Icons.delete_outline_rounded, size: 18, color: AppColors.danger),
+                    tooltip: 'Delete message (or right-click)',
+                    onPressed: widget.onDelete,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                  ),
+                ),
+              Flexible(
+                child: Container(
+                  margin: const EdgeInsets.symmetric(vertical: 5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    gradient: widget.isMe ? AppColors.primaryGradient : null,
+                    color: widget.isMe ? null : Colors.white,
+                    border: widget.isMe ? null : Border.all(color: AppColors.borderSubtle),
+                    borderRadius: BorderRadius.only(
+                      topLeft: const Radius.circular(18),
+                      topRight: const Radius.circular(18),
+                      bottomLeft: widget.isMe
+                          ? const Radius.circular(18)
+                          : const Radius.circular(4),
+                      bottomRight: widget.isMe
+                          ? const Radius.circular(4)
+                          : const Radius.circular(18),
+                    ),
+                    boxShadow: AppDecorations.shadowSm,
+                  ),
+                  constraints: const BoxConstraints(
+                    maxWidth: 560,
+                  ),
+                  child: Text(
+                    text,
+                    style: AppTypography.bodyMedium.copyWith(
+                      color: widget.isMe ? Colors.white : AppColors.textDark,
+                      fontWeight: widget.isMe ? FontWeight.w600 : FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+              if (widget.isAdmin && !widget.isMe && _isHovered)
+                Padding(
+                  padding: const EdgeInsets.only(left: 6),
+                  child: IconButton(
+                    icon: const Icon(Icons.delete_outline_rounded, size: 18, color: AppColors.danger),
+                    tooltip: 'Delete message (or right-click)',
+                    onPressed: widget.onDelete,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }

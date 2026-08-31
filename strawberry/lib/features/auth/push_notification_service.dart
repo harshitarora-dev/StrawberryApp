@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:ui';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -28,6 +29,7 @@ class PushNotificationService {
   bool _isInitialized = false;
 
   Future<void> initialize() async {
+    if (kIsWeb) return;
     if (_isInitialized) return;
 
     // 1. Request notification permissions
@@ -105,6 +107,7 @@ class PushNotificationService {
 
   // Retrieve current token and store it in database
   Future<void> registerDeviceToken() async {
+    if (kIsWeb) return;
     try {
       final token = await _fcm.getToken();
       if (token != null) {
