@@ -11,6 +11,7 @@ import 'categories_admin_page.dart';
 import 'manage_admins_page.dart';
 import 'fee_payments_admin_page.dart';
 import 'holiday_admin_page.dart';
+import 'package:strawberry/features/about/about_page.dart';
 import 'package:strawberry/features/chat/chat_page.dart';
 
 import 'package:strawberry/core/theme/app_colors.dart';
@@ -202,8 +203,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
   }
 
   void _openAdminsPage() {
-    if (_authService.currentUserEmail != 'dev.harshitcreations@gmail.com')
+    if (_authService.currentUserEmail != 'dev.harshitcreations@gmail.com') {
       return;
+    }
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => ManageAdminsPage(authService: _authService),
@@ -257,7 +259,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     final name = request['name'] ?? 'Unknown';
     final uid = request['id'] ?? '';
 
-    String? _selectedStudentType;
+    String? selectedStudentType;
     final feesController = TextEditingController();
     final formKey = GlobalKey<FormState>();
 
@@ -392,7 +394,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
                     // Student Type Dropdown
                     DropdownButtonFormField<String>(
-                      value: _selectedStudentType,
+                      value: selectedStudentType,
                       dropdownColor: _Palette.surface,
                       style: const TextStyle(
                         color: _Palette.textDark,
@@ -410,7 +412,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       }).toList(),
                       onChanged: (value) {
                         setModalState(() {
-                          _selectedStudentType = value;
+                          selectedStudentType = value;
                         });
                       },
                       validator: (value) {
@@ -446,7 +448,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         onPressed: () async {
                           if (!formKey.currentState!.validate()) return;
 
-                          final type = _selectedStudentType!;
+                          final type = selectedStudentType!;
                           final fees =
                               double.tryParse(feesController.text.trim()) ??
                               0.0;
@@ -655,7 +657,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
       // (nothing left to unwind inside the dashboard) does back behave
       // normally (pop this route / exit, same as before).
       canPop: _navIndex == 0,
-      onPopInvoked: (didPop) {
+      onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
         if (_navIndex != 0) {
           setState(() => _navIndex = 0);
@@ -723,7 +725,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 24,
             offset: const Offset(0, 10),
           ),
@@ -921,7 +923,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: _Palette.primary.withOpacity(0.28),
+            color: _Palette.primary.withValues(alpha: 0.28),
             blurRadius: 24,
             offset: const Offset(0, 12),
           ),
@@ -968,7 +970,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
             child: Container(
               padding: const EdgeInsets.all(11),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.22),
+                color: Colors.white.withValues(alpha: 0.22),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: const Icon(
@@ -1061,6 +1063,16 @@ class _AdminDashboardState extends State<AdminDashboard> {
             icon: Icons.admin_panel_settings_rounded,
             color: _Palette.violet,
             onTap: _openAdminsPage,
+          ),
+          const SizedBox(height: 10),
+          _QuickActionCard(
+            title: 'Institute Info & Story',
+            subtitle: 'Edit About page, photos & founder journey',
+            icon: Icons.auto_stories_rounded,
+            color: _Palette.primary,
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const AboutPage()),
+            ),
           ),
         ],
         const SizedBox(height: 10),
@@ -1640,7 +1652,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           Container(
             padding: const EdgeInsets.all(22),
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.10),
+              color: iconColor.withValues(alpha: 0.10),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, size: 46, color: iconColor),
@@ -1707,7 +1719,7 @@ class _AdminCard extends StatelessWidget {
         border: Border.all(color: _Palette.border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -1756,7 +1768,7 @@ class _StatCard extends StatelessWidget {
           border: Border.all(color: _Palette.border),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 16,
               offset: const Offset(0, 6),
             ),
@@ -1769,7 +1781,7 @@ class _StatCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(9),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.12),
+                color: color.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(13),
               ),
               child: Icon(icon, color: color, size: 19),
@@ -1832,7 +1844,7 @@ class _QuickActionCard extends StatelessWidget {
           border: Border.all(color: _Palette.border),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -1844,7 +1856,7 @@ class _QuickActionCard extends StatelessWidget {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [color, color.withOpacity(0.7)],
+                  colors: [color, color.withValues(alpha: 0.7)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),

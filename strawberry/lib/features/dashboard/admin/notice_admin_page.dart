@@ -5,16 +5,12 @@ import 'package:strawberry/features/auth/push_notification_service.dart';
 
 
 import 'package:strawberry/core/theme/app_colors.dart';
-import 'package:strawberry/core/theme/app_typography.dart';
-import 'package:strawberry/core/theme/app_decorations.dart';
 
 /// ---------------------------------------------------------------------
 /// Design tokens — unified with AppTheme
 /// ---------------------------------------------------------------------
 class _Palette {
   static const primary = AppColors.primary;
-  static const primaryDark = AppColors.primaryDark;
-  static const primarySoft = AppColors.primarySoft;
 
   static const bg = AppColors.background;
   static const surface = AppColors.surface;
@@ -36,7 +32,7 @@ class _Palette {
 
 class NoticeAdminPage extends StatefulWidget {
   final AuthService authService;
-  const NoticeAdminPage({Key? key, required this.authService}) : super(key: key);
+  const NoticeAdminPage({super.key, required this.authService});
 
   @override
   State<NoticeAdminPage> createState() => _NoticeAdminPageState();
@@ -257,7 +253,7 @@ class _NoticeAdminPageState extends State<NoticeAdminPage> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: _Palette.danger.withOpacity(0.1),
+                color: _Palette.danger.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(Icons.delete_outline_rounded, color: _Palette.danger, size: 20),
@@ -503,7 +499,7 @@ class _NoticeAdminPageState extends State<NoticeAdminPage> {
               onPressed: _submitting ? null : _submit,
               style: ElevatedButton.styleFrom(
                 backgroundColor: _Palette.primary,
-                disabledBackgroundColor: _Palette.primary.withOpacity(0.6),
+                disabledBackgroundColor: _Palette.primary.withValues(alpha: 0.6),
                 foregroundColor: Colors.white,
                 elevation: 0,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -741,7 +737,7 @@ class _NoticeAdminPageState extends State<NoticeAdminPage> {
                   Container(
                     padding: const EdgeInsets.all(22),
                     decoration: BoxDecoration(
-                      color: _Palette.textFaint.withOpacity(0.1),
+                      color: _Palette.textFaint.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(Icons.campaign_rounded, size: 46, color: _Palette.textFaint),
@@ -790,7 +786,7 @@ class _NoticeAdminPageState extends State<NoticeAdminPage> {
               border: Border.all(color: _Palette.border),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
+                  color: Colors.black.withValues(alpha: 0.03),
                   blurRadius: 14,
                   offset: const Offset(0, 6),
                 ),
@@ -810,7 +806,7 @@ class _NoticeAdminPageState extends State<NoticeAdminPage> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                           decoration: BoxDecoration(
-                            color: categoryColor.withOpacity(0.12),
+                            color: categoryColor.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
@@ -927,7 +923,7 @@ class _NoticeAdminPageState extends State<NoticeAdminPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(

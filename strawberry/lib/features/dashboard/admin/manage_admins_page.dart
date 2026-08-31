@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:strawberry/features/auth/auth_service.dart';
 
 import 'package:strawberry/core/theme/app_colors.dart';
-import 'package:strawberry/core/theme/app_typography.dart';
-import 'package:strawberry/core/theme/app_decorations.dart';
 
 // ── Design tokens (unified with AppTheme) ──────────────
 class _P {
@@ -72,7 +70,7 @@ class _ManageAdminsPageState extends State<ManageAdminsPage> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: _P.danger.withOpacity(0.10),
+                color: _P.danger.withValues(alpha: 0.10),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(Icons.delete_outline_rounded,
@@ -362,7 +360,7 @@ class _ManageAdminsPageState extends State<ManageAdminsPage> {
                             border: Border.all(color: _P.border),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.04),
+                                color: Colors.black.withValues(alpha: 0.04),
                                 blurRadius: 12,
                                 offset: const Offset(0, 4),
                               ),
@@ -376,7 +374,7 @@ class _ManageAdminsPageState extends State<ManageAdminsPage> {
                                 CircleAvatar(
                                   radius: 22,
                                   backgroundColor: isPrimary
-                                      ? _P.amber.withOpacity(0.15)
+                                      ? _P.amber.withValues(alpha: 0.15)
                                       : _P.bg,
                                   child: Icon(
                                     Icons.admin_panel_settings_rounded,

@@ -479,7 +479,11 @@ class _LightboxViewerState extends State<_LightboxViewer> {
   }
 
   void _shareImage(String url) {
-    Share.share('Check out this photo from Strawberry Preschool & Daycare! 🍓 $url');
+    SharePlus.instance.share(
+      ShareParams(
+        text: 'Check out this photo from Strawberry Preschool & Daycare! 🍓 $url',
+      ),
+    );
   }
 
   @override

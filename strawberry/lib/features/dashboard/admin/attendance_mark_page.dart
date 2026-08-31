@@ -3,8 +3,6 @@ import 'package:strawberry/features/auth/auth_service.dart';
 import 'package:intl/intl.dart';
 
 import 'package:strawberry/core/theme/app_colors.dart';
-import 'package:strawberry/core/theme/app_typography.dart';
-import 'package:strawberry/core/theme/app_decorations.dart';
 
 /// ---------------------------------------------------------------------
 /// Design tokens — unified with AppTheme
@@ -32,8 +30,7 @@ class _Palette {
 
 class AttendanceMarkPage extends StatefulWidget {
   final AuthService authService;
-  const AttendanceMarkPage({Key? key, required this.authService})
-      : super(key: key);
+  const AttendanceMarkPage({super.key, required this.authService});
 
   @override
   State<AttendanceMarkPage> createState() => _AttendanceMarkPageState();
@@ -141,11 +138,9 @@ class _AttendanceMarkPageState extends State<AttendanceMarkPage> {
   }
 
   Map<String, dynamic>? _holidayInfo;
-  bool _checkingHoliday = false;
 
   Future<void> _checkHolidayForCurrentSelection() async {
     if (_selectedDate == null || _selectedCategory == null) return;
-    setState(() => _checkingHoliday = true);
 
     final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate!);
     final result = await widget.authService.checkHoliday(
@@ -156,7 +151,6 @@ class _AttendanceMarkPageState extends State<AttendanceMarkPage> {
     if (!mounted) return;
     setState(() {
       _holidayInfo = result;
-      _checkingHoliday = false;
     });
   }
 
@@ -245,6 +239,7 @@ class _AttendanceMarkPageState extends State<AttendanceMarkPage> {
       }
     }
 
+    if (!mounted) return;
     final selected = await showModalBottomSheet<String>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -376,11 +371,11 @@ class _AttendanceMarkPageState extends State<AttendanceMarkPage> {
       setState(() {
         _selectedDate = null;
         _selectedCategory = null;
-        _students = [];
         _attendanceStatus = {};
         _inTimes = {};
         _outTimes = {};
       });
+      _loadStudents();
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -442,7 +437,7 @@ class _AttendanceMarkPageState extends State<AttendanceMarkPage> {
         decoration: BoxDecoration(
           color: _Palette.successSoft,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: _Palette.success.withOpacity(0.3)),
+          border: Border.all(color: _Palette.success.withValues(alpha: 0.3)),
         ),
         child: Row(
           children: [
@@ -471,7 +466,7 @@ class _AttendanceMarkPageState extends State<AttendanceMarkPage> {
       decoration: BoxDecoration(
         color: _Palette.dangerSoft,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: _Palette.danger.withOpacity(0.3)),
+        border: Border.all(color: _Palette.danger.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -559,7 +554,7 @@ class _AttendanceMarkPageState extends State<AttendanceMarkPage> {
                             border: Border.all(color: _Palette.border),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.03),
+                                color: Colors.black.withValues(alpha: 0.03),
                                 blurRadius: 14,
                                 offset: const Offset(0, 6),
                               ),
@@ -621,7 +616,7 @@ class _AttendanceMarkPageState extends State<AttendanceMarkPage> {
                               border: Border.all(color: _Palette.border),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.03),
+                                  color: Colors.black.withValues(alpha: 0.03),
                                   blurRadius: 14,
                                   offset: const Offset(0, 6),
                                 ),
@@ -720,7 +715,7 @@ class _AttendanceMarkPageState extends State<AttendanceMarkPage> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                             decoration: BoxDecoration(
-                              color: _Palette.primarySoft.withOpacity(0.5),
+                              color: _Palette.primarySoft.withValues(alpha: 0.5),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(color: _Palette.border),
                             ),
@@ -785,7 +780,7 @@ class _AttendanceMarkPageState extends State<AttendanceMarkPage> {
                                   Container(
                                     padding: const EdgeInsets.all(22),
                                     decoration: BoxDecoration(
-                                      color: _Palette.textFaint.withOpacity(0.1),
+                                      color: _Palette.textFaint.withValues(alpha: 0.1),
                                       shape: BoxShape.circle,
                                     ),
                                     child: const Icon(Icons.groups_rounded, size: 46, color: _Palette.textFaint),
@@ -816,7 +811,7 @@ class _AttendanceMarkPageState extends State<AttendanceMarkPage> {
                                     border: Border.all(color: _Palette.border),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withOpacity(0.03),
+                                        color: Colors.black.withValues(alpha: 0.03),
                                         blurRadius: 12,
                                         offset: const Offset(0, 5),
                                       ),
@@ -1011,7 +1006,7 @@ class _AttendanceMarkPageState extends State<AttendanceMarkPage> {
                         onPressed: _saving ? null : _saveAttendance,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: _Palette.primary,
-                          disabledBackgroundColor: _Palette.primary.withOpacity(0.6),
+                          disabledBackgroundColor: _Palette.primary.withValues(alpha: 0.6),
                           foregroundColor: Colors.white,
                           elevation: 0,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -1065,7 +1060,7 @@ class _CountChip extends StatelessWidget {
           const SizedBox(height: 2),
           Text(label,
               style: TextStyle(
-                  fontSize: 11, fontWeight: FontWeight.w600, color: color.withOpacity(0.85))),
+                  fontSize: 11, fontWeight: FontWeight.w600, color: color.withValues(alpha: 0.85))),
         ],
       ),
     );
@@ -1105,7 +1100,7 @@ class _StatusSegmented extends StatelessWidget {
                   color: selected ? bg : _Palette.bg,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: selected ? color.withOpacity(0.4) : _Palette.border,
+                    color: selected ? color.withValues(alpha: 0.4) : _Palette.border,
                   ),
                 ),
                 child: Column(

@@ -12,6 +12,7 @@ import 'package:strawberry/features/dashboard/student/attendance_page.dart';
 import 'package:strawberry/features/dashboard/student/gallery_page.dart';
 import 'package:strawberry/features/dashboard/student/notice_board_page.dart';
 import 'package:strawberry/features/dashboard/student/pay_fees_page.dart';
+import 'package:strawberry/features/about/about_page.dart';
 import 'package:strawberry/features/chat/chat_page.dart';
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -278,6 +279,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.info_outline_rounded, color: AppColors.primary),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const AboutPage()),
+            ),
+            tooltip: 'About Strawberry',
+          ),
+          IconButton(
             icon: const Icon(Icons.logout_rounded, color: AppColors.primary),
             onPressed: _logout,
             tooltip: 'Log Out',
@@ -324,9 +332,28 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           const SizedBox(height: 28),
 
                           Center(
-                            child: Text(
-                              'Strawberry Preschool & Daycare ERP • v1.0',
-                              style: AppTypography.caption,
+                            child: InkWell(
+                              onTap: () => Navigator.of(context).push(
+                                MaterialPageRoute(builder: (_) => const AboutPage()),
+                              ),
+                              borderRadius: AppDecorations.radiusMd,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.info_outline_rounded, size: 16, color: AppColors.primary),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      'About Strawberry Preschool & Daycare',
+                                      style: AppTypography.caption.copyWith(
+                                        color: AppColors.primary,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
                           ),
                           const SizedBox(height: 90), // Space for floating speed dial

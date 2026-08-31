@@ -574,7 +574,7 @@ class AuthService {
     // Tracks the last_sent_at we've already shown for each notice id, so a
     // recurring notice firing again (same id, new last_sent_at) is detected
     // as a fresh delivery instead of being silently ignored.
-    final Map<int, String?> _lastKnownSentAt = {};
+    final Map<int, String?> lastKnownSentAt = {};
 
     bool isNoticeForStudent(Map<String, dynamic> notice) {
       final audience = (notice['target_audience'] ?? 'All') as String;
@@ -592,7 +592,7 @@ class AuthService {
         final list = await getNoticesForStudent(uid, studentType);
         noticesList = list;
         for (final n in list) {
-          _lastKnownSentAt[n['id'] as int] = n['last_sent_at'] as String?;
+          lastKnownSentAt[n['id'] as int] = n['last_sent_at'] as String?;
         }
         if (!controller.isClosed) controller.add(List.from(noticesList));
       } catch (e) {
@@ -609,11 +609,11 @@ class AuthService {
 
       final id = row['id'] as int;
       final incomingSentAt = row['last_sent_at'] as String?;
-      final alreadyKnownSentAt = _lastKnownSentAt[id];
+      final alreadyKnownSentAt = lastKnownSentAt[id];
 
       if (alreadyKnownSentAt == incomingSentAt) return; // nothing new to show
 
-      _lastKnownSentAt[id] = incomingSentAt;
+      lastKnownSentAt[id] = incomingSentAt;
 
       final existingIndex = noticesList.indexWhere((n) => n['id'] == id);
       if (existingIndex != -1) {

@@ -895,9 +895,9 @@ class _ReviewAnalyticsPageState extends State<ReviewAnalyticsPage> {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               margin: const EdgeInsets.only(bottom: 14),
               decoration: BoxDecoration(
-                color: _violet.withOpacity(0.10),
+                color: _violet.withValues(alpha: 0.10),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: _violet.withOpacity(0.30)),
+                border: Border.all(color: _violet.withValues(alpha: 0.30)),
               ),
               child: Row(
                 children: [
@@ -1120,7 +1120,7 @@ class _OverviewCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.12),
+              color: color.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: color, size: 18),
@@ -1168,7 +1168,7 @@ class _MiniStat extends StatelessWidget {
           Text(label,
               textAlign: TextAlign.center,
               style: TextStyle(
-                  fontSize: 9.5, fontWeight: FontWeight.w700, color: color.withOpacity(0.85))),
+                  fontSize: 9.5, fontWeight: FontWeight.w700, color: color.withValues(alpha: 0.85))),
         ],
       ),
     );
@@ -1197,7 +1197,7 @@ class _RoundIconBtn extends StatelessWidget {
           icon,
           size: 17,
           color: disabled
-              ? const Color(0xFF8A8794).withOpacity(0.4)
+              ? const Color(0xFF8A8794).withValues(alpha: 0.4)
               : const Color(0xFFD32F52),
         ),
       ),
@@ -1237,7 +1237,7 @@ class _ExportOptionTile extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: iconColor.withOpacity(0.12),
+                color: iconColor.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: iconColor, size: 20),

@@ -2,12 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:strawberry/features/auth/auth_service.dart';
 
 import 'package:strawberry/core/theme/app_colors.dart';
-import 'package:strawberry/core/theme/app_typography.dart';
-import 'package:strawberry/core/theme/app_decorations.dart';
 
 class _Palette {
   static const primary = AppColors.primary;
-  static const primaryDark = AppColors.primaryDark;
   static const primarySoft = AppColors.primarySoft;
   static const accentPeach = AppColors.primaryLight;
 
@@ -25,7 +22,7 @@ class _Palette {
 
 class CategoriesAdminPage extends StatefulWidget {
   final AuthService authService;
-  const CategoriesAdminPage({Key? key, required this.authService}) : super(key: key);
+  const CategoriesAdminPage({super.key, required this.authService});
 
   @override
   State<CategoriesAdminPage> createState() => _CategoriesAdminPageState();
@@ -99,7 +96,7 @@ class _CategoriesAdminPageState extends State<CategoriesAdminPage> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: _Palette.danger.withOpacity(0.1),
+                color: _Palette.danger.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(Icons.delete_outline_rounded, color: _Palette.danger, size: 20),
@@ -305,7 +302,7 @@ class _CategoriesAdminPageState extends State<CategoriesAdminPage> {
                           Container(
                             padding: const EdgeInsets.all(22),
                             decoration: BoxDecoration(
-                              color: _Palette.textFaint.withOpacity(0.1),
+                              color: _Palette.textFaint.withValues(alpha: 0.1),
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(Icons.category_rounded, size: 46, color: _Palette.textFaint),
@@ -335,7 +332,7 @@ class _CategoriesAdminPageState extends State<CategoriesAdminPage> {
                               border: Border.all(color: _Palette.border),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.01),
+                                  color: Colors.black.withValues(alpha: 0.01),
                                   blurRadius: 10,
                                   offset: const Offset(0, 4),
                                 ),

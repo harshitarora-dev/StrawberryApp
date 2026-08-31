@@ -71,8 +71,8 @@ class _StudentAttendanceHistoryPageState
       );
 
       final results = await Future.wait([recordsFuture, holidaysFuture]);
-      final records = results[0] as List<Map<String, dynamic>>;
-      final holidays = results[1] as List<Map<String, dynamic>>;
+      final records = results[0];
+      final holidays = results[1];
 
       final map = <String, Map<String, dynamic>>{};
       for (final r in records) {
@@ -292,7 +292,7 @@ class _StudentAttendanceHistoryPageState
                 leading: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: _colorFor(status).withOpacity(0.12),
+                    color: _colorFor(status).withValues(alpha: 0.12),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -488,7 +488,7 @@ class _StudentAttendanceHistoryPageState
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: _primary.withOpacity(0.25),
+            color: _primary.withValues(alpha: 0.25),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -505,7 +505,7 @@ class _StudentAttendanceHistoryPageState
                 CircularProgressIndicator(
                   value: _totalMarked == 0 ? 0 : (_percentage / 100).clamp(0, 1),
                   strokeWidth: 7,
-                  backgroundColor: Colors.white.withOpacity(0.25),
+                  backgroundColor: Colors.white.withValues(alpha: 0.25),
                   valueColor: const AlwaysStoppedAnimation(Colors.white),
                 ),
                 Text(
@@ -537,7 +537,7 @@ class _StudentAttendanceHistoryPageState
                       ? 'No attendance marked yet'
                       : 'Present + Late out of $_totalMarked marked day${_totalMarked == 1 ? '' : 's'}',
                   style: TextStyle(
-                      color: Colors.white.withOpacity(0.85),
+                      color: Colors.white.withValues(alpha: 0.85),
                       fontSize: 12,
                       fontWeight: FontWeight.w500),
                 ),
@@ -666,7 +666,7 @@ class _StudentAttendanceHistoryPageState
               final isFuture = date.isAfter(DateTime.now());
               
               Color cellBg = Colors.transparent;
-              Color textCol = isFuture ? _textMuted.withOpacity(0.4) : _textDark;
+              Color textCol = isFuture ? _textMuted.withValues(alpha: 0.4) : _textDark;
               Widget? badge;
 
               if (holidayType == 'sunday' || holidayType == 'saturday' || holidayType == 'holiday') {
@@ -683,7 +683,7 @@ class _StudentAttendanceHistoryPageState
                 cellBg = _successSoft;
                 badge = Icon(Icons.check, size: 10, color: _success);
               } else if (status != null) {
-                cellBg = _colorFor(status).withOpacity(0.18);
+                cellBg = _colorFor(status).withValues(alpha: 0.18);
                 badge = Container(
                   width: 5,
                   height: 5,
@@ -812,7 +812,7 @@ class _StatTile extends StatelessWidget {
               style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
-                  color: color.withOpacity(0.85))),
+                  color: color.withValues(alpha: 0.85))),
         ],
       ),
     );
@@ -843,7 +843,7 @@ class _RoundIconButton extends StatelessWidget {
           icon,
           size: 18,
           color: disabled
-              ? _StudentAttendanceHistoryPageState._textMuted.withOpacity(0.4)
+              ? _StudentAttendanceHistoryPageState._textMuted.withValues(alpha: 0.4)
               : _StudentAttendanceHistoryPageState._primaryDark,
         ),
       ),

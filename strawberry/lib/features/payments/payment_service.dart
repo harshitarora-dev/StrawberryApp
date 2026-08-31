@@ -344,6 +344,37 @@ class PaymentService {
     await _updateStatus(rowId, 'submitted');
   }
 
+  /// Direct submission for manual/external UPI payments (e.g. copied UPI ID,
+  /// paid outside the app or from another phone, or app was restarted).
+  Future<String> submitManualPayment({
+    required String studentId,
+    required String studentName,
+    required String monthKey,
+    required double amount,
+    String? utrOrTxnNote,
+  }) async {
+    final txnRef = generateTxnRef(studentId);
+    final note = utrOrTxnNote != null && utrOrTxnNote.trim().isNotEmpty
+        ? 'Manual UTR/Note: ${utrOrTxnNote.trim()}'
+        : buildTransactionNote(studentName: studentName, monthKey: monthKey);
+
+    final row = await _client
+        .from('fee_payments')
+        .insert({
+          'student_id': studentId,
+          'student_name': studentName,
+          'month_key': monthKey,
+          'amount': amount,
+          'txn_ref': txnRef,
+          'upi_app': 'Manual / Direct UPI',
+          'status': 'submitted',
+          'raw_response': note,
+        })
+        .select('id')
+        .single();
+    return row['id'] as String;
+  }
+
   /// Student self-report: payment didn't go through / was cancelled.
   Future<void> markSelfReportedFailed(String rowId) async {
     await _updateStatus(rowId, 'failed');

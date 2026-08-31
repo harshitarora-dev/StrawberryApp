@@ -4,8 +4,6 @@ import 'package:strawberry/features/auth/auth_service.dart';
 import 'package:strawberry/features/payments/payment_service.dart';
 
 import 'package:strawberry/core/theme/app_colors.dart';
-import 'package:strawberry/core/theme/app_typography.dart';
-import 'package:strawberry/core/theme/app_decorations.dart';
 
 /// Admin-facing screen that tracks every UPI fee payment attempt logged
 /// by students — across the whole school, newest first. Lets the admin
@@ -338,7 +336,7 @@ class _FeePaymentsAdminPageState extends State<FeePaymentsAdminPage> {
                                 Container(
                                   padding: const EdgeInsets.all(10),
                                   decoration: BoxDecoration(
-                                    color: color.withOpacity(0.12),
+                                    color: color.withValues(alpha: 0.12),
                                     borderRadius: BorderRadius.circular(14),
                                   ),
                                   child: Icon(icon, color: color, size: 22),

@@ -4,8 +4,6 @@ import 'package:strawberry/features/auth/auth_service.dart';
 import 'package:strawberry/features/auth/push_notification_service.dart';
 
 import 'package:strawberry/core/theme/app_colors.dart';
-import 'package:strawberry/core/theme/app_typography.dart';
-import 'package:strawberry/core/theme/app_decorations.dart';
 
 class _Palette {
   static const primary = AppColors.violet; // Violet theme for Holidays
@@ -18,7 +16,6 @@ class _Palette {
 
   static const textDark = AppColors.textDark;
   static const textMuted = AppColors.textMuted;
-  static const textFaint = AppColors.textFaint;
 
   static const success = AppColors.emerald;
   static const danger = AppColors.danger;
@@ -26,7 +23,7 @@ class _Palette {
 
 class HolidayAdminPage extends StatefulWidget {
   final AuthService authService;
-  const HolidayAdminPage({Key? key, required this.authService}) : super(key: key);
+  const HolidayAdminPage({super.key, required this.authService});
 
   @override
   State<HolidayAdminPage> createState() => _HolidayAdminPageState();
@@ -75,11 +72,13 @@ class _HolidayAdminPageState extends State<HolidayAdminPage> {
   Future<void> _deleteHoliday(int id) async {
     try {
       await widget.authService.deleteHoliday(id);
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Holiday entry removed')),
       );
       _loadData();
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to delete holiday entry')),
       );
@@ -310,7 +309,7 @@ class _HolidayAdminPageState extends State<HolidayAdminPage> {
         decoration: BoxDecoration(
           color: _Palette.bg,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: _Palette.border.withOpacity(0.5)),
+          border: Border.all(color: _Palette.border.withValues(alpha: 0.5)),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -457,9 +456,6 @@ class _HolidayAdminPageState extends State<HolidayAdminPage> {
         else
           ...filtered.map((h) {
             final isWorkingDay = h['type'] == 'working_day';
-            final color = isWorkingDay
-                ? _Palette.success
-                : (h['category'] == 'All' ? _Palette.danger : _Palette.primary);
             final emoji = isWorkingDay ? '✏️' : (h['category'] == 'All' ? '🏖️' : '🎈');
 
             return Container(
@@ -642,9 +638,17 @@ class _AddHolidaySheetState extends State<_AddHolidaySheet> with SingleTickerPro
             subtitle: Text(DateFormat('yyyy-MM-dd (EEEE)').format(_selectedDate)),
             trailing: const Icon(Icons.calendar_today_rounded, color: _Palette.primary),
             onTap: () async {
+              DateTime initial = _selectedDate;
+              if (_tabController.index == 1 &&
+                  initial.weekday != DateTime.saturday &&
+                  initial.weekday != DateTime.sunday) {
+                final daysUntilSat = (DateTime.saturday - initial.weekday) % 7;
+                initial = initial.add(Duration(days: daysUntilSat == 0 ? 7 : daysUntilSat));
+              }
+
               final picked = await showDatePicker(
                 context: context,
-                initialDate: _selectedDate,
+                initialDate: initial,
                 firstDate: DateTime(2025),
                 lastDate: DateTime(2030),
                 selectableDayPredicate: (date) {

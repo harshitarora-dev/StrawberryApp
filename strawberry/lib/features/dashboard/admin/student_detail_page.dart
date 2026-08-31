@@ -594,7 +594,7 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
                         padding: const EdgeInsets.all(3),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Colors.white.withOpacity(0.3),
+                          color: Colors.white.withValues(alpha: 0.3),
                         ),
                         child: CircleAvatar(
                           radius: 44,
@@ -623,7 +623,7 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
                       Text(
                         type,
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.8),
+                          color: Colors.white.withValues(alpha: 0.8),
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
                         ),
@@ -832,7 +832,7 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
                           onLongPress: () => _unmarkPaid(m),
                           child: Chip(
                             label: Text(_formatMonthKey(m)),
-                            backgroundColor: _success.withOpacity(0.1),
+                            backgroundColor: _success.withValues(alpha: 0.1),
                             labelStyle: const TextStyle(
                               color: _success,
                               fontWeight: FontWeight.w600,
@@ -849,7 +849,7 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
                               color: _textMuted,
                             ),
                             onDeleted: () => _unmarkPaid(m),
-                            side: BorderSide(color: _success.withOpacity(0.3)),
+                            side: BorderSide(color: _success.withValues(alpha: 0.3)),
                           ),
                         );
                       }).toList(),
@@ -859,7 +859,7 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
                     Text(
                       'Long-press or tap ✕ on a chip to remove a payment record.',
                       style: TextStyle(
-                        color: _textMuted.withOpacity(0.7),
+                        color: _textMuted.withValues(alpha: 0.7),
                         fontSize: 11.5,
                       ),
                     ),
