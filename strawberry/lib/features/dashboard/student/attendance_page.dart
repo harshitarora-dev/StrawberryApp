@@ -167,7 +167,7 @@ class _AttendancePageState extends State<AttendancePage> {
         shape: const Border(bottom: BorderSide(color: AppColors.borderSubtle, width: 1)),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+          ? const StrawberryLoader(message: 'Fetching your attendance records... 📋')
           : RefreshIndicator(
               onRefresh: _loadData,
               color: AppColors.primary,

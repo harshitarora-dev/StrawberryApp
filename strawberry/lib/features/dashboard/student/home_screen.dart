@@ -268,9 +268,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             ),
             const SizedBox(width: 14),
             const Text(
-              'Confirm Logout',
+              'Heading out, Superstar? 🎒',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 17.5,
                 fontWeight: FontWeight.w800,
                 color: AppColors.textDark,
               ),
@@ -278,7 +278,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           ],
         ),
         content: const Text(
-          'Are you sure you want to log out of your Strawberry account?',
+          'Don\'t forget to pack your curiosity & smiles for tomorrow. See you soon!',
           style: TextStyle(
             fontSize: 13.5,
             color: AppColors.textMuted,
@@ -293,7 +293,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             child: const Text(
-              'Cancel',
+              'Keep Exploring',
               style: TextStyle(
                 color: AppColors.textDark,
                 fontWeight: FontWeight.w700,
@@ -311,7 +311,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             child: const Text(
-              'Log Out',
+              'Sign Out 👋',
               style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
             ),
           ),
@@ -357,12 +357,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    shape: BoxShape.circle,
+                    borderRadius: BorderRadius.circular(10),
                     color: AppColors.primarySoft,
                     border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
                   ),
-                  child: ClipOval(
-                    child: Image.asset('assets/images/logo.png', fit: BoxFit.cover),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(9),
+                    child: Image.asset('assets/images/logo_square.png', fit: BoxFit.cover),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -579,7 +580,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             ],
           ),
           body: _loading
-              ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+              ? const StrawberryLoader(message: 'Loading your profile... ✨')
               : Stack(
                   children: [
                     RefreshIndicator(
@@ -663,9 +664,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   String _getGreeting() {
     final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good Morning, Superstar! ☀️';
-    if (hour < 17) return 'Good Afternoon, Champ! 🌟';
-    return 'Good Evening, Little Star! 🌙';
+    if (hour < 12) return 'Rise & Shine, Little Champion! ☀️';
+    if (hour < 17) return 'Afternoon Adventures in Full Swing! 🚀';
+    return 'Mission Accomplished Today, Superstar! 🌙';
   }
 
   String _getCategoryEmoji(String? category) {
@@ -1816,7 +1817,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 ),
                 SizedBox(height: 2),
                 Text(
-                  'Main Campus • Helpline: +91 98765 43210',
+                  'Main Campus • +91 9999249495',
                   style: TextStyle(
                     fontSize: 11,
                     color: AppColors.textDark,

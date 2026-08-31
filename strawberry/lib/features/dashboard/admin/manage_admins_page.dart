@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:strawberry/features/auth/auth_service.dart';
 
 import 'package:strawberry/core/theme/app_colors.dart';
+import 'package:strawberry/core/widgets/playschool_animations.dart';
 
 // ── Design tokens (unified with AppTheme) ──────────────
 class _P {
@@ -319,8 +320,7 @@ class _ManageAdminsPageState extends State<ManageAdminsPage> {
             )
           : null,
       body: _loading
-          ? const Center(
-              child: CircularProgressIndicator(color: _P.primary))
+          ? const StrawberryLoader(message: 'Loading admin team... 👨‍💼')
           : RefreshIndicator(
               onRefresh: _loadAdmins,
               color: _P.primary,

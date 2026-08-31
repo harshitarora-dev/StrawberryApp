@@ -9,6 +9,7 @@ import 'package:file_saver/file_saver.dart';
 import 'package:share_plus/share_plus.dart';
 
 import 'package:strawberry/core/theme/app_colors.dart';
+import 'package:strawberry/core/widgets/playschool_animations.dart';
 
 /// Admin "Review & Analysis" dashboard.
 /// - Total students / new admissions this month
@@ -729,12 +730,7 @@ class _ReviewAnalyticsPageState extends State<ReviewAnalyticsPage> {
             child: _exporting
                 ? const Padding(
                     padding: EdgeInsets.all(14),
-                    child: SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                          color: _primary, strokeWidth: 2.4),
-                    ),
+                    child: BtnLoader(color: _primary, dotSize: 5),
                   )
                 : IconButton(
                     icon: const Icon(Icons.file_download_rounded, color: _primaryDark),
@@ -745,7 +741,7 @@ class _ReviewAnalyticsPageState extends State<ReviewAnalyticsPage> {
         ],
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: _primary))
+          ? const StrawberryLoader(message: 'Crunching school analytics... 📊')
           : _error != null
               ? _ErrorState(message: _error!, onRetry: _loadAll)
               : RefreshIndicator(
@@ -1077,14 +1073,7 @@ class _ReviewAnalyticsPageState extends State<ReviewAnalyticsPage> {
                   ),
                   if (_changingMonth) ...[
                     const SizedBox(width: 8),
-                    const SizedBox(
-                      width: 14,
-                      height: 14,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation(_primary),
-                      ),
-                    ),
+                    const BtnLoader(color: _primary, dotSize: 5),
                   ],
                 ],
               ),

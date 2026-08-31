@@ -4,6 +4,7 @@ import 'package:strawberry/features/auth/auth_service.dart';
 import 'package:strawberry/features/auth/push_notification_service.dart';
 
 import 'package:strawberry/core/theme/app_colors.dart';
+import 'package:strawberry/core/widgets/playschool_animations.dart';
 
 class _Palette {
   static const primary = AppColors.violet; // Violet theme for Holidays
@@ -74,7 +75,7 @@ class _HolidayAdminPageState extends State<HolidayAdminPage> {
       await widget.authService.deleteHoliday(id);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Holiday entry removed')),
+        const SnackBar(content: Text('Holiday entry removed from calendar 🗑️')),
       );
       _loadData();
     } catch (e) {
@@ -119,7 +120,7 @@ class _HolidayAdminPageState extends State<HolidayAdminPage> {
         ),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: _Palette.primary))
+          ? const StrawberryLoader(message: 'Loading the holiday calendar... 🎉')
           : LayoutBuilder(
               builder: (context, constraints) {
                 final isDesktop = constraints.maxWidth >= 900;
@@ -729,7 +730,7 @@ class _AddHolidaySheetState extends State<_AddHolidaySheet> with SingleTickerPro
                   : () async {
                       if (_titleController.text.trim().isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Please enter a title')),
+                          const SnackBar(content: Text('Hold up! Give this holiday or event a title 🎉')),
                         );
                         return;
                       }
@@ -746,7 +747,7 @@ class _AddHolidaySheetState extends State<_AddHolidaySheet> with SingleTickerPro
                       if (mounted) Navigator.pop(context);
                     },
               child: _saving
-                  ? const CircularProgressIndicator(color: Colors.white)
+                  ? const BtnLoader()
                   : Text(
                       _tabController.index == 0 ? 'Save Holiday' : 'Save Exception',
                       style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),

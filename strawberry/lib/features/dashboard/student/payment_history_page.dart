@@ -5,6 +5,7 @@ import 'package:strawberry/core/theme/app_typography.dart';
 import 'package:strawberry/core/theme/app_decorations.dart';
 import 'package:strawberry/core/widgets/app_badge.dart';
 import 'package:strawberry/features/payments/payment_service.dart';
+import 'package:strawberry/core/widgets/playschool_animations.dart';
 
 class PaymentHistoryPage extends StatefulWidget {
   final String studentId;
@@ -84,7 +85,7 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
             color: AppColors.primary,
             onRefresh: _load,
             child: _loading
-                ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                ? const StrawberryLoader(message: 'Loading your payment history... 💰')
                 : _payments.isEmpty
                     ? ListView(
                         children: [

@@ -95,9 +95,7 @@ class _NoticeBoardPageState extends State<NoticeBoardPage> {
                 const SizedBox(height: 10),
                 Expanded(
                   child: _loading
-                      ? const Center(
-                          child: CircularProgressIndicator(color: AppColors.primary),
-                        )
+                      ? const StrawberryLoader(message: 'Fetching notices from school... 📢')
                       : filteredNotices.isEmpty
                       ? Center(
                           child: Text(

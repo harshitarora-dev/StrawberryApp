@@ -3,6 +3,7 @@ import 'package:strawberry/features/auth/auth_service.dart';
 import 'package:intl/intl.dart';
 
 import 'package:strawberry/core/theme/app_colors.dart';
+import 'package:strawberry/core/widgets/playschool_animations.dart';
 
 /// ---------------------------------------------------------------------
 /// Design tokens — unified with AppTheme
@@ -332,13 +333,13 @@ class _AttendanceMarkPageState extends State<AttendanceMarkPage> {
   Future<void> _saveAttendance() async {
     if (_selectedDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        _snack('Select a date first', success: false),
+        _snack('Hold on! Pick a date first 📅', success: false),
       );
       return;
     }
     if (_selectedCategory == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        _snack('Select a category first', success: false),
+        _snack('Almost there! Choose a category/grade first 🏷️', success: false),
       );
       return;
     }
@@ -366,7 +367,7 @@ class _AttendanceMarkPageState extends State<AttendanceMarkPage> {
       await widget.authService.markAttendance(dateStr, entries);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        _snack('Attendance saved for $_selectedCategory', success: true),
+        _snack('Boom! Attendance locked in for $_selectedCategory 🎯✨', success: true),
       );
       setState(() {
         _selectedDate = null;
@@ -913,71 +914,65 @@ class _AttendanceMarkPageState extends State<AttendanceMarkPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDesktopWidth = MediaQuery.of(context).size.width >= 960;
     final filteredStudents = _students.where((s) =>
         (s['student_type'] as String? ?? 'Other') == _selectedCategory).toList();
 
     return Scaffold(
       backgroundColor: _Palette.bg,
-      appBar: AppBar(
-        title: const Text(
-          'Mark Attendance',
-          style: TextStyle(color: _Palette.textDark, fontWeight: FontWeight.w800, fontSize: 19),
-        ),
-        backgroundColor: _Palette.surface,
-        surfaceTintColor: Colors.transparent,
-        foregroundColor: _Palette.textDark,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        shape: const Border(bottom: BorderSide(color: _Palette.border, width: 1)),
-      ),
+      appBar: isDesktopWidth
+          ? null
+          : AppBar(
+              title: const Text(
+                'Mark Attendance',
+                style: TextStyle(color: _Palette.textDark, fontWeight: FontWeight.w800, fontSize: 19),
+              ),
+              backgroundColor: _Palette.surface,
+              surfaceTintColor: Colors.transparent,
+              foregroundColor: _Palette.textDark,
+              elevation: 0,
+              scrolledUnderElevation: 0,
+              shape: const Border(bottom: BorderSide(color: _Palette.border, width: 1)),
+            ),
       bottomNavigationBar: (_selectedDate != null &&
               _selectedCategory != null &&
               filteredStudents.isNotEmpty)
           ? Container(
-              padding: EdgeInsets.fromLTRB(
-                16, 12, 16, MediaQuery.of(context).padding.bottom + 12,
-              ),
+              height: 76,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: const BoxDecoration(
                 color: _Palette.surface,
                 border: Border(top: BorderSide(color: _Palette.border)),
               ),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 600),
-                  child: SizedBox(
-                    height: 52,
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _saving ? null : _saveAttendance,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _Palette.primary,
-                        disabledBackgroundColor:
-                            _Palette.primary.withValues(alpha: 0.6),
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16)),
-                      ),
-                      child: _saving
-                          ? const SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2.4,
-                              ),
-                            )
-                          : const Text('Save Attendance',
-                              style: TextStyle(
-                                  fontSize: 15.5, fontWeight: FontWeight.w700)),
+              alignment: Alignment.center,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: SizedBox(
+                  height: 52,
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _saving ? null : _saveAttendance,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _Palette.primary,
+                      disabledBackgroundColor:
+                          _Palette.primary.withValues(alpha: 0.6),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16)),
                     ),
+                    child: _saving
+                        ? const BtnLoader()
+                        : const Text('Save Attendance',
+                            style: TextStyle(
+                                fontSize: 15.5, fontWeight: FontWeight.w700)),
                   ),
                 ),
               ),
             )
           : null,
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: _Palette.primary))
+          ? const StrawberryLoader(message: 'Loading student roster... 📚')
           : LayoutBuilder(
               builder: (context, constraints) {
                 final isDesktop = constraints.maxWidth >= 960;

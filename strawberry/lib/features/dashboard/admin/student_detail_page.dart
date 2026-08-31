@@ -3,6 +3,7 @@ import 'package:strawberry/features/auth/auth_service.dart';
 import 'package:strawberry/features/dashboard/admin/student_attendance_history_page.dart';
 
 import 'package:strawberry/core/theme/app_colors.dart';
+import 'package:strawberry/core/widgets/playschool_animations.dart';
 
 /// Full-screen admin detail page for a student
 class StudentDetailPage extends StatefulWidget {
@@ -679,14 +680,7 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
               if (_saving)
                 const Padding(
                   padding: EdgeInsets.all(16),
-                  child: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2,
-                    ),
-                  ),
+                  child: BtnLoader(),
                 ),
             ],
           ),

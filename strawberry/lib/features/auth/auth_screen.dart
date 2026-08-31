@@ -14,6 +14,7 @@ import 'package:strawberry/features/dashboard/student/wait_screen.dart';
 import 'package:strawberry/features/dashboard/student/home_screen.dart';
 import 'package:strawberry/features/dashboard/student/gallery_page.dart';
 import 'package:strawberry/features/dashboard/admin/admin_dashboard.dart';
+import 'package:strawberry/core/widgets/playschool_animations.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -303,7 +304,7 @@ class _AuthScreenState extends State<AuthScreen>
                               if (pName.isEmpty || phone.isEmpty) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content: Text('Please enter Parent Name & Mobile Number'),
+                                    content: Text('Hold up! We need your Parent Name & Mobile Number 🎒✨'),
                                     backgroundColor: AppColors.danger,
                                   ),
                                 );
@@ -325,7 +326,7 @@ class _AuthScreenState extends State<AuthScreen>
                               if (!mounted) return;
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('Enquiry recorded! Opening WhatsApp helpline... 🍓'),
+                                  content: Text('Woohoo! Enquiry recorded. Connecting you with our campus team... 🚀🍓'),
                                   backgroundColor: AppColors.emerald,
                                 ),
                               );
@@ -409,7 +410,7 @@ class _AuthScreenState extends State<AuthScreen>
           }
         } else {
           setState(() {
-            _error = 'Invalid profile status. Please contact school administration.';
+            _error = 'Oops! Profile status unknown. Please buzz the school office 📞';
             _loading = false;
           });
         }
@@ -417,7 +418,7 @@ class _AuthScreenState extends State<AuthScreen>
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = 'Sign-in failed. Please try again. $e';
+          _error = 'Couldn\'t sign in this time. Let\'s give it another spin! 🔄';
           _loading = false;
         });
       }
@@ -460,12 +461,13 @@ class _AuthScreenState extends State<AuthScreen>
                         Container(
                           width: 32,
                           height: 32,
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                          child: ClipOval(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
                             child: Image.asset(
-                              'assets/images/logo.png',
+                              'assets/images/logo_square.png',
                               fit: BoxFit.cover,
                             ),
                           ),
@@ -790,9 +792,9 @@ class _AuthScreenState extends State<AuthScreen>
                           ? Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
                               children: [
-                                _buildHeroMetricItem('10+ Yrs', 'Preschool Legacy'),
+                                _buildHeroMetricItem('5+ Yrs', 'Preschool Legacy'),
                                 _dividerLine(),
-                                _buildHeroMetricItem('1:8 Ratio', 'Personal Care'),
+                                _buildHeroMetricItem('1:1 Attention', 'Personal Care'),
                                 _dividerLine(),
                                 _buildHeroMetricItem('100% Safe', 'CCTV Campus'),
                                 _dividerLine(),
@@ -807,8 +809,8 @@ class _AuthScreenState extends State<AuthScreen>
                               crossAxisSpacing: 10,
                               childAspectRatio: 2.8,
                               children: [
-                                _buildHeroMetricItem('10+ Yrs', 'Preschool Legacy'),
-                                _buildHeroMetricItem('1:8 Ratio', 'Personal Care'),
+                                _buildHeroMetricItem('5+ Yrs', 'Preschool Legacy'),
+                                _buildHeroMetricItem('1:1 Attention', 'Personal Care'),
                                 _buildHeroMetricItem('100% Safe', 'CCTV Campus'),
                                 _buildHeroMetricItem('Live ERP', 'Parent App'),
                               ],
@@ -962,11 +964,9 @@ class _AuthScreenState extends State<AuthScreen>
           const SizedBox(height: 16),
 
           if (_loadingData)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.all(24),
-                child: CircularProgressIndicator(color: AppColors.primary),
-              ),
+            const Padding(
+              padding: EdgeInsets.all(24),
+              child: StrawberryLoader(message: 'Scooping up categories... 🍓'),
             )
           else
             ListView.separated(
@@ -1134,8 +1134,8 @@ class _AuthScreenState extends State<AuthScreen>
       {
         'icon': Icons.groups_rounded,
         'color': AppColors.amberDark,
-        'title': '1:8 Teacher-Child Ratio',
-        'sub': 'Individual care, affectionate mentoring, and loving personal attention.',
+        'title': '1:1 Personal Attention',
+        'sub': 'Individual care, affectionate mentoring, and dedicated personal attention.',
       },
     ];
 
@@ -1431,7 +1431,7 @@ class _AuthScreenState extends State<AuthScreen>
           SizedBox(
             height: 160,
             child: _loadingData
-                ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                ? const SectionShimmer(height: 160, message: 'Loading gallery memories... 📸')
                 : _galleryPhotos.isEmpty
                     ? Container(
                         alignment: Alignment.center,
@@ -1462,8 +1462,8 @@ class _AuthScreenState extends State<AuthScreen>
                                 borderRadius: BorderRadius.circular(16),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.05),
-                                    blurRadius: 8,
+                                    color: Colors.black.withValues(alpha: 0.18),
+                                    blurRadius: 10,
                                     offset: const Offset(0, 3),
                                   ),
                                 ],
@@ -1787,7 +1787,7 @@ class _AuthScreenState extends State<AuthScreen>
                             width: 56,
                             height: 56,
                             decoration: BoxDecoration(
-                              shape: BoxShape.circle,
+                              borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
                                   color: Colors.black.withValues(alpha: 0.18),
@@ -1796,9 +1796,10 @@ class _AuthScreenState extends State<AuthScreen>
                                 ),
                               ],
                             ),
-                            child: ClipOval(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
                               child: Image.asset(
-                                'assets/images/logo.png',
+                                'assets/images/logo_square.png',
                                 fit: BoxFit.cover,
                               ),
                             ),
@@ -1932,7 +1933,7 @@ class _AuthScreenState extends State<AuthScreen>
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  shape: BoxShape.circle,
+                  borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.12),
@@ -1941,9 +1942,10 @@ class _AuthScreenState extends State<AuthScreen>
                     ),
                   ],
                 ),
-                child: ClipOval(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
                   child: Image.asset(
-                    'assets/images/logo.png',
+                    'assets/images/logo_square.png',
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -2207,16 +2209,7 @@ class _GoogleSignInButton extends StatelessWidget {
               borderRadius: AppDecorations.radiusMd,
             ),
             child: loading
-                ? const Center(
-                    child: SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.2,
-                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-                      ),
-                    ),
-                  )
+                ? const Center(child: BtnLoader(color: Color(0xFFE91E63), dotSize: 6))
                 : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [

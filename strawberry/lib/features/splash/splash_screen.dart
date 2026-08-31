@@ -337,10 +337,14 @@ class _StrawberryLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 140,
-      height: 140,
-      child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(32),
+      child: Image.asset(
+        'assets/images/logo_square.png',
+        width: 140,
+        height: 140,
+        fit: BoxFit.contain,
+      ),
     );
   }
 }

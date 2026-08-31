@@ -5,6 +5,7 @@ import 'package:strawberry/features/auth/push_notification_service.dart';
 
 
 import 'package:strawberry/core/theme/app_colors.dart';
+import 'package:strawberry/core/widgets/playschool_animations.dart';
 
 /// ---------------------------------------------------------------------
 /// Design tokens — unified with AppTheme
@@ -188,7 +189,7 @@ class _NoticeAdminPageState extends State<NoticeAdminPage> {
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(_snack(
-        _scheduleType == 'now' ? 'Notice sent' : 'Notice scheduled',
+        _scheduleType == 'now' ? 'Notice blasted to parents! 📢⚡' : 'Notice scheduled on clock! ⏰✨',
         success: true,
       ));
       _titleController.clear();
@@ -461,7 +462,7 @@ class _NoticeAdminPageState extends State<NoticeAdminPage> {
             _loadingStudents
                 ? const Padding(
                     padding: EdgeInsets.symmetric(vertical: 16),
-                    child: Center(child: CircularProgressIndicator(color: _Palette.primary)),
+                    child: SectionShimmer(height: 80, message: 'Finding students... 🌟'),
                   )
                 : DropdownSearch<Map<String, dynamic>>(
                     items: _students,
@@ -515,11 +516,7 @@ class _NoticeAdminPageState extends State<NoticeAdminPage> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),
               child: _submitting
-                  ? const SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.4),
-                    )
+                  ? const BtnLoader()
                   : Text(_scheduleType == 'now' ? 'Send Notice Now' : 'Schedule Notice',
                       style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w700)),
                   ),
@@ -734,7 +731,7 @@ class _NoticeAdminPageState extends State<NoticeAdminPage> {
 
   Widget _buildHistoryTab() {
     if (_loadingHistory) {
-      return const Center(child: CircularProgressIndicator(color: _Palette.primary));
+      return const StrawberryLoader(message: 'Loading notice history... 📜');
     }
 
     if (_historyNotices.isEmpty) {

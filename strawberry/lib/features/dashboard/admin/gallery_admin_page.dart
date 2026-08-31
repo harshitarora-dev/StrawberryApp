@@ -8,6 +8,7 @@ import 'package:strawberry/core/theme/app_colors.dart';
 import 'package:strawberry/core/theme/app_decorations.dart';
 import 'package:strawberry/core/utils/responsive.dart';
 import 'package:strawberry/core/widgets/app_empty_state.dart';
+import 'package:strawberry/core/widgets/playschool_animations.dart';
 
 class GalleryAdminPage extends StatefulWidget {
   final AuthService authService;
@@ -297,11 +298,7 @@ class _GalleryAdminPageState extends State<GalleryAdminPage> {
                                           );
                                         }
                                         return const Center(
-                                          child: SizedBox(
-                                            width: 16,
-                                            height: 16,
-                                            child: CircularProgressIndicator(strokeWidth: 2),
-                                          ),
+                                          child: BtnLoader(color: Color(0xFFE91E63), dotSize: 5),
                                         );
                                       },
                                     ),
@@ -523,9 +520,7 @@ class _GalleryAdminPageState extends State<GalleryAdminPage> {
                     // ── Photo Grid / State ─────────────────────────────────
                     Expanded(
                       child: _loading
-                          ? const Center(
-                              child: CircularProgressIndicator(color: AppColors.primary),
-                            )
+                          ? const StrawberryLoader(message: 'Loading gallery memories... 📸')
                           : _filteredImages.isEmpty
                               ? AppEmptyState(
                                   icon: Icons.photo_library_outlined,
@@ -683,10 +678,7 @@ class _GalleryAdminPageState extends State<GalleryAdminPage> {
               return Container(
                 color: AppColors.surfaceAlt,
                 child: const Center(
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-                  ),
+                  child: SectionShimmer(height: double.infinity, message: ''),
                 ),
               );
             },

@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:strawberry/features/auth/auth_service.dart';
 
 import 'package:strawberry/core/theme/app_colors.dart';
+import 'package:strawberry/core/widgets/playschool_animations.dart';
 
 /// Admin-facing attendance history for a single student.
 /// Shows overall stats (present/absent/late/percentage) + a GitHub-style
@@ -411,9 +412,7 @@ class _StudentAttendanceHistoryPageState
         ),
       ),
       body: _loading
-          ? const Center(
-              child: CircularProgressIndicator(color: _primary),
-            )
+          ? const StrawberryLoader(message: 'Loading attendance history... 📊')
           : _error != null
               ? _ErrorState(message: _error!, onRetry: _load)
               : RefreshIndicator(

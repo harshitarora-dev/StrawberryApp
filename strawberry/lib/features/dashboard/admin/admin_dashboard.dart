@@ -15,6 +15,7 @@ import 'package:strawberry/features/about/about_page.dart';
 import 'package:strawberry/features/chat/chat_page.dart';
 
 import 'package:strawberry/core/theme/app_colors.dart';
+import 'package:strawberry/core/widgets/playschool_animations.dart';
 
 /// ---------------------------------------------------------------------
 /// Design tokens — Strawberry admin panel (Bridged with AppTheme)
@@ -184,9 +185,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
             ),
             const SizedBox(width: 14),
             const Text(
-              'Confirm Logout',
+              'Leaving the cockpit, Chief? ☕',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 17.5,
                 fontWeight: FontWeight.w800,
                 color: _Palette.textDark,
               ),
@@ -194,7 +195,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           ],
         ),
         content: const Text(
-          'Are you sure you want to log out of the Administrator Portal?',
+          'We\'ll keep the school fort locked & safe while you take a breather.',
           style: TextStyle(
             fontSize: 13.5,
             color: _Palette.textMuted,
@@ -209,7 +210,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             child: const Text(
-              'Cancel',
+              'Stay Here',
               style: TextStyle(
                 color: _Palette.textDark,
                 fontWeight: FontWeight.w700,
@@ -227,7 +228,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             child: const Text(
-              'Log Out',
+              'Log Out 👋',
               style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
             ),
           ),
@@ -398,7 +399,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text(
-                          'Approve Student',
+                          'Roll out the Red Carpet! ⭐',
                           style: _AdminTextStyles.title,
                         ),
                         InkWell(
@@ -555,7 +556,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                             Navigator.of(context).pop(); // Close bottom sheet
                             ScaffoldMessenger.of(context).showSnackBar(
                               _adminSnackBar(
-                                'Successfully approved $name!',
+                                'Woohoo! $name is now officially part of the Strawberry family! 🎉',
                                 success: true,
                               ),
                             );
@@ -564,7 +565,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                             if (!mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               _adminSnackBar(
-                                'Failed to approve student. Please try again.',
+                                'Oops! Couldn\'t approve right now. Give it another tap! 🔄',
                                 success: false,
                               ),
                             );
@@ -579,7 +580,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                           ),
                         ),
                         child: const Text(
-                          'Approve & Enroll',
+                          'Approve & Welcome to Strawberry 🎓',
                           style: TextStyle(
                             fontSize: 15.5,
                             fontWeight: FontWeight.w700,
@@ -913,20 +914,22 @@ class _AdminDashboardState extends State<AdminDashboard> {
             padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
             child: Row(
               children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: _Palette.primarySoft,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
                   child: Image.asset(
-                    'assets/images/logo.png',
-                    errorBuilder: (_, __, ___) => const Icon(
-                      Icons.school_rounded,
-                      color: _Palette.primary,
-                      size: 24,
+                    'assets/images/logo_square.png',
+                    width: 44,
+                    height: 44,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      width: 44,
+                      height: 44,
+                      color: _Palette.primarySoft,
+                      child: const Icon(
+                        Icons.school_rounded,
+                        color: _Palette.primary,
+                        size: 24,
+                      ),
                     ),
                   ),
                 ),
@@ -2218,9 +2221,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
   // ---------------------------------------------------------------------
   Widget _buildPendingTab() {
     if (_loadingRequests) {
-      return const Center(
-        child: CircularProgressIndicator(color: _Palette.primary),
-      );
+      return const StrawberryLoader(message: 'Checking pending admissions... 📝');
     }
 
     if (_pendingRequests.isEmpty) {
@@ -2234,8 +2235,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
             child: _emptyState(
               icon: Icons.check_circle_rounded,
               iconColor: _Palette.success,
-              title: 'No Pending Requests',
-              subtitle: 'Pull down to refresh',
+              title: 'All Caught Up! 🍪',
+              subtitle: 'Zero pending admissions. Grab a cookie or coffee!',
             ),
           ),
         ),
@@ -2389,7 +2390,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
         onChanged: (v) => setState(() => _searchQuery = v),
         style: const TextStyle(color: _Palette.textDark, fontSize: 14),
         decoration: InputDecoration(
-          hintText: 'Search students...',
+          hintText: 'Search superstars by name or category...',
           hintStyle: const TextStyle(color: _Palette.textFaint, fontSize: 14),
           prefixIcon: const Icon(
             Icons.search_rounded,
@@ -2421,9 +2422,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   Widget _buildStudentsTab() {
     if (_loadingStudents) {
-      return const Center(
-        child: CircularProgressIndicator(color: _Palette.primary),
-      );
+      return const StrawberryLoader(message: 'Rounding up the squad... 🌟');
     }
 
     if (_allStudents.isEmpty) {
@@ -2437,8 +2436,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
             child: _emptyState(
               icon: Icons.school_rounded,
               iconColor: _Palette.textFaint,
-              title: 'No Enrolled Students',
-              subtitle: 'Approved students will show up here',
+              title: 'No Students Enrolled Yet 🌱',
+              subtitle: 'Approved students will populate your classes here.',
             ),
           ),
         ),
@@ -2667,9 +2666,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
   // ---------------------------------------------------------------------
   Widget _buildChatInboxTab() {
     if (_loadingChats) {
-      return const Center(
-        child: CircularProgressIndicator(color: _Palette.primary),
-      );
+      return const StrawberryLoader(message: 'Fetching support messages... 💬');
     }
 
     if (_chatStudents.isEmpty) {
@@ -2683,8 +2680,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
             child: _emptyState(
               icon: Icons.chat_bubble_outline_rounded,
               iconColor: _Palette.textFaint,
-              title: 'No Conversations',
-              subtitle: 'Chats from parents will appear here',
+              title: 'Quiet on the Support Front 🤫',
+              subtitle: 'Direct messages from parents will ping right here.',
             ),
           ),
         ),

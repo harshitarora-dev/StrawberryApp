@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:strawberry/features/auth/auth_service.dart';
 
 import 'package:strawberry/core/theme/app_colors.dart';
+import 'package:strawberry/core/widgets/playschool_animations.dart';
 
 class _Palette {
   static const primary = AppColors.primary;
@@ -293,7 +294,7 @@ class _CategoriesAdminPageState extends State<CategoriesAdminPage> {
       body: Stack(
         children: [
           _loading
-              ? const Center(child: CircularProgressIndicator(color: _Palette.primary))
+              ? const StrawberryLoader(message: 'Loading school categories... 🏷️')
               : _categories.isEmpty
                   ? Center(
                       child: Column(
@@ -357,7 +358,7 @@ class _CategoriesAdminPageState extends State<CategoriesAdminPage> {
             Container(
               color: Colors.black12,
               child: const Center(
-                child: CircularProgressIndicator(color: _Palette.primary),
+                child: StrawberryLoader(message: 'Saving category... ✅'),
               ),
             ),
         ],

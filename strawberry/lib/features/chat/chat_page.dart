@@ -3,6 +3,7 @@ import 'package:strawberry/core/theme/app_colors.dart';
 import 'package:strawberry/core/theme/app_typography.dart';
 import 'package:strawberry/core/theme/app_decorations.dart';
 import 'package:strawberry/features/auth/auth_service.dart';
+import 'package:strawberry/core/widgets/playschool_animations.dart';
 
 class ChatPage extends StatefulWidget {
   final String studentId;
@@ -90,13 +91,13 @@ class _ChatPageState extends State<ChatPage> {
       builder: (ctx) => AlertDialog(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: AppDecorations.radiusLg),
-        title: Text('Delete message?', style: AppTypography.h3),
-        content: Text('This message will be permanently deleted for both sides.', style: AppTypography.bodySmall),
+        title: Text('Undo this message? 🤫', style: AppTypography.h3),
+        content: Text('Poof! This message will disappear for everyone on both sides.', style: AppTypography.bodySmall),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Cancel', style: AppTypography.button.copyWith(color: AppColors.textMuted))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Keep it', style: AppTypography.button.copyWith(color: AppColors.textMuted))),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text('Delete', style: AppTypography.button.copyWith(color: AppColors.danger)),
+            child: Text('Vanish 🪄', style: AppTypography.button.copyWith(color: AppColors.danger)),
           ),
         ],
       ),
@@ -109,6 +110,12 @@ class _ChatPageState extends State<ChatPage> {
       setState(() {
         _pendingMessages.removeWhere((m) => m['id'] == id);
       });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Message vanished into thin air 🪄', style: AppTypography.bodySmall.copyWith(color: Colors.white)),
+          backgroundColor: AppColors.emerald,
+        ),
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -126,16 +133,16 @@ class _ChatPageState extends State<ChatPage> {
       builder: (ctx) => AlertDialog(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: AppDecorations.radiusLg),
-        title: Text('Delete entire chat?', style: AppTypography.h3),
+        title: Text('Wipe the slate clean? 🧹', style: AppTypography.h3),
         content: Text(
-          'All messages with ${widget.studentName} will be permanently deleted. This cannot be undone.',
+          'All chat history with ${widget.studentName} will be erased forever. Fresh start!',
           style: AppTypography.bodySmall,
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Cancel', style: AppTypography.button.copyWith(color: AppColors.textMuted))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Nevermind', style: AppTypography.button.copyWith(color: AppColors.textMuted))),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text('Delete chat', style: AppTypography.button.copyWith(color: AppColors.danger)),
+            child: Text('Wipe Everything 💥', style: AppTypography.button.copyWith(color: AppColors.danger)),
           ),
         ],
       ),
@@ -149,7 +156,7 @@ class _ChatPageState extends State<ChatPage> {
         _pendingMessages.clear();
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Chat deleted', style: AppTypography.bodySmall.copyWith(color: Colors.white)), backgroundColor: AppColors.emerald),
+        SnackBar(content: Text('Chat wiped clean like new ✨', style: AppTypography.bodySmall.copyWith(color: Colors.white)), backgroundColor: AppColors.emerald),
       );
     } catch (e) {
       if (!mounted) return;
@@ -217,9 +224,7 @@ class _ChatPageState extends State<ChatPage> {
                   stream: _chatStream,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(
-                        child: CircularProgressIndicator(color: AppColors.primary),
-                      );
+                      return const StrawberryLoader(message: 'Loading the conversation... 💬');
                     }
 
                     final streamMessages = snapshot.data ?? const [];
@@ -249,7 +254,7 @@ class _ChatPageState extends State<ChatPage> {
                             ),
                             const SizedBox(height: 12),
                             Text(
-                              'Say hello! Type below to start a conversation.',
+                              'The floor is yours! Drop a message to start the magic ✨',
                               style: AppTypography.bodySmall,
                             ),
                           ],

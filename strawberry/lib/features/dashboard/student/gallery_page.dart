@@ -148,9 +148,7 @@ class _GalleryPageState extends State<GalleryPage> {
                 // ── Photo Grid / State ─────────────────────────────────
                 Expanded(
                   child: _loading
-                      ? const Center(
-                          child: CircularProgressIndicator(color: AppColors.primary),
-                        )
+                      ? const StrawberryLoader(message: 'Loading campus memories... 🎓')
                       : _filteredImages.isEmpty
                           ? AppEmptyState(
                               icon: Icons.photo_library_outlined,
@@ -317,15 +315,8 @@ class _GalleryPageState extends State<GalleryPage> {
                     if (progress == null) return child;
                     return Container(
                       color: AppColors.surfaceAlt,
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
-                          value: progress.expectedTotalBytes != null
-                              ? progress.cumulativeBytesLoaded /
-                                  (progress.expectedTotalBytes ?? 1)
-                              : null,
-                        ),
+                      child: const Center(
+                        child: BtnLoader(color: AppColors.primary, dotSize: 5),
                       ),
                     );
                   },
@@ -523,7 +514,7 @@ class _LightboxViewerState extends State<_LightboxViewer> {
                     loadingBuilder: (context, child, progress) {
                       if (progress == null) return child;
                       return const Center(
-                        child: CircularProgressIndicator(color: Colors.white),
+                        child: BtnLoader(color: Colors.white),
                       );
                     },
                   ),

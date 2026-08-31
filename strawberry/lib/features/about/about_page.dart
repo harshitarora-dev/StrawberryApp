@@ -8,6 +8,7 @@ import 'package:strawberry/features/auth/auth_service.dart';
 import 'about_model.dart';
 import 'about_service.dart';
 import 'edit_about_page.dart';
+import 'package:strawberry/core/widgets/playschool_animations.dart';
 
 class AboutPage extends StatefulWidget {
   const AboutPage({super.key});
@@ -106,9 +107,9 @@ class _AboutPageState extends State<AboutPage> {
                     Container(
                       width: 56,
                       height: 56,
-                      padding: const EdgeInsets.all(3),
+                      padding: const EdgeInsets.all(2),
                       decoration: BoxDecoration(
-                        shape: BoxShape.circle,
+                        borderRadius: BorderRadius.circular(16),
                         color: Colors.white,
                         boxShadow: [
                           BoxShadow(
@@ -118,8 +119,9 @@ class _AboutPageState extends State<AboutPage> {
                           ),
                         ],
                       ),
-                      child: ClipOval(
-                        child: Image.asset('assets/images/logo.png', fit: BoxFit.cover),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(14),
+                        child: Image.asset('assets/images/logo_square.png', fit: BoxFit.cover),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -619,7 +621,7 @@ class _AboutPageState extends State<AboutPage> {
         ],
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+          ? const StrawberryLoader(message: 'Loading school info... 🏫')
           : RefreshIndicator(
               onRefresh: _loadInfo,
               color: AppColors.primary,
