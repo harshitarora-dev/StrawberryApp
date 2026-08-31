@@ -780,15 +780,15 @@ class _AuthScreenState extends State<AuthScreen>
                 // Key Stats & Trust Metrics Matrix
                 LayoutBuilder(
                   builder: (ctx, constraints) {
-                    final isDesktop = constraints.maxWidth >= 600;
+                    final isWide = constraints.maxWidth >= 540;
                     return Container(
-                      padding: const EdgeInsets.all(14),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.14),
                         borderRadius: BorderRadius.circular(18),
                         border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
                       ),
-                      child: isDesktop
+                      child: isWide
                           ? Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
                               children: [
@@ -807,7 +807,7 @@ class _AuthScreenState extends State<AuthScreen>
                               physics: const NeverScrollableScrollPhysics(),
                               mainAxisSpacing: 10,
                               crossAxisSpacing: 10,
-                              childAspectRatio: 2.8,
+                              childAspectRatio: 2.1,
                               children: [
                                 _buildHeroMetricItem('5+ Yrs', 'Preschool Legacy'),
                                 _buildHeroMetricItem('1:1 Attention', 'Personal Care'),
@@ -820,37 +820,43 @@ class _AuthScreenState extends State<AuthScreen>
                 ),
                 const SizedBox(height: 20),
 
-                // Call to actions
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 10,
+                Row(
                   children: [
-                    ElevatedButton.icon(
-                      onPressed: () => _showEnquirySheet(),
-                      icon: const Icon(Icons.assignment_turned_in_rounded, size: 18),
-                      label: const Text(
-                        'Apply for Admission',
-                        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: AppColors.primaryDark,
-                        elevation: 0,
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () => _showEnquirySheet(),
+                        icon: const Icon(Icons.assignment_turned_in_rounded, size: 16),
+                        label: const Text(
+                          'Apply Online',
+                          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: AppColors.primaryDark,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 8),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        ),
                       ),
                     ),
-                    OutlinedButton.icon(
-                      onPressed: () => _launchWhatsApp(),
-                      icon: const Icon(Icons.chat_bubble_rounded, size: 18, color: Colors.white),
-                      label: const Text(
-                        'WhatsApp Enquiry',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Colors.white, width: 1.5),
-                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => _launchWhatsApp(),
+                        icon: const Icon(Icons.chat_bubble_rounded, size: 16, color: Colors.white),
+                        label: const Text(
+                          'WhatsApp',
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12.5),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Colors.white, width: 1.5),
+                          padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 8),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        ),
                       ),
                     ),
                   ],
@@ -866,6 +872,7 @@ class _AuthScreenState extends State<AuthScreen>
   Widget _buildHeroMetricItem(String value, String label) {
     return Column(
       mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
           value,
@@ -883,6 +890,8 @@ class _AuthScreenState extends State<AuthScreen>
             fontSize: 11,
             fontWeight: FontWeight.w600,
           ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
       ],
     );
@@ -899,7 +908,7 @@ class _AuthScreenState extends State<AuthScreen>
   // ── UX Pillar 2: Dynamic Programs Offered (From Categories) ───────────
   Widget _buildProgramsSection(int columns) {
     return Container(
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(22),
@@ -918,36 +927,43 @@ class _AuthScreenState extends State<AuthScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.primarySoft,
-                      borderRadius: BorderRadius.circular(12),
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.primarySoft,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.school_rounded, color: AppColors.primary, size: 20),
                     ),
-                    child: const Icon(Icons.school_rounded, color: AppColors.primary, size: 20),
-                  ),
-                  const SizedBox(width: 12),
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Academic Programs',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textDark,
-                        ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Academic Programs',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.textDark,
+                            ),
+                          ),
+                          Text(
+                            'Curriculum tailored for Ages 1.5 to 6 Years',
+                            style: TextStyle(fontSize: 11.5, color: AppColors.textMuted),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ),
-                      Text(
-                        'Curriculum tailored for Ages 1.5 to 6 Years',
-                        style: TextStyle(fontSize: 11.5, color: AppColors.textMuted),
-                      ),
-                    ],
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               TextButton(
                 onPressed: () => _showEnquirySheet(),
                 child: const Text(
@@ -1044,12 +1060,15 @@ class _AuthScreenState extends State<AuthScreen>
             ),
             child: Icon(meta['icon'] as IconData, color: accent, size: 22),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     Text(
                       programName,
@@ -1058,10 +1077,7 @@ class _AuthScreenState extends State<AuthScreen>
                         fontWeight: FontWeight.w800,
                         color: AppColors.textDark,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                       decoration: BoxDecoration(
@@ -1140,7 +1156,7 @@ class _AuthScreenState extends State<AuthScreen>
     ];
 
     return Container(
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(22),
@@ -1167,22 +1183,26 @@ class _AuthScreenState extends State<AuthScreen>
                 child: const Icon(Icons.stars_rounded, color: AppColors.violetDark, size: 20),
               ),
               const SizedBox(width: 12),
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Why Parents Choose Strawberry',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textDark,
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Why Parents Choose Strawberry',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textDark,
+                      ),
                     ),
-                  ),
-                  Text(
-                    'Core pillars of early childhood excellence',
-                    style: TextStyle(fontSize: 11.5, color: AppColors.textMuted),
-                  ),
-                ],
+                    Text(
+                      'Core pillars of early childhood excellence',
+                      style: TextStyle(fontSize: 11.5, color: AppColors.textMuted),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -1194,7 +1214,7 @@ class _AuthScreenState extends State<AuthScreen>
               crossAxisCount: columns,
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
-              mainAxisExtent: 120,
+              mainAxisExtent: columns == 1 ? 84 : 124,
             ),
             itemCount: features.length,
             itemBuilder: (ctx, i) {
@@ -1207,38 +1227,77 @@ class _AuthScreenState extends State<AuthScreen>
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: const Color(0xFFE2E8F0)),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: color.withValues(alpha: 0.12),
-                        shape: BoxShape.circle,
+                child: columns == 1
+                    ? Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(9),
+                            decoration: BoxDecoration(
+                              color: color.withValues(alpha: 0.12),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(f['icon'] as IconData, color: color, size: 20),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  f['title'] as String,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 13,
+                                    color: AppColors.textDark,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  f['sub'] as String,
+                                  style: const TextStyle(fontSize: 11, color: AppColors.textMuted, height: 1.25),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      )
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: color.withValues(alpha: 0.12),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(f['icon'] as IconData, color: color, size: 18),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            f['title'] as String,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 12.5,
+                              color: AppColors.textDark,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            f['sub'] as String,
+                            style: const TextStyle(fontSize: 10.5, color: AppColors.textMuted, height: 1.25),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ),
-                      child: Icon(f['icon'] as IconData, color: color, size: 18),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      f['title'] as String,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 12.5,
-                        color: AppColors.textDark,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      f['sub'] as String,
-                      style: const TextStyle(fontSize: 10.5, color: AppColors.textMuted, height: 1.25),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
               );
             },
           ),
@@ -1250,7 +1309,7 @@ class _AuthScreenState extends State<AuthScreen>
   // ── UX Pillar 4: Founder's Story Spotlight Card ───────────────────────
   Widget _buildFounderSpotlight() {
     return Container(
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(22),
@@ -1362,7 +1421,7 @@ class _AuthScreenState extends State<AuthScreen>
   // ── UX Pillar: Campus Life Gallery Reel ──────────────────────────────
   Widget _buildGallerySection() {
     return Container(
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(22),
@@ -1381,36 +1440,43 @@ class _AuthScreenState extends State<AuthScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.skySoft,
-                      borderRadius: BorderRadius.circular(12),
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.skySoft,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.photo_library_rounded, color: AppColors.sky, size: 20),
                     ),
-                    child: const Icon(Icons.photo_library_rounded, color: AppColors.sky, size: 20),
-                  ),
-                  const SizedBox(width: 12),
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Campus Moments & Activities',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textDark,
-                        ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Campus Moments & Activities',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.textDark,
+                            ),
+                          ),
+                          Text(
+                            'Celebrations, workshops & daily highlights',
+                            style: TextStyle(fontSize: 11.5, color: AppColors.textMuted),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ),
-                      Text(
-                        'Celebrations, workshops & daily highlights',
-                        style: TextStyle(fontSize: 11.5, color: AppColors.textMuted),
-                      ),
-                    ],
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               TextButton(
                 onPressed: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const GalleryPage()),
@@ -1525,7 +1591,7 @@ class _AuthScreenState extends State<AuthScreen>
   // ── UX Pillar: High-Converting Admission Connect Hub ─────────────────
   Widget _buildAdmissionHub() {
     return Container(
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(22),
@@ -1552,22 +1618,26 @@ class _AuthScreenState extends State<AuthScreen>
                 child: const Icon(Icons.support_agent_rounded, color: AppColors.emerald, size: 20),
               ),
               const SizedBox(width: 12),
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Campus Admission Helpline',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textDark,
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Campus Admission Helpline',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textDark,
+                      ),
                     ),
-                  ),
-                  Text(
-                    'Mon - Sat: 8:30 AM - 4:00 PM',
-                    style: TextStyle(fontSize: 11.5, color: AppColors.textMuted),
-                  ),
-                ],
+                    Text(
+                      'Mon - Sat: 8:30 AM - 4:00 PM',
+                      style: TextStyle(fontSize: 11.5, color: AppColors.textMuted),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -1623,10 +1693,12 @@ class _AuthScreenState extends State<AuthScreen>
             label: const Text(
               'Submit Online Admission Application Form',
               style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: AppColors.textDark),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
             style: OutlinedButton.styleFrom(
               side: const BorderSide(color: Color(0xFFE2E8F0)),
-              padding: const EdgeInsets.symmetric(vertical: 13),
+              padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 12),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             ),
           ),
@@ -1682,7 +1754,7 @@ class _AuthScreenState extends State<AuthScreen>
           const SizedBox(height: 18),
           _buildGallerySection(),
           const SizedBox(height: 18),
-          _buildWhyChooseSection(isTablet ? 4 : 2),
+          _buildWhyChooseSection(isTablet ? 2 : 1),
           const SizedBox(height: 18),
           _buildFounderSpotlight(),
           const SizedBox(height: 18),
@@ -1691,59 +1763,118 @@ class _AuthScreenState extends State<AuthScreen>
         const SizedBox(height: 24),
 
         // Bottom CTA to switch to Portal
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.primarySoft,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.lock_person_rounded, color: AppColors.primary, size: 20),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final isWide = constraints.maxWidth >= 600;
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
               ),
-              const SizedBox(width: 14),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Enrolled Student, Parent or Staff?',
-                      style: TextStyle(
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textDark,
-                      ),
+              child: isWide
+                  ? Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: const BoxDecoration(
+                            color: AppColors.primarySoft,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.lock_person_rounded, color: AppColors.primary, size: 20),
+                        ),
+                        const SizedBox(width: 14),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Enrolled Student, Parent or Staff?',
+                                style: TextStyle(
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.textDark,
+                                ),
+                              ),
+                              Text(
+                                'Access live attendance, fee receipts & notices',
+                                style: TextStyle(fontSize: 11.5, color: AppColors.textMuted),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        ElevatedButton(
+                          onPressed: () => _switchTab(1),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: const Text(
+                            'Sign In to Portal →',
+                            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5),
+                          ),
+                        ),
+                      ],
+                    )
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: const BoxDecoration(
+                                color: AppColors.primarySoft,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.lock_person_rounded, color: AppColors.primary, size: 20),
+                            ),
+                            const SizedBox(width: 12),
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Enrolled Student or Parent?',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w800,
+                                      color: AppColors.textDark,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Live attendance, fee receipts & notices',
+                                    style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        ElevatedButton(
+                          onPressed: () => _switchTab(1),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(vertical: 11),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: const Text(
+                            'Sign In to Parent Portal →',
+                            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                          ),
+                        ),
+                      ],
                     ),
-                    Text(
-                      'Access live attendance, fee receipts & notices',
-                      style: TextStyle(fontSize: 11.5, color: AppColors.textMuted),
-                    ),
-                  ],
-                ),
-              ),
-              ElevatedButton(
-                onPressed: () => _switchTab(1),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: const Text(
-                  'Sign In to Portal →',
-                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5),
-                ),
-              ),
-            ],
-          ),
+            );
+          },
         ),
         const SizedBox(height: 30),
       ],
