@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:math' as math;
 import 'package:strawberry/features/auth/auth_screen.dart';
 import 'package:strawberry/features/auth/auth_service.dart';
@@ -87,17 +89,36 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _navigateAfterDelay() async {
-    await Future<void>.delayed(const Duration(seconds: 1));
+    await Future<void>.delayed(const Duration(milliseconds: 600));
 
     if (!mounted) return;
 
     try {
       final authService = AuthService();
-      final loggedIn = authService.isLoggedIn();
+      final auth = FirebaseAuth.instance;
+      User? user = auth.currentUser;
+
+      if (kIsWeb) {
+        try {
+          final redirectResult = await auth.getRedirectResult();
+          if (redirectResult.user != null) {
+            user = redirectResult.user;
+          }
+        } catch (_) {}
+      }
+
+      if (user == null) {
+        try {
+          user = await auth.authStateChanges().first.timeout(
+            const Duration(milliseconds: 1200),
+            onTimeout: () => auth.currentUser,
+          );
+        } catch (_) {}
+      }
 
       if (!mounted) return;
 
-      if (!loggedIn) {
+      if (user == null) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const AuthScreen()),
         );

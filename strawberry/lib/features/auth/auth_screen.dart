@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:strawberry/core/theme/app_colors.dart';
 import 'package:strawberry/core/theme/app_typography.dart';
 import 'package:strawberry/core/theme/app_decorations.dart';
@@ -38,6 +40,9 @@ class _AuthScreenState extends State<AuthScreen>
   AboutInfo _aboutInfo = AboutInfo.defaults();
   bool _loadingData = true;
 
+  StreamSubscription<User?>? _authSubscription;
+  bool _navigating = false;
+
   late final AnimationController _animController;
   late final Animation<double> _fadeAnim;
   late final Animation<Offset> _slideAnim;
@@ -62,6 +67,14 @@ class _AuthScreenState extends State<AuthScreen>
         );
     _animController.forward();
     _loadDiscoveryData();
+
+    // Listen to Firebase Auth state for mobile web redirect completions
+    _authSubscription = FirebaseAuth.instance.authStateChanges().listen((user) async {
+      if (user != null && mounted && !_navigating) {
+        _navigating = true;
+        _routeUser(user);
+      }
+    });
   }
 
   void _switchTab(int index) {
@@ -92,6 +105,7 @@ class _AuthScreenState extends State<AuthScreen>
 
   @override
   void dispose() {
+    _authSubscription?.cancel();
     _animController.dispose();
     super.dispose();
   }
@@ -340,29 +354,12 @@ class _AuthScreenState extends State<AuthScreen>
     );
   }
 
-  Future<void> _signInWithGoogle() async {
-    if (_loading) return;
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+  Future<void> _routeUser(User user) async {
+    if (!mounted) return;
+    setState(() => _loading = true);
 
     try {
-      final userCredential = await _authService.signInWithGoogle();
-
-      if (userCredential == null) {
-        // User closed or cancelled the popup — stop loading immediately
-        if (mounted) {
-          setState(() {
-            _loading = false;
-            _error = null;
-          });
-        }
-        return;
-      }
-
       final profile = await _authService.getCurrentProfile();
-
       if (!mounted) return;
 
       if (profile == null) {
@@ -416,10 +413,44 @@ class _AuthScreenState extends State<AuthScreen>
           });
         }
       }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _error = 'Failed to load profile. Please try signing in again.';
+        });
+      }
+    }
+  }
+
+  Future<void> _signInWithGoogle() async {
+    if (_loading) return;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    try {
+      final userCredential = await _authService.signInWithGoogle();
+
+      if (userCredential == null) {
+        // User closed/cancelled popup OR switched to redirect on mobile
+        if (mounted && FirebaseAuth.instance.currentUser == null) {
+          setState(() {
+            _loading = false;
+            _error = null;
+          });
+        }
+        return;
+      }
+
+      if (userCredential.user != null) {
+        _navigating = true;
+        await _routeUser(userCredential.user!);
+      }
     } catch (e) {
       if (mounted) {
         final msg = e.toString().toLowerCase();
-        // If it was any form of popup cancellation / closure, silently turn off loading
         if (msg.contains('popup-closed') ||
             msg.contains('popup_closed') ||
             msg.contains('closed') ||
@@ -436,7 +467,7 @@ class _AuthScreenState extends State<AuthScreen>
         }
       }
     } finally {
-      if (mounted && _loading) {
+      if (mounted && _loading && FirebaseAuth.instance.currentUser == null) {
         setState(() {
           _loading = false;
         });

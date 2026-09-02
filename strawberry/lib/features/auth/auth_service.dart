@@ -33,7 +33,17 @@ class AuthService {
         final GoogleAuthProvider googleProvider = GoogleAuthProvider();
         googleProvider.addScope('email');
         googleProvider.setCustomParameters({'prompt': 'select_account'});
-        return await _firebaseAuth!.signInWithPopup(googleProvider);
+        try {
+          return await _firebaseAuth!.signInWithPopup(googleProvider);
+        } catch (e) {
+          if (e is FirebaseAuthException &&
+              (e.code == 'popup-blocked' ||
+                  e.code == 'cancelled-popup-request')) {
+            await _firebaseAuth!.signInWithRedirect(googleProvider);
+            return null;
+          }
+          rethrow;
+        }
       }
 
       // Mobile: Trigger native Google Sign-In account picker
