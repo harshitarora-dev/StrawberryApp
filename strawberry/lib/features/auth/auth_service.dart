@@ -33,11 +33,7 @@ class AuthService {
         final GoogleAuthProvider googleProvider = GoogleAuthProvider();
         googleProvider.addScope('email');
         googleProvider.setCustomParameters({'prompt': 'select_account'});
-
-        // On Web, signInWithRedirect opens Google login in the EXACT SAME TAB!
-        // No extra tabs, no popup blocked issues on mobile or desktop browsers.
-        await _firebaseAuth!.signInWithRedirect(googleProvider);
-        return null;
+        return await _firebaseAuth!.signInWithPopup(googleProvider);
       }
 
       // Mobile: Trigger native Google Sign-In account picker
