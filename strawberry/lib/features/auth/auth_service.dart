@@ -32,6 +32,7 @@ class AuthService {
       if (kIsWeb && _firebaseAuth != null) {
         final GoogleAuthProvider googleProvider = GoogleAuthProvider();
         googleProvider.addScope('email');
+        googleProvider.setCustomParameters({'prompt': 'select_account'});
         return await _firebaseAuth!.signInWithPopup(googleProvider);
       }
 
@@ -54,12 +55,27 @@ class AuthService {
 
       // Sign in to Firebase with the Google credential
       return await _firebaseAuth?.signInWithCredential(credential);
-    } on Exception catch (e) {
+    } catch (e) {
       final msg = e.toString().toLowerCase();
-      // Silently handle user cancellation
+      // Silently handle user cancellation across Web & Mobile
+      if (e is FirebaseAuthException) {
+        final code = e.code.toLowerCase();
+        if (code.contains('popup-closed') ||
+            code.contains('popup_closed') ||
+            code.contains('cancel') ||
+            code.contains('closed-by-user') ||
+            code.contains('user-cancelled')) {
+          return null;
+        }
+      }
       if (msg.contains('cancel') ||
+          msg.contains('closed') ||
+          msg.contains('popup-closed') ||
+          msg.contains('popup_closed') ||
           msg.contains('sign_in_canceled') ||
-          msg.contains('popup_closed_by_user') ||
+          msg.contains('cancelled') ||
+          msg.contains('closed by user') ||
+          msg.contains('popup has been closed') ||
           msg.contains('canceled-by-user')) {
         return null;
       }

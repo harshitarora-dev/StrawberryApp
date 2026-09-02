@@ -356,14 +356,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 Container(
                   width: 36,
                   height: 36,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    color: AppColors.primarySoft,
-                    border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
                   ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(9),
-                    child: Image.asset('assets/images/logo_square.png', fit: BoxFit.cover),
+                  child: ClipOval(
+                    child: Image.asset('assets/images/logo.png', fit: BoxFit.cover),
                   ),
                 ),
                 const SizedBox(width: 10),

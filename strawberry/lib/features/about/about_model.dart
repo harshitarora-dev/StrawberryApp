@@ -38,14 +38,14 @@ class AboutInfo {
           'Welcome to Strawberry Playschool & Daycare! We are dedicated to creating a vibrant, safe, and happy learning sanctuary where each child can explore their natural curiosity, build early cognitive and social skills, and blossom with confidence.\n\nOur curriculum integrates play-based exploration, sensory activities, creative arts, and foundational early education guided by compassionate and experienced educators.',
       founderName: 'Aarti Arora',
       founderTitle: 'Founder & Director',
-      founderImageUrl: '',
+      founderImageUrl: 'assets/images/founder.jpg',
       founderJourney:
           'Strawberry Playschool was born out of a heartfelt dream to provide children with a warm, joyful "second home" filled with love and encouragement.\n\nBeginning with a humble classroom and a handful of eager young learners, our mission has always been deeply personal: ensuring every child feels cherished, valued, and excited to learn. Over the years, with the unwavering trust of parents, Strawberry has blossomed into a cherished early childhood institute known for holistic care, modern pedagogies, and joyful childhood memories.',
       developerCredit:
           'Designed & Developed by Harshit\nNeed app or website solutions? Contact: dev.harshitcreations@gmail.com',
       contactEmail: 'daycarestrawberry@gmail.com',
       contactPhone: '+91 99992 49495',
-      address: 'Strawberry Playschool, New Delhi, India',
+      address: 'Strawberry, Sector-85, Faridabad, Haryana, India',
     );
   }
 

@@ -109,8 +109,7 @@ class _AboutPageState extends State<AboutPage> {
                       height: 56,
                       padding: const EdgeInsets.all(2),
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        color: Colors.white,
+                        shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withValues(alpha: 0.15),
@@ -119,9 +118,8 @@ class _AboutPageState extends State<AboutPage> {
                           ),
                         ],
                       ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(14),
-                        child: Image.asset('assets/images/logo_square.png', fit: BoxFit.cover),
+                      child: ClipOval(
+                        child: Image.asset('assets/images/logo.png', fit: BoxFit.cover),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -366,15 +364,23 @@ class _AboutPageState extends State<AboutPage> {
           Row(
             children: [
               if (_info.founderImageUrl.isNotEmpty)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(30),
-                  child: Image.network(
-                    _info.founderImageUrl,
-                    width: 62,
-                    height: 62,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => _founderAvatarFallback(),
-                  ),
+                ClipOval(
+                  child: _info.founderImageUrl.startsWith('assets/')
+                      ? Image.asset(
+                          _info.founderImageUrl,
+                          width: 62,
+                          height: 62,
+                          fit: BoxFit.cover,
+                          alignment: Alignment.topCenter,
+                        )
+                      : Image.network(
+                          _info.founderImageUrl,
+                          width: 62,
+                          height: 62,
+                          fit: BoxFit.cover,
+                          alignment: Alignment.topCenter,
+                          errorBuilder: (_, _, _) => _founderAvatarFallback(),
+                        ),
                 )
               else
                 _founderAvatarFallback(),

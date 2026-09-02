@@ -237,11 +237,13 @@ class _EditAboutPageState extends State<EditAboutPage> {
                           ? Image.network(newFile.path, fit: BoxFit.cover)
                           : Image.file(File(newFile.path), fit: BoxFit.cover))
                       : currentUrl.isNotEmpty
-                          ? Image.network(
-                              currentUrl,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, _, _) => _imagePlaceholder(),
-                            )
+                          ? (currentUrl.startsWith('assets/')
+                              ? Image.asset(currentUrl, fit: BoxFit.cover)
+                              : Image.network(
+                                  currentUrl,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, _, _) => _imagePlaceholder(),
+                                ))
                           : _imagePlaceholder(),
                 ),
               ),

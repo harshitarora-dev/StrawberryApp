@@ -337,13 +337,19 @@ class _StrawberryLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(32),
-      child: Image.asset(
-        'assets/images/logo_square.png',
-        width: 140,
-        height: 140,
-        fit: BoxFit.contain,
+    return Container(
+      width: 140,
+      height: 140,
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+      ),
+      child: ClipOval(
+        child: Image.asset(
+          'assets/images/logo.png',
+          width: 140,
+          height: 140,
+          fit: BoxFit.contain,
+        ),
       ),
     );
   }

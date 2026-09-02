@@ -914,10 +914,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
             padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
             child: Row(
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
+                ClipOval(
                   child: Image.asset(
-                    'assets/images/logo_square.png',
+                    'assets/images/logo.png',
                     width: 44,
                     height: 44,
                     fit: BoxFit.cover,

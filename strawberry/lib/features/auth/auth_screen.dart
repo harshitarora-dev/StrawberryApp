@@ -29,6 +29,7 @@ class _AuthScreenState extends State<AuthScreen>
   final _aboutService = AboutService();
 
   int _activeTab = 0; // 0: 🌟 Explore School, 1: 🔐 Parent Portal
+  int _previousTab = 0;
   bool _loading = false;
   String? _error;
 
@@ -40,12 +41,10 @@ class _AuthScreenState extends State<AuthScreen>
   late final AnimationController _animController;
   late final Animation<double> _fadeAnim;
   late final Animation<Offset> _slideAnim;
-  late final PageController _pageController;
 
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(initialPage: 0);
     _animController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 650),
@@ -67,14 +66,10 @@ class _AuthScreenState extends State<AuthScreen>
 
   void _switchTab(int index) {
     if (_activeTab == index) return;
-    setState(() => _activeTab = index);
-    if (_pageController.hasClients) {
-      _pageController.animateToPage(
-        index,
-        duration: const Duration(milliseconds: 320),
-        curve: Curves.easeInOutCubic,
-      );
-    }
+    setState(() {
+      _previousTab = _activeTab;
+      _activeTab = index;
+    });
   }
 
   Future<void> _loadDiscoveryData() async {
@@ -97,7 +92,6 @@ class _AuthScreenState extends State<AuthScreen>
 
   @override
   void dispose() {
-    _pageController.dispose();
     _animController.dispose();
     super.dispose();
   }
@@ -347,6 +341,7 @@ class _AuthScreenState extends State<AuthScreen>
   }
 
   Future<void> _signInWithGoogle() async {
+    if (_loading) return;
     setState(() {
       _loading = true;
       _error = null;
@@ -356,7 +351,13 @@ class _AuthScreenState extends State<AuthScreen>
       final userCredential = await _authService.signInWithGoogle();
 
       if (userCredential == null) {
-        if (mounted) setState(() => _loading = false);
+        // User closed or cancelled the popup — stop loading immediately
+        if (mounted) {
+          setState(() {
+            _loading = false;
+            _error = null;
+          });
+        }
         return;
       }
 
@@ -417,8 +418,26 @@ class _AuthScreenState extends State<AuthScreen>
       }
     } catch (e) {
       if (mounted) {
+        final msg = e.toString().toLowerCase();
+        // If it was any form of popup cancellation / closure, silently turn off loading
+        if (msg.contains('popup-closed') ||
+            msg.contains('popup_closed') ||
+            msg.contains('closed') ||
+            msg.contains('cancel')) {
+          setState(() {
+            _loading = false;
+            _error = null;
+          });
+        } else {
+          setState(() {
+            _error = 'Couldn\'t sign in this time. Let\'s give it another spin! 🔄';
+            _loading = false;
+          });
+        }
+      }
+    } finally {
+      if (mounted && _loading) {
         setState(() {
-          _error = 'Couldn\'t sign in this time. Let\'s give it another spin! 🔄';
           _loading = false;
         });
       }
@@ -461,13 +480,12 @@ class _AuthScreenState extends State<AuthScreen>
                         Container(
                           width: 32,
                           height: 32,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
                           ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
+                          child: ClipOval(
                             child: Image.asset(
-                              'assets/images/logo_square.png',
+                              'assets/images/logo.png',
                               fit: BoxFit.cover,
                             ),
                           ),
@@ -1328,15 +1346,43 @@ class _AuthScreenState extends State<AuthScreen>
           Row(
             children: [
               Container(
-                width: 48,
-                height: 48,
+                width: 52,
+                height: 52,
                 decoration: BoxDecoration(
                   color: AppColors.primarySoft,
                   shape: BoxShape.circle,
                   border: Border.all(color: AppColors.primary, width: 2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.18),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-                child: const Center(
-                  child: Icon(Icons.person_rounded, color: AppColors.primary, size: 26),
+                child: ClipOval(
+                  child: _aboutInfo.founderImageUrl.isNotEmpty
+                      ? (_aboutInfo.founderImageUrl.startsWith('assets/')
+                          ? Image.asset(
+                              _aboutInfo.founderImageUrl,
+                              fit: BoxFit.cover,
+                              alignment: Alignment.topCenter,
+                            )
+                          : Image.network(
+                              _aboutInfo.founderImageUrl,
+                              fit: BoxFit.cover,
+                              alignment: Alignment.topCenter,
+                              errorBuilder: (_, __, ___) => Image.asset(
+                                'assets/images/founder.jpg',
+                                fit: BoxFit.cover,
+                                alignment: Alignment.topCenter,
+                              ),
+                            ))
+                      : Image.asset(
+                          'assets/images/founder.jpg',
+                          fit: BoxFit.cover,
+                          alignment: Alignment.topCenter,
+                        ),
                 ),
               ),
               const SizedBox(width: 14),
@@ -1918,7 +1964,7 @@ class _AuthScreenState extends State<AuthScreen>
                             width: 56,
                             height: 56,
                             decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(16),
+                              shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
                                   color: Colors.black.withValues(alpha: 0.18),
@@ -1927,10 +1973,9 @@ class _AuthScreenState extends State<AuthScreen>
                                 ),
                               ],
                             ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(16),
+                            child: ClipOval(
                               child: Image.asset(
-                                'assets/images/logo_square.png',
+                                'assets/images/logo.png',
                                 fit: BoxFit.cover,
                               ),
                             ),
@@ -2064,7 +2109,7 @@ class _AuthScreenState extends State<AuthScreen>
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
+                  shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.12),
@@ -2073,10 +2118,9 @@ class _AuthScreenState extends State<AuthScreen>
                     ),
                   ],
                 ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
+                child: ClipOval(
                   child: Image.asset(
-                    'assets/images/logo_square.png',
+                    'assets/images/logo.png',
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -2254,49 +2298,83 @@ class _AuthScreenState extends State<AuthScreen>
                       // Top Transparent Floating Navbar
                       _buildTabSwitcher(isDesktop),
 
-                      // Full-width edge-to-edge scrollable PageView
+                      // Smooth swipeable tab content
                       Expanded(
-                        child: PageView(
-                          controller: _pageController,
-                          onPageChanged: (index) {
-                            setState(() => _activeTab = index);
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.translucent,
+                          onHorizontalDragEnd: (details) {
+                            final vx = details.primaryVelocity ?? 0;
+                            if (vx < -200) {
+                              // Swiped left -> Switch to Parent Portal
+                              _switchTab(1);
+                            } else if (vx > 200) {
+                              // Swiped right -> Switch to Explore School
+                              _switchTab(0);
+                            }
                           },
-                          physics: const BouncingScrollPhysics(),
-                          children: [
-                            // Tab 0: Explore School
-                            SingleChildScrollView(
-                              physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-                              padding: EdgeInsets.symmetric(
-                                horizontal: isDesktop ? 36.0 : (isTablet ? 24.0 : 16.0),
-                                vertical: 16.0,
-                              ),
-                              child: _buildExploreTab(size.width),
-                            ),
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 240),
+                            switchInCurve: Curves.easeOutCubic,
+                            switchOutCurve: Curves.easeInCubic,
+                            layoutBuilder: (currentChild, previousChildren) {
+                              return Stack(
+                                alignment: Alignment.topCenter,
+                                children: <Widget>[
+                                  ...previousChildren,
+                                  if (currentChild != null) currentChild,
+                                ],
+                              );
+                            },
+                            transitionBuilder: (child, animation) {
+                              final isCurrent = child.key == ValueKey(_activeTab);
+                              final forward = _activeTab >= _previousTab;
+                              final offset = forward ? const Offset(0.06, 0) : const Offset(-0.06, 0);
+                              final anim = isCurrent
+                                  ? Tween<Offset>(begin: offset, end: Offset.zero).animate(animation)
+                                  : Tween<Offset>(begin: Offset.zero, end: -offset).animate(animation);
 
-                            // Tab 1: Parent Portal
-                            LayoutBuilder(
-                              builder: (context, constraints) {
-                                return SingleChildScrollView(
-                                  physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-                                  child: ConstrainedBox(
-                                    constraints: BoxConstraints(
-                                      minHeight: constraints.maxHeight,
+                              return SlideTransition(
+                                position: anim,
+                                child: FadeTransition(
+                                  opacity: animation,
+                                  child: child,
+                                ),
+                              );
+                            },
+                            child: _activeTab == 0
+                                ? SingleChildScrollView(
+                                    key: const ValueKey(0),
+                                    physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: isDesktop ? 36.0 : (isTablet ? 24.0 : 16.0),
+                                      vertical: 16.0,
                                     ),
-                                    child: Center(
-                                      child: Container(
-                                        constraints: BoxConstraints(maxWidth: isDesktop ? 1100 : 540),
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: isDesktop ? 32.0 : 18.0,
-                                          vertical: 14.0,
+                                    child: _buildExploreTab(size.width),
+                                  )
+                                : LayoutBuilder(
+                                    key: const ValueKey(1),
+                                    builder: (context, constraints) {
+                                      return SingleChildScrollView(
+                                        physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                                        child: ConstrainedBox(
+                                          constraints: BoxConstraints(
+                                            minHeight: constraints.maxHeight,
+                                          ),
+                                          child: Center(
+                                            child: Container(
+                                              constraints: BoxConstraints(maxWidth: isDesktop ? 1100 : 540),
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: isDesktop ? 32.0 : 18.0,
+                                                vertical: 14.0,
+                                              ),
+                                              child: _buildPortalTab(size.width),
+                                            ),
+                                          ),
                                         ),
-                                        child: _buildPortalTab(size.width),
-                                      ),
-                                    ),
+                                      );
+                                    },
                                   ),
-                                );
-                              },
-                            ),
-                          ],
+                          ),
                         ),
                       ),
                     ],
