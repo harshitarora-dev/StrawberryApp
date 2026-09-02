@@ -33,6 +33,18 @@ class AuthService {
         final GoogleAuthProvider googleProvider = GoogleAuthProvider();
         googleProvider.addScope('email');
         googleProvider.setCustomParameters({'prompt': 'select_account'});
+
+        // On mobile web browsers (Android & iOS), popups open detached tabs.
+        // Using signInWithRedirect provides a smooth, reliable in-place login flow.
+        final isMobileWeb = defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS;
+
+        if (isMobileWeb) {
+          await _firebaseAuth!.signInWithRedirect(googleProvider);
+          return null;
+        }
+
+        // Desktop web: Use popup
         try {
           return await _firebaseAuth!.signInWithPopup(googleProvider);
         } catch (e) {
@@ -158,10 +170,29 @@ class AuthService {
           .eq('id', userId)
           .maybeSingle();
       if (data != null) {
-        // Trigger register device token asynchronously
         unawaited(PushNotificationService().registerDeviceToken());
+        return data;
       }
-      return data;
+
+      // Fallback: Check if profile exists by email (e.g. created on mobile with different UID)
+      final email = currentUserEmail;
+      if (email != null && email.isNotEmpty) {
+        final emailData = await _supabaseClient
+            .from('profiles')
+            .select()
+            .eq('email', email)
+            .maybeSingle();
+        if (emailData != null) {
+          try {
+            await _supabaseClient
+                .from('profiles')
+                .update({'id': userId})
+                .eq('email', email);
+          } catch (_) {}
+          return emailData;
+        }
+      }
+      return null;
     } catch (e) {
       return null;
     }
@@ -205,12 +236,18 @@ class AuthService {
       'fees': 0,
     };
 
-    await _supabaseClient.from('profiles').insert(profileData).select();
-    
-    // Trigger register device token asynchronously
-    unawaited(PushNotificationService().registerDeviceToken());
+    try {
+      final res = await _supabaseClient
+          .from('profiles')
+          .upsert(profileData, onConflict: 'id')
+          .select()
+          .maybeSingle();
 
-    return profileData;
+      unawaited(PushNotificationService().registerDeviceToken());
+      return res ?? profileData;
+    } catch (e) {
+      return profileData;
+    }
   }
 
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:strawberry/core/theme/app_colors.dart';
 import 'package:strawberry/core/theme/app_decorations.dart';
 import 'package:strawberry/core/theme/app_typography.dart';
@@ -604,6 +605,69 @@ class _AboutPageState extends State<AboutPage> {
     );
   }
 
+  Widget _buildPrivacyPolicyCard() {
+    return InkWell(
+      onTap: () async {
+        final uri = Uri.parse('https://strawberryschool.netlify.app/privacy.html');
+        try {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        } catch (_) {}
+      },
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.border),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.primarySoft,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.shield_outlined, color: AppColors.primary, size: 20),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Privacy & Data Policy',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13.5,
+                      color: AppColors.textDark,
+                    ),
+                  ),
+                  Text(
+                    'Student safety, data retention & compliance',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.textMuted),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -656,6 +720,8 @@ class _AboutPageState extends State<AboutPage> {
                                       const SizedBox(height: 20),
                                       _buildContactCard(),
                                       const SizedBox(height: 20),
+                                      _buildPrivacyPolicyCard(),
+                                      const SizedBox(height: 20),
                                       _buildDeveloperCard(),
                                     ],
                                   ),
@@ -684,6 +750,8 @@ class _AboutPageState extends State<AboutPage> {
                             _buildFounderCard(),
                             const SizedBox(height: 18),
                             _buildContactCard(),
+                            const SizedBox(height: 18),
+                            _buildPrivacyPolicyCard(),
                             const SizedBox(height: 18),
                             _buildDeveloperCard(),
                             const SizedBox(height: 30),

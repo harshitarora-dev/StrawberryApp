@@ -413,12 +413,18 @@ class _AuthScreenState extends State<AuthScreen>
           });
         }
       }
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
         setState(() {
           _loading = false;
-          _error = 'Failed to load profile. Please try signing in again.';
+          _error = 'Failed to load profile: $e';
         });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Login note: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
       }
     }
   }
@@ -2236,6 +2242,30 @@ class _AuthScreenState extends State<AuthScreen>
                   style: AppTypography.bodySmall.copyWith(
                     color: AppColors.primary,
                     fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Center(
+              child: InkWell(
+                onTap: () async {
+                  final uri = Uri.parse('https://strawberryschool.netlify.app/privacy.html');
+                  try {
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                  } catch (_) {}
+                },
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  child: Text(
+                    'Privacy Policy & Child Safety Terms 🛡️',
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppColors.textMuted,
+                      fontSize: 11.5,
+                      decoration: TextDecoration.underline,
+                      decorationColor: AppColors.textMuted.withValues(alpha: 0.5),
+                    ),
                   ),
                 ),
               ),
