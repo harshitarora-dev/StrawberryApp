@@ -33,7 +33,7 @@ class AboutInfo {
     return const AboutInfo(
       schoolName: 'Strawberry Playschool & Daycare',
       schoolTagline: 'Nurturing young minds with love, care & joyful discovery.',
-      schoolImageUrl: '',
+      schoolImageUrl: 'assets/images/school.jpg',
       aboutSchool:
           'Welcome to Strawberry Playschool & Daycare! We are dedicated to creating a vibrant, safe, and happy learning sanctuary where each child can explore their natural curiosity, build early cognitive and social skills, and blossom with confidence.\n\nOur curriculum integrates play-based exploration, sensory activities, creative arts, and foundational early education guided by compassionate and experienced educators.',
       founderName: 'Aarti Arora',

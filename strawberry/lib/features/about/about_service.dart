@@ -8,7 +8,7 @@ import 'about_model.dart';
 
 class AboutService {
   static const String primaryAdminEmail = 'dev.harshitcreations@gmail.com';
-  static const String _prefsKey = 'strawberry_about_info_v4';
+  static const String _prefsKey = 'strawberry_about_info_v5';
   static const String _tableName = 'about_info';
 
   final SupabaseClient _client = Supabase.instance.client;

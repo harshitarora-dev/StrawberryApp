@@ -90,11 +90,16 @@ class _AboutPageState extends State<AboutPage> {
                 borderRadius: BorderRadius.circular(24),
                 child: Opacity(
                   opacity: 0.15,
-                  child: Image.network(
-                    _info.schoolImageUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => const SizedBox.shrink(),
-                  ),
+                  child: _info.schoolImageUrl.startsWith('assets/')
+                      ? Image.asset(
+                          _info.schoolImageUrl,
+                          fit: BoxFit.cover,
+                        )
+                      : Image.network(
+                          _info.schoolImageUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                        ),
                 ),
               ),
             ),
@@ -298,13 +303,20 @@ class _AboutPageState extends State<AboutPage> {
           if (_info.schoolImageUrl.isNotEmpty) ...[
             ClipRRect(
               borderRadius: BorderRadius.circular(16),
-              child: Image.network(
-                _info.schoolImageUrl,
-                width: double.infinity,
-                height: 200,
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => const SizedBox.shrink(),
-              ),
+              child: _info.schoolImageUrl.startsWith('assets/')
+                  ? Image.asset(
+                      _info.schoolImageUrl,
+                      width: double.infinity,
+                      height: 220,
+                      fit: BoxFit.cover,
+                    )
+                  : Image.network(
+                      _info.schoolImageUrl,
+                      width: double.infinity,
+                      height: 220,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                    ),
             ),
             const SizedBox(height: 18),
           ],
