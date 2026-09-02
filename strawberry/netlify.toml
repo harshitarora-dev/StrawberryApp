@@ -1,0 +1,14 @@
+[build]
+  publish = "build/web"
+  command = "if [ ! -d 'flutter' ]; then git clone https://github.com/flutter/flutter.git -b stable --depth 1; fi && export PATH=\"$PATH:$(pwd)/flutter/bin\" && flutter build web --release --base-href /"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
