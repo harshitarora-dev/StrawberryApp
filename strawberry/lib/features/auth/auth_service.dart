@@ -34,28 +34,10 @@ class AuthService {
         googleProvider.addScope('email');
         googleProvider.setCustomParameters({'prompt': 'select_account'});
 
-        // On mobile web browsers (Android & iOS), popups open detached tabs.
-        // Using signInWithRedirect provides a smooth, reliable in-place login flow.
-        final isMobileWeb = defaultTargetPlatform == TargetPlatform.android ||
-            defaultTargetPlatform == TargetPlatform.iOS;
-
-        if (isMobileWeb) {
-          await _firebaseAuth!.signInWithRedirect(googleProvider);
-          return null;
-        }
-
-        // Desktop web: Use popup
-        try {
-          return await _firebaseAuth!.signInWithPopup(googleProvider);
-        } catch (e) {
-          if (e is FirebaseAuthException &&
-              (e.code == 'popup-blocked' ||
-                  e.code == 'cancelled-popup-request')) {
-            await _firebaseAuth!.signInWithRedirect(googleProvider);
-            return null;
-          }
-          rethrow;
-        }
+        // On Web, signInWithRedirect opens Google login in the EXACT SAME TAB!
+        // No extra tabs, no popup blocked issues on mobile or desktop browsers.
+        await _firebaseAuth!.signInWithRedirect(googleProvider);
+        return null;
       }
 
       // Mobile: Trigger native Google Sign-In account picker

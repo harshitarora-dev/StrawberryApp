@@ -68,10 +68,21 @@ class _AuthScreenState extends State<AuthScreen>
     _animController.forward();
     _loadDiscoveryData();
 
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      _activeTab = 1;
+      _loading = true;
+      _navigating = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _routeUser(currentUser);
+      });
+    }
+
     // Listen to Firebase Auth state for mobile web redirect completions
     _authSubscription = FirebaseAuth.instance.authStateChanges().listen((user) async {
       if (user != null && mounted && !_navigating) {
         _navigating = true;
+        _activeTab = 1;
         _routeUser(user);
       }
     });
