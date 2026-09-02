@@ -451,8 +451,13 @@ class _AuthScreenState extends State<AuthScreen>
       final userCredential = await _authService.signInWithGoogle();
 
       if (userCredential == null) {
-        // User closed/cancelled popup OR switched to redirect on mobile
-        if (mounted && FirebaseAuth.instance.currentUser == null) {
+        final current = FirebaseAuth.instance.currentUser;
+        if (current != null) {
+          _navigating = true;
+          await _routeUser(current);
+          return;
+        }
+        if (mounted) {
           setState(() {
             _loading = false;
             _error = null;

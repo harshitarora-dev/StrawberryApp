@@ -666,22 +666,21 @@ class _StudentAttendanceHistoryPageState
             const Text('Calendar', style: TextStyle(
                 fontSize: 15, fontWeight: FontWeight.w800, color: _textDark)),
             Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 _RoundIconButton(
                   icon: Icons.chevron_left_rounded,
                   onTap: () => _changeMonth(-1),
                 ),
-                const SizedBox(width: 8),
-                SizedBox(
-                  width: 118,
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
                   child: Text(
                     monthLabel,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
-                        fontSize: 13.5, fontWeight: FontWeight.w700, color: _textDark),
+                        fontSize: 13, fontWeight: FontWeight.w700, color: _textDark),
                   ),
                 ),
-                const SizedBox(width: 8),
                 _RoundIconButton(
                   icon: Icons.chevron_right_rounded,
                   onTap: isCurrentOrFuture ? null : () => _changeMonth(1),

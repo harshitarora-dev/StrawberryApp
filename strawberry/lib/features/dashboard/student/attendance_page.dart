@@ -391,23 +391,27 @@ class _AttendancePageState extends State<AttendancePage> {
         children: [
           // Header: Title + Month Switcher
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.primarySoft,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(Icons.calendar_month_rounded, color: AppColors.primary, size: 18),
-                  ),
-                  const SizedBox(width: 10),
-                  Text('Monthly Register', style: AppTypography.h3),
-                ],
-              ),
               Container(
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  color: AppColors.primarySoft,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.calendar_month_rounded, color: AppColors.primary, size: 18),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Monthly Register',
+                  style: AppTypography.h3.copyWith(fontSize: 15),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                 decoration: BoxDecoration(
                   color: AppColors.surfaceAlt,
                   borderRadius: BorderRadius.circular(12),
@@ -419,18 +423,26 @@ class _AttendancePageState extends State<AttendancePage> {
                     IconButton(
                       icon: const Icon(Icons.chevron_left_rounded, size: 18),
                       visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(minWidth: 26, minHeight: 26),
                       onPressed: () => _changeMonth(-1),
                     ),
-                    Text(
-                      monthLabel,
-                      style: AppTypography.bodySmall.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textDark,
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Text(
+                        monthLabel,
+                        style: AppTypography.bodySmall.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textDark,
+                          fontSize: 12,
+                        ),
                       ),
                     ),
                     IconButton(
                       icon: const Icon(Icons.chevron_right_rounded, size: 18),
                       visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(minWidth: 26, minHeight: 26),
                       onPressed: () => _changeMonth(1),
                     ),
                   ],

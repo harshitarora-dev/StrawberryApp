@@ -183,13 +183,15 @@ class _AdminDashboardState extends State<AdminDashboard> {
               ),
               child: const Icon(Icons.logout_rounded, color: AppColors.danger, size: 22),
             ),
-            const SizedBox(width: 14),
-            const Text(
-              'Leaving the cockpit, Chief? ☕',
-              style: TextStyle(
-                fontSize: 17.5,
-                fontWeight: FontWeight.w800,
-                color: _Palette.textDark,
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text(
+                'Leaving the cockpit, Chief? ☕',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: _Palette.textDark,
+                ),
               ),
             ),
           ],

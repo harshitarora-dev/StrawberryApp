@@ -1078,14 +1078,14 @@ class _ReviewAnalyticsPageState extends State<ReviewAnalyticsPage> {
                 ],
               ),
               Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   _RoundIconBtn(
                     icon: Icons.chevron_left_rounded,
                     onTap: _changingMonth ? null : () => _changeMonth(-1),
                   ),
-                  const SizedBox(width: 6),
-                  SizedBox(
-                    width: 100,
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
                     child: Text(
                       monthLabel,
                       textAlign: TextAlign.center,
@@ -1096,7 +1096,6 @@ class _ReviewAnalyticsPageState extends State<ReviewAnalyticsPage> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 6),
                   _RoundIconBtn(
                     icon: Icons.chevron_right_rounded,
                     onTap: (isCurrentOrFuture || _changingMonth)

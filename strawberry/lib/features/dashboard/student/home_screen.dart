@@ -266,13 +266,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               ),
               child: const Icon(Icons.logout_rounded, color: AppColors.danger, size: 22),
             ),
-            const SizedBox(width: 14),
-            const Text(
-              'Heading out, Superstar? 🎒',
-              style: TextStyle(
-                fontSize: 17.5,
-                fontWeight: FontWeight.w800,
-                color: AppColors.textDark,
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text(
+                'Heading out, Superstar? 🎒',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textDark,
+                ),
               ),
             ),
           ],

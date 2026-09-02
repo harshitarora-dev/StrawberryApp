@@ -89,7 +89,7 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _navigateAfterDelay() async {
-    await Future<void>.delayed(const Duration(milliseconds: 600));
+    await Future<void>.delayed(const Duration(milliseconds: 750));
 
     if (!mounted) return;
 
@@ -110,10 +110,12 @@ class _SplashScreenState extends State<SplashScreen>
       if (user == null) {
         try {
           user = await auth.authStateChanges().first.timeout(
-            const Duration(milliseconds: 1200),
+            const Duration(milliseconds: 2500),
             onTimeout: () => auth.currentUser,
           );
-        } catch (_) {}
+        } catch (_) {
+          user = auth.currentUser;
+        }
       }
 
       if (!mounted) return;
@@ -125,43 +127,51 @@ class _SplashScreenState extends State<SplashScreen>
         return;
       }
 
-      Map<String, dynamic>? profile = await authService.getCurrentProfile();
+      Map<String, dynamic>? profile;
+      try {
+        profile = await authService.getCurrentProfile();
+      } catch (_) {}
+
+      if (profile == null) {
+        try {
+          profile = await authService.createProfile();
+        } catch (_) {}
+      }
 
       if (!mounted) return;
 
-      if (profile == null) {
-        profile = await authService.createProfile();
-        if (!mounted) return;
-      }
+      if (profile != null) {
+        final role = profile['role'];
+        final status = profile['status'];
 
-      final role = profile['role'];
-      final status = profile['status'];
-
-      if (status == 'pending') {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const WaitScreen()),
-        );
-      } else if (status == 'rejected') {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const WaitScreen(isRejected: true)),
-        );
-      } else if (status == 'approved') {
-        if (role == 'admin') {
+        if (status == 'pending') {
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const AdminDashboard()),
+            MaterialPageRoute(builder: (_) => const WaitScreen()),
           );
-        } else {
+          return;
+        } else if (status == 'rejected') {
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const HomeScreen()),
+            MaterialPageRoute(builder: (_) => const WaitScreen(isRejected: true)),
           );
+          return;
+        } else if (status == 'approved') {
+          if (role == 'admin') {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (_) => const AdminDashboard()),
+            );
+            return;
+          } else {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (_) => const HomeScreen()),
+            );
+            return;
+          }
         }
-      } else {
-        await authService.logout();
-        if (!mounted) return;
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const AuthScreen()),
-        );
       }
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const AuthScreen()),
+      );
     } catch (_) {
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
