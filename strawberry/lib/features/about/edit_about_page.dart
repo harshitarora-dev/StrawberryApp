@@ -33,6 +33,10 @@ class _EditAboutPageState extends State<EditAboutPage> {
   late TextEditingController _contactEmailCtrl;
   late TextEditingController _contactPhoneCtrl;
   late TextEditingController _addressCtrl;
+  late TextEditingController _websiteUrlCtrl;
+  late TextEditingController _googleMapsCtrl;
+  late TextEditingController _instagramCtrl;
+  late TextEditingController _facebookCtrl;
 
   String _schoolImageUrl = '';
   String _founderImageUrl = '';
@@ -56,6 +60,10 @@ class _EditAboutPageState extends State<EditAboutPage> {
     _contactEmailCtrl = TextEditingController(text: info.contactEmail);
     _contactPhoneCtrl = TextEditingController(text: info.contactPhone);
     _addressCtrl = TextEditingController(text: info.address);
+    _websiteUrlCtrl = TextEditingController(text: info.websiteUrl);
+    _googleMapsCtrl = TextEditingController(text: info.googleMapsUrl);
+    _instagramCtrl = TextEditingController(text: info.instagramUrl);
+    _facebookCtrl = TextEditingController(text: info.facebookUrl);
 
     _schoolImageUrl = info.schoolImageUrl;
     _founderImageUrl = info.founderImageUrl;
@@ -73,6 +81,10 @@ class _EditAboutPageState extends State<EditAboutPage> {
     _contactEmailCtrl.dispose();
     _contactPhoneCtrl.dispose();
     _addressCtrl.dispose();
+    _websiteUrlCtrl.dispose();
+    _googleMapsCtrl.dispose();
+    _instagramCtrl.dispose();
+    _facebookCtrl.dispose();
     super.dispose();
   }
 
@@ -169,6 +181,10 @@ class _EditAboutPageState extends State<EditAboutPage> {
         contactEmail: _contactEmailCtrl.text.trim(),
         contactPhone: _contactPhoneCtrl.text.trim(),
         address: _addressCtrl.text.trim(),
+        websiteUrl: _websiteUrlCtrl.text.trim(),
+        googleMapsUrl: _googleMapsCtrl.text.trim(),
+        instagramUrl: _instagramCtrl.text.trim(),
+        facebookUrl: _facebookCtrl.text.trim(),
       );
 
       await _aboutService.saveAboutInfo(updatedInfo);
@@ -456,6 +472,38 @@ class _EditAboutPageState extends State<EditAboutPage> {
                 decoration: const InputDecoration(
                   labelText: 'Campus Address',
                   prefixIcon: Icon(Icons.location_on_rounded, color: AppColors.primary),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _websiteUrlCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Official Website URL',
+                  prefixIcon: Icon(Icons.language_rounded, color: AppColors.primary),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _googleMapsCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Google Maps Link',
+                  prefixIcon: Icon(Icons.map_rounded, color: AppColors.primary),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _instagramCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Instagram Profile URL',
+                  prefixIcon: Icon(Icons.camera_alt_rounded, color: AppColors.primary),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _facebookCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Facebook Page URL',
+                  prefixIcon: Icon(Icons.facebook_rounded, color: AppColors.primary),
                 ),
               ),
 

@@ -371,38 +371,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text(
-                            'Strawberry',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w900,
-                              color: AppColors.textDark,
-                              letterSpacing: -0.3,
-                            ),
-                          ),
-                          if (constraints.maxWidth >= 420) ...[
-                            const SizedBox(width: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: AppColors.primarySoft,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: const Text(
-                                'PORTAL',
-                                style: TextStyle(
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w800,
-                                  color: AppColors.primaryDark,
-                                  letterSpacing: 0.4,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ],
+                      const Text(
+                        'Strawberry',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.textDark,
+                          letterSpacing: -0.3,
+                        ),
                       ),
                       const Text(
                         'Preschool & Daycare',
@@ -489,15 +465,33 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      CircleAvatar(
-                        radius: 13,
-                        backgroundColor: AppColors.primarySoft,
-                        backgroundImage: (photoUrl != null && photoUrl.isNotEmpty)
-                            ? NetworkImage(photoUrl)
-                            : null,
-                        child: (photoUrl == null || photoUrl.isEmpty)
-                            ? const Icon(Icons.person_rounded, color: AppColors.primary, size: 14)
-                            : null,
+                      ClipOval(
+                        child: SizedBox(
+                          width: 26,
+                          height: 26,
+                          child: (photoUrl != null && photoUrl.isNotEmpty)
+                              ? Image.network(
+                                  photoUrl,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) => Container(
+                                    color: AppColors.primarySoft,
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      studentName.isNotEmpty ? studentName[0].toUpperCase() : '🍓',
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w800,
+                                        color: AppColors.primary,
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              : Container(
+                                  color: AppColors.primarySoft,
+                                  alignment: Alignment.center,
+                                  child: const Icon(Icons.person_rounded, color: AppColors.primary, size: 14),
+                                ),
+                        ),
                       ),
                       const SizedBox(width: 8),
                       Column(
@@ -718,13 +712,40 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     color: Colors.white.withValues(alpha: 0.35),
                     border: Border.all(color: Colors.white, width: 2),
                   ),
-                  child: CircleAvatar(
-                    radius: 32,
-                    backgroundColor: Colors.white.withValues(alpha: 0.2),
-                    backgroundImage: hasPhoto ? NetworkImage(photoUrl) : null,
-                    child: !hasPhoto
-                        ? const Text('🍓', style: TextStyle(fontSize: 30))
-                        : null,
+                  child: ClipOval(
+                    child: SizedBox(
+                      width: 64,
+                      height: 64,
+                      child: hasPhoto
+                          ? Image.network(
+                              photoUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => Container(
+                                color: Colors.white.withValues(alpha: 0.25),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  name.isNotEmpty ? name[0].toUpperCase() : '🍓',
+                                  style: const TextStyle(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            )
+                          : Container(
+                              color: Colors.white.withValues(alpha: 0.25),
+                              alignment: Alignment.center,
+                              child: Text(
+                                name.isNotEmpty ? name[0].toUpperCase() : '🍓',
+                                style: const TextStyle(
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 18),
@@ -853,13 +874,40 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         color: Colors.white.withValues(alpha: 0.35),
                         border: Border.all(color: Colors.white, width: 2),
                       ),
-                      child: CircleAvatar(
-                        radius: 26,
-                        backgroundColor: Colors.white.withValues(alpha: 0.2),
-                        backgroundImage: hasPhoto ? NetworkImage(photoUrl) : null,
-                        child: !hasPhoto
-                            ? const Text('🍓', style: TextStyle(fontSize: 24))
-                            : null,
+                      child: ClipOval(
+                        child: SizedBox(
+                          width: 52,
+                          height: 52,
+                          child: hasPhoto
+                              ? Image.network(
+                                  photoUrl,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) => Container(
+                                    color: Colors.white.withValues(alpha: 0.25),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      name.isNotEmpty ? name[0].toUpperCase() : '🍓',
+                                      style: const TextStyle(
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.w800,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              : Container(
+                                  color: Colors.white.withValues(alpha: 0.25),
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    name.isNotEmpty ? name[0].toUpperCase() : '🍓',
+                                    style: const TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),

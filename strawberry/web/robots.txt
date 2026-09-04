@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Allow: /privacy
+Allow: /privacy.html
+
+Sitemap: https://strawberrydaycare.co.in/sitemap.xml

@@ -13,6 +13,10 @@ class AboutInfo {
   final String contactEmail;
   final String contactPhone;
   final String address;
+  final String websiteUrl;
+  final String googleMapsUrl;
+  final String instagramUrl;
+  final String facebookUrl;
 
   const AboutInfo({
     required this.schoolName,
@@ -27,6 +31,10 @@ class AboutInfo {
     required this.contactEmail,
     required this.contactPhone,
     required this.address,
+    this.websiteUrl = 'https://strawberrydaycare.co.in',
+    this.googleMapsUrl = 'https://maps.app.goo.gl/efvVwz7AMGXp1EC68',
+    this.instagramUrl = 'https://www.instagram.com/strawberry.preschool/',
+    this.facebookUrl = 'https://www.facebook.com/daycare.strawberry',
   });
 
   factory AboutInfo.defaults() {
@@ -45,7 +53,11 @@ class AboutInfo {
           'Designed & Developed by Harshit\nNeed app or website solutions? Contact: dev.harshitcreations@gmail.com',
       contactEmail: 'daycarestrawberry@gmail.com',
       contactPhone: '+91 99992 49495',
-      address: 'Strawberry, Sector-85, Faridabad, Haryana, India',
+      address: 'BPTP Parklands, C-22, Sector 85, Faridabad, Haryana 121007',
+      websiteUrl: 'https://strawberrydaycare.co.in',
+      googleMapsUrl: 'https://maps.app.goo.gl/efvVwz7AMGXp1EC68',
+      instagramUrl: 'https://www.instagram.com/strawberry.preschool/',
+      facebookUrl: 'https://www.facebook.com/daycare.strawberry',
     );
   }
 
@@ -63,6 +75,10 @@ class AboutInfo {
       'contact_email': contactEmail,
       'contact_phone': contactPhone,
       'address': address,
+      'website_url': websiteUrl,
+      'google_maps_url': googleMapsUrl,
+      'instagram_url': instagramUrl,
+      'facebook_url': facebookUrl,
       'updated_at': DateTime.now().toIso8601String(),
     };
   }
@@ -93,6 +109,10 @@ class AboutInfo {
       contactEmail: email,
       contactPhone: map['contact_phone']?.toString() ?? def.contactPhone,
       address: map['address']?.toString() ?? def.address,
+      websiteUrl: map['website_url']?.toString() ?? def.websiteUrl,
+      googleMapsUrl: map['google_maps_url']?.toString() ?? def.googleMapsUrl,
+      instagramUrl: map['instagram_url']?.toString() ?? def.instagramUrl,
+      facebookUrl: map['facebook_url']?.toString() ?? def.facebookUrl,
     );
   }
 

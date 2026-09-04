@@ -1,10 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:strawberry/core/theme/app_colors.dart';
-import 'package:strawberry/core/theme/app_decorations.dart';
-import 'package:strawberry/core/theme/app_typography.dart';
-import 'package:strawberry/core/utils/responsive.dart';
-import 'package:strawberry/core/widgets/app_badge.dart';
 import 'package:strawberry/features/auth/auth_service.dart';
 import 'about_model.dart';
 import 'about_service.dart';
@@ -344,6 +341,7 @@ class _AboutPageState extends State<AboutPage> {
           const SizedBox(height: 14),
           Text(
             _info.aboutSchool,
+            textAlign: TextAlign.justify,
             style: const TextStyle(
               color: AppColors.textBody,
               fontSize: 14,
@@ -447,6 +445,7 @@ class _AboutPageState extends State<AboutPage> {
                 Expanded(
                   child: Text(
                     _info.founderJourney,
+                    textAlign: TextAlign.justify,
                     style: const TextStyle(
                       color: AppColors.textDark,
                       fontSize: 13,
@@ -518,23 +517,113 @@ class _AboutPageState extends State<AboutPage> {
           ),
           const SizedBox(height: 14),
           if (_info.address.isNotEmpty) ...[
-            _contactRow(Icons.place_rounded, _info.address),
+            _contactRow(
+              Icons.place_rounded,
+              _info.address,
+              onTap: () async {
+                final uri = Uri.parse(_info.googleMapsUrl);
+                try {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                } catch (_) {}
+              },
+              actionLabel: 'Maps ↗',
+            ),
             const SizedBox(height: 10),
           ],
           if (_info.contactPhone.isNotEmpty) ...[
-            _contactRow(Icons.phone_rounded, _info.contactPhone),
+            _contactRow(
+              Icons.phone_rounded,
+              _info.contactPhone,
+              onTap: () async {
+                final uri = Uri.parse('tel:${_info.contactPhone.replaceAll(' ', '')}');
+                try {
+                  await launchUrl(uri);
+                } catch (_) {}
+              },
+              actionLabel: 'Call',
+            ),
             const SizedBox(height: 10),
           ],
           if (_info.contactEmail.isNotEmpty) ...[
-            _contactRow(Icons.email_rounded, _info.contactEmail),
+            _contactRow(
+              Icons.email_rounded,
+              _info.contactEmail,
+              onTap: () async {
+                final uri = Uri.parse('mailto:${_info.contactEmail}');
+                try {
+                  await launchUrl(uri);
+                } catch (_) {}
+              },
+            ),
+            const SizedBox(height: 10),
           ],
+          if (!kIsWeb && _info.websiteUrl.isNotEmpty) ...[
+            _contactRow(
+              Icons.language_rounded,
+              _info.websiteUrl,
+              onTap: () async {
+                final uri = Uri.parse(_info.websiteUrl);
+                try {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                } catch (_) {}
+              },
+              actionLabel: 'Visit ↗',
+            ),
+          ],
+          const SizedBox(height: 16),
+          const Divider(height: 1, color: AppColors.border),
+          const SizedBox(height: 12),
+          const Text(
+            'Connect & Follow Us',
+            style: TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textMuted,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              if (!kIsWeb && _info.websiteUrl.isNotEmpty)
+                _socialBadge(
+                  label: 'Official Website',
+                  icon: Icons.language_rounded,
+                  color: const Color(0xFF0F9D58),
+                  bgColor: const Color(0xFFE6F4EA),
+                  url: _info.websiteUrl,
+                ),
+              _socialBadge(
+                label: 'Google Maps',
+                icon: Icons.map_rounded,
+                color: const Color(0xFF1A73E8),
+                bgColor: const Color(0xFFE8F0FE),
+                url: _info.googleMapsUrl,
+              ),
+              _socialBadge(
+                label: 'Instagram',
+                icon: Icons.camera_alt_rounded,
+                color: const Color(0xFFE1306C),
+                bgColor: const Color(0xFFFDE8EF),
+                url: _info.instagramUrl,
+              ),
+              _socialBadge(
+                label: 'Facebook',
+                icon: Icons.facebook_rounded,
+                color: const Color(0xFF1877F2),
+                bgColor: const Color(0xFFE7F0FE),
+                url: _info.facebookUrl,
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
 
-  Widget _contactRow(IconData icon, String text) {
-    return Row(
+  Widget _contactRow(IconData icon, String text, {VoidCallback? onTap, String? actionLabel}) {
+    final row = Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Icon(icon, size: 18, color: AppColors.primary),
@@ -542,14 +631,86 @@ class _AboutPageState extends State<AboutPage> {
         Expanded(
           child: Text(
             text,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13.5,
-              color: AppColors.textBody,
-              fontWeight: FontWeight.w500,
+              color: onTap != null ? AppColors.primary : AppColors.textBody,
+              fontWeight: onTap != null ? FontWeight.w600 : FontWeight.w500,
             ),
           ),
         ),
+        if (actionLabel != null) ...[
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: AppColors.primarySoft,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              actionLabel,
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: AppColors.primary,
+              ),
+            ),
+          ),
+        ],
       ],
+    );
+
+    if (onTap != null) {
+      return InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 2),
+          child: row,
+        ),
+      );
+    }
+    return row;
+  }
+
+  Widget _socialBadge({
+    required String label,
+    required IconData icon,
+    required Color color,
+    required Color bgColor,
+    required String url,
+  }) {
+    return InkWell(
+      onTap: () async {
+        if (url.isEmpty) return;
+        final uri = Uri.parse(url);
+        try {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        } catch (_) {}
+      },
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 15, color: color),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: color,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -617,10 +778,97 @@ class _AboutPageState extends State<AboutPage> {
     );
   }
 
+  Widget _buildWebsiteCard() {
+    if (kIsWeb) return const SizedBox.shrink();
+    return InkWell(
+      onTap: () async {
+        final uri = Uri.parse(_info.websiteUrl.isNotEmpty ? _info.websiteUrl : 'https://strawberrydaycare.co.in');
+        try {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        } catch (_) {}
+      },
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFF0F9D58).withValues(alpha: 0.3)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE6F4EA),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.language_rounded, color: Color(0xFF0F9D58), size: 20),
+            ),
+            const SizedBox(width: 14),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Official School Website',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textDark,
+                    ),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    'strawberrydaycare.co.in',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF0F9D58),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE6F4EA),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Visit',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF0F9D58),
+                    ),
+                  ),
+                  SizedBox(width: 4),
+                  Icon(Icons.open_in_new_rounded, size: 12, color: Color(0xFF0F9D58)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildPrivacyPolicyCard() {
     return InkWell(
       onTap: () async {
-        final uri = Uri.parse('https://strawberryschool.netlify.app/privacy.html');
+        final uri = Uri.parse('https://strawberrydaycare.co.in/privacy');
         try {
           await launchUrl(uri, mode: LaunchMode.externalApplication);
         } catch (_) {}
@@ -731,6 +979,10 @@ class _AboutPageState extends State<AboutPage> {
                                       _buildHighlightsPills(),
                                       const SizedBox(height: 20),
                                       _buildContactCard(),
+                                      if (!kIsWeb) ...[
+                                        const SizedBox(height: 20),
+                                        _buildWebsiteCard(),
+                                      ],
                                       const SizedBox(height: 20),
                                       _buildPrivacyPolicyCard(),
                                       const SizedBox(height: 20),
@@ -762,6 +1014,10 @@ class _AboutPageState extends State<AboutPage> {
                             _buildFounderCard(),
                             const SizedBox(height: 18),
                             _buildContactCard(),
+                            if (!kIsWeb) ...[
+                              const SizedBox(height: 18),
+                              _buildWebsiteCard(),
+                            ],
                             const SizedBox(height: 18),
                             _buildPrivacyPolicyCard(),
                             const SizedBox(height: 18),

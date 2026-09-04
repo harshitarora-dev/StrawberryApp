@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -7,9 +8,7 @@ import 'package:strawberry/core/theme/app_colors.dart';
 import 'package:strawberry/core/theme/app_typography.dart';
 import 'package:strawberry/core/theme/app_decorations.dart';
 import 'package:strawberry/core/widgets/app_button.dart';
-import 'package:strawberry/core/widgets/app_badge.dart';
 import 'package:strawberry/features/auth/auth_service.dart';
-import 'package:strawberry/features/about/about_page.dart';
 import 'package:strawberry/features/about/about_service.dart';
 import 'package:strawberry/features/about/about_model.dart';
 import 'package:strawberry/features/dashboard/student/wait_screen.dart';
@@ -39,6 +38,14 @@ class _AuthScreenState extends State<AuthScreen>
   List<Map<String, dynamic>> _galleryPhotos = [];
   AboutInfo _aboutInfo = AboutInfo.defaults();
   bool _loadingData = true;
+
+  final ScrollController _exploreScrollController = ScrollController();
+  final GlobalKey _heroKey = GlobalKey();
+  final GlobalKey _aboutKey = GlobalKey();
+  final GlobalKey _programsKey = GlobalKey();
+  final GlobalKey _tourKey = GlobalKey();
+  final GlobalKey _whyUsKey = GlobalKey();
+  final GlobalKey _locationKey = GlobalKey();
 
   StreamSubscription<User?>? _authSubscription;
   bool _navigating = false;
@@ -118,7 +125,37 @@ class _AuthScreenState extends State<AuthScreen>
   void dispose() {
     _authSubscription?.cancel();
     _animController.dispose();
+    _exploreScrollController.dispose();
     super.dispose();
+  }
+
+  void _scrollToKey(GlobalKey key) {
+    if (_activeTab != 0) {
+      _switchTab(0);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _performScrollToKey(key);
+      });
+    } else {
+      _performScrollToKey(key);
+    }
+  }
+
+  void _performScrollToKey(GlobalKey key) {
+    final ctx = key.currentContext;
+    if (ctx != null) {
+      Scrollable.ensureVisible(
+        ctx,
+        duration: const Duration(milliseconds: 600),
+        curve: Curves.easeInOutCubic,
+      );
+    }
+  }
+
+  Future<void> _launchExternalUrl(String url) async {
+    final uri = Uri.parse(url);
+    try {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {}
   }
 
   Future<void> _launchWhatsApp([String? program]) async {
@@ -180,8 +217,51 @@ class _AuthScreenState extends State<AuthScreen>
     final childNameCtrl = TextEditingController();
     final childAgeCtrl = TextEditingController();
     final phoneCtrl = TextEditingController();
-    String selectedProgram = preselectedProgram ??
-        (_categories.isNotEmpty ? _categories.first : 'Playgroup');
+    final standardPrograms = [
+      'Playgroup',
+      'Nursery',
+      'LKG (Junior KG)',
+      'UKG (Senior KG)',
+      'Daycare & Creche',
+      'Tuition Classes',
+    ];
+
+    String normalizeProgram(String? input) {
+      if (input == null || input.trim().isEmpty) return standardPrograms.first;
+      final clean = input.toLowerCase().trim();
+
+      if (clean.contains('tuition') || clean.contains('tution')) {
+        return 'Tuition Classes';
+      }
+      if (clean.contains('daycare') || clean.contains('creche')) {
+        return 'Daycare & Creche';
+      }
+      if (clean.contains('ukg') || clean.contains('senior')) {
+        return 'UKG (Senior KG)';
+      }
+      if (clean.contains('lkg') || clean.contains('junior')) {
+        return 'LKG (Junior KG)';
+      }
+      if (clean.contains('nursery')) {
+        return 'Nursery';
+      }
+      if (clean.contains('play')) {
+        return 'Playgroup';
+      }
+
+      for (final p in standardPrograms) {
+        if (p.toLowerCase() == clean) return p;
+      }
+      return standardPrograms.first;
+    }
+
+    final availableCategories = [
+      ...standardPrograms,
+      for (final c in _categories)
+        if (!standardPrograms.any((sp) => sp.toLowerCase() == c.toLowerCase()))
+          c,
+    ];
+    String selectedProgram = normalizeProgram(preselectedProgram);
     bool submitting = false;
 
     showModalBottomSheet(
@@ -294,22 +374,20 @@ class _AuthScreenState extends State<AuthScreen>
                     ),
                     const SizedBox(height: 14),
 
-                    if (_categories.isNotEmpty) ...[
-                      DropdownButtonFormField<String>(
-                        value: _categories.contains(selectedProgram) ? selectedProgram : _categories.first,
-                        decoration: const InputDecoration(
-                          labelText: 'Interested Program',
-                          prefixIcon: Icon(Icons.category_rounded, color: AppColors.primary),
-                        ),
-                        items: _categories
-                            .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                            .toList(),
-                        onChanged: (v) {
-                          if (v != null) setSheetState(() => selectedProgram = v);
-                        },
+                    DropdownButtonFormField<String>(
+                      initialValue: selectedProgram,
+                      decoration: const InputDecoration(
+                        labelText: 'Interested Program',
+                        prefixIcon: Icon(Icons.category_rounded, color: AppColors.primary),
                       ),
-                      const SizedBox(height: 22),
-                    ],
+                      items: availableCategories
+                          .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                          .toList(),
+                      onChanged: (v) {
+                        if (v != null) setSheetState(() => selectedProgram = v);
+                      },
+                    ),
+                    const SizedBox(height: 22),
 
                     AppButton(
                       label: submitting ? 'Submitting...' : 'Submit & Connect on WhatsApp',
@@ -499,112 +577,159 @@ class _AuthScreenState extends State<AuthScreen>
 
   // ── Top Segmented Pill Switcher & Transparent Header ───────────────────
   Widget _buildTabSwitcher(bool isDesktop) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final horizontalPad = isDesktop ? (screenWidth >= 1200 ? 36.0 : 20.0) : 16.0;
+
     return Container(
       color: Colors.transparent,
       padding: EdgeInsets.symmetric(
-        horizontal: isDesktop ? 36.0 : 16.0,
-        vertical: 8.0,
+        horizontal: horizontalPad,
+        vertical: isDesktop ? 12.0 : 8.0,
       ),
       child: isDesktop
-          ? Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Left Brand Pill
-                InkWell(
-                  onTap: () => _switchTab(0),
-                  borderRadius: BorderRadius.circular(30),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.88),
-                      borderRadius: BorderRadius.circular(30),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.03),
-                          blurRadius: 10,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 32,
-                          height: 32,
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                          ),
-                          child: ClipOval(
-                            child: Image.asset(
-                              'assets/images/logo.png',
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'Strawberry',
-                          style: TextStyle(
-                            fontSize: 14.5,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.textDark,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: AppColors.primarySoft,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: const Text(
-                            'PORTAL',
-                            style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.primaryDark,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+          ? LayoutBuilder(
+              builder: (context, navConstraints) {
+                final navWidth = navConstraints.maxWidth;
+                final showAllNavLinks = navWidth >= 1080;
+                final showCompactNavLinks = navWidth >= 880 && navWidth < 1080;
+                final showFullBrandTitle = navWidth >= 960;
 
-                // Right Switcher Pill
-                Container(
-                  padding: const EdgeInsets.all(4),
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.92),
-                    borderRadius: BorderRadius.circular(30),
+                    color: Colors.white.withValues(alpha: 0.94),
+                    borderRadius: BorderRadius.circular(36),
                     border: Border.all(color: const Color(0xFFE2E8F0)),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
-                        blurRadius: 12,
-                        offset: const Offset(0, 3),
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 16,
+                        offset: const Offset(0, 4),
                       ),
                     ],
                   ),
                   child: Row(
-                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      _buildSwitcherPill(
-                        index: 0,
-                        icon: Icons.auto_awesome_rounded,
-                        label: 'Explore School',
+                      // Left Brand Pill
+                      Flexible(
+                        flex: 0,
+                        child: InkWell(
+                          onTap: () {
+                            if (_activeTab != 0) _switchTab(0);
+                            _scrollToKey(_heroKey);
+                          },
+                          borderRadius: BorderRadius.circular(30),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 38,
+                                height: 38,
+                                decoration: const BoxDecoration(shape: BoxShape.circle),
+                                child: ClipOval(
+                                  child: Image.asset(
+                                    'assets/images/logo.png',
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    showFullBrandTitle
+                                        ? 'Strawberry Preschool & Daycare'
+                                        : 'Strawberry Preschool',
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w900,
+                                      color: AppColors.textDark,
+                                      letterSpacing: -0.2,
+                                    ),
+                                  ),
+                                  const Text(
+                                    'Sector 85, Faridabad',
+                                    style: TextStyle(
+                                      fontSize: 10.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                      _buildSwitcherPill(
-                        index: 1,
-                        icon: Icons.login_rounded,
-                        label: 'Parent Portal',
+
+                      const Spacer(),
+
+                      // Center Quick Navigation links
+                      if (_activeTab == 0) ...[
+                        if (showAllNavLinks) ...[
+                          _buildDesktopNavLink('About School', () => _scrollToKey(_aboutKey)),
+                          _buildDesktopNavLink('Programs', () => _scrollToKey(_programsKey)),
+                          _buildDesktopNavLink('Campus Gallery', () => _scrollToKey(_tourKey)),
+                          _buildDesktopNavLink('Why Us', () => _scrollToKey(_whyUsKey)),
+                          _buildDesktopNavLink('Visit Campus', () => _scrollToKey(_locationKey)),
+                          const SizedBox(width: 6),
+                        ] else if (showCompactNavLinks) ...[
+                          _buildDesktopNavLink('About', () => _scrollToKey(_aboutKey), true),
+                          _buildDesktopNavLink('Programs', () => _scrollToKey(_programsKey), true),
+                          _buildDesktopNavLink('Gallery', () => _scrollToKey(_tourKey), true),
+                          _buildDesktopNavLink('Visit', () => _scrollToKey(_locationKey), true),
+                          const SizedBox(width: 4),
+                        ],
+                      ],
+
+                      // WhatsApp SVG Button
+                      Tooltip(
+                        message: 'Chat on WhatsApp',
+                        child: InkWell(
+                          onTap: () => _launchWhatsApp(),
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF25D366).withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: const Color(0xFF25D366).withValues(alpha: 0.3)),
+                            ),
+                            child: SvgPicture.asset(
+                              'assets/images/whatsapp.svg',
+                              width: 20,
+                              height: 20,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+
+                      // Right Switcher Button
+                      ElevatedButton.icon(
+                        onPressed: () => _switchTab(_activeTab == 0 ? 1 : 0),
+                        icon: Icon(
+                          _activeTab == 0 ? Icons.lock_person_rounded : Icons.explore_rounded,
+                          size: 15,
+                        ),
+                        label: Text(
+                          _activeTab == 0 ? 'Parent Portal' : 'Explore Website',
+                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _activeTab == 0 ? AppColors.primary : AppColors.textDark,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                        ),
                       ),
                     ],
                   ),
-                ),
-              ],
+                );
+              },
             )
           : Center(
               child: Container(
@@ -642,6 +767,30 @@ class _AuthScreenState extends State<AuthScreen>
                 ),
               ),
             ),
+    );
+  }
+
+  Widget _buildDesktopNavLink(String title, VoidCallback onTap, [bool compact = false]) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: compact ? 2 : 4),
+      child: TextButton(
+        onPressed: onTap,
+        style: TextButton.styleFrom(
+          foregroundColor: AppColors.textDark,
+          padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 10, vertical: 6),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          minimumSize: Size.zero,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+        child: Text(
+          title,
+          style: TextStyle(
+            fontSize: compact ? 12 : 13,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textDark,
+          ),
+        ),
+      ),
     );
   }
 
@@ -695,8 +844,280 @@ class _AuthScreenState extends State<AuthScreen>
   }
 
   // ── UX Pillar 1: Hero Banner & Trust Badges ───────────────────────────
-  Widget _buildHeroBanner() {
+  Widget _buildHeroBanner(bool isDesktop, [double? screenWidth]) {
+    if (isDesktop) {
+      return Container(
+        key: _heroKey,
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 44, vertical: 48),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFE93B61), Color(0xFFC72847), Color(0xFFA61C37)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(32),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFE93B61).withValues(alpha: 0.35),
+              blurRadius: 36,
+              offset: const Offset(0, 14),
+            ),
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Left Hero Column: Headings, Badges, Trust Metrics, CTAs
+            Expanded(
+              flex: 6,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Location & Admission badge
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.22),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.45)),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.location_on_rounded, color: Colors.white, size: 14),
+                        SizedBox(width: 6),
+                        Text(
+                          'BPTP Parklands, Sector 85, Faridabad • Admissions Open 2026-27',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+
+                  // Big Headline
+                  const Text(
+                    'Where Happy Childhoods Begin & Little Minds Blossom! 🍓',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 38,
+                      fontWeight: FontWeight.w900,
+                      height: 1.2,
+                      letterSpacing: -0.6,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Subtitle
+                  Text(
+                    'Faridabad’s leading early learning sanctuary. We offer playgroup, nursery, kindergarten, and full-day daycare with joyful Montessori methods, personal attention, and live parent updates.',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.94),
+                      fontSize: 15.5,
+                      height: 1.55,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                  const SizedBox(height: 26),
+
+                  // 4 Hero Trust Metric Pills
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.16),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.28)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildHeroMetricItem('5+ Yrs', 'Preschool Legacy'),
+                        _dividerLine(),
+                        _buildHeroMetricItem('1:1 Care', 'Individual Attention'),
+                        _dividerLine(),
+                        _buildHeroMetricItem('100% Safe', 'CCTV Monitored'),
+                        _dividerLine(),
+                        _buildHeroMetricItem('4.7 ★', 'Google Rating'),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 26),
+
+                  // CTAs
+                  Wrap(
+                    spacing: 14,
+                    runSpacing: 12,
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: () => _showEnquirySheet(),
+                        icon: const Icon(Icons.assignment_turned_in_rounded, size: 18),
+                        label: const Text(
+                          'Apply for Admission',
+                          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: AppColors.primaryDark,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        ),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: () => _launchWhatsApp(),
+                        icon: const Icon(Icons.chat_bubble_rounded, size: 18, color: Colors.white),
+                        label: const Text(
+                          'WhatsApp Campus Desk',
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 14),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Colors.white, width: 2),
+                          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        ),
+                      ),
+                      TextButton.icon(
+                        onPressed: () => _scrollToKey(_tourKey),
+                        icon: const Icon(Icons.photo_library_rounded, size: 20, color: Colors.white),
+                        label: const Text(
+                          'Explore Photo Gallery',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 14,
+                            decoration: TextDecoration.underline,
+                            decorationColor: Colors.white,
+                          ),
+                        ),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 36),
+
+            // Right Hero Column: Campus Image Card with floating badges
+            Expanded(
+              flex: 5,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    height: (screenWidth != null && screenWidth >= 1400) ? 440 : 400,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(26),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.25),
+                          blurRadius: 30,
+                          offset: const Offset(0, 14),
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(26),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Image.asset(
+                            'assets/images/school.jpg',
+                            fit: BoxFit.cover,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Floating Badge 1: Top Right (Google Rating)
+                  Positioned(
+                    top: -14,
+                    right: 18,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.12),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.star_rounded, color: Color(0xFFF59E0B), size: 18),
+                          SizedBox(width: 6),
+                          Text(
+                            '4.7 Rating • Sector 85',
+                            style: TextStyle(
+                              color: AppColors.textDark,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Floating Badge 2: Bottom Left (Safety)
+                  Positioned(
+                    bottom: -14,
+                    left: 18,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.12),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.verified_user_rounded, color: Color(0xFF10B981), size: 18),
+                          SizedBox(width: 6),
+                          Text(
+                            'Child-Safe & CCTV Campus',
+                            style: TextStyle(
+                              color: AppColors.textDark,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Mobile / Compact Hero Banner
     return Container(
+      key: _heroKey,
       width: double.infinity,
       decoration: BoxDecoration(
         gradient: const LinearGradient(
@@ -741,7 +1162,7 @@ class _AuthScreenState extends State<AuthScreen>
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(26),
+            padding: const EdgeInsets.all(22),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -749,8 +1170,8 @@ class _AuthScreenState extends State<AuthScreen>
                 Row(
                   children: [
                     Container(
-                      width: 56,
-                      height: 56,
+                      width: 52,
+                      height: 52,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         boxShadow: [
@@ -768,7 +1189,7 @@ class _AuthScreenState extends State<AuthScreen>
                         ),
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 14),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -779,18 +1200,18 @@ class _AuthScreenState extends State<AuthScreen>
                                 : 'Strawberry Preschool & Daycare',
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 22,
+                              fontSize: 20,
                               fontWeight: FontWeight.w900,
                               letterSpacing: 0.2,
                             ),
                           ),
                           const SizedBox(height: 4),
                           Wrap(
-                            spacing: 8,
+                            spacing: 6,
                             runSpacing: 4,
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                 decoration: BoxDecoration(
                                   color: Colors.white.withValues(alpha: 0.22),
                                   borderRadius: BorderRadius.circular(12),
@@ -800,22 +1221,22 @@ class _AuthScreenState extends State<AuthScreen>
                                   '✨ Admissions Open 2026-27',
                                   style: TextStyle(
                                     color: Colors.white,
-                                    fontSize: 11,
+                                    fontSize: 10.5,
                                     fontWeight: FontWeight.w800,
                                   ),
                                 ),
                               ),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                 decoration: BoxDecoration(
                                   color: Colors.white.withValues(alpha: 0.18),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Text(
-                                  'Ages 1.5 - 6 Years',
+                                  'Sector 85 Faridabad',
                                   style: TextStyle(
                                     color: Colors.white,
-                                    fontSize: 11,
+                                    fontSize: 10.5,
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
@@ -827,12 +1248,12 @@ class _AuthScreenState extends State<AuthScreen>
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 18),
                 const Text(
                   'Nurturing Young Minds with Love, Discovery & Joyful Learning! 🍓',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 16,
+                    fontSize: 15,
                     height: 1.4,
                     fontWeight: FontWeight.w700,
                   ),
@@ -842,95 +1263,88 @@ class _AuthScreenState extends State<AuthScreen>
                   'A warm, child-centric second home offering activity-based preschool education and reliable daycare with real-time parent updates.',
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.9),
-                    fontSize: 13,
+                    fontSize: 12.5,
                     height: 1.45,
                   ),
                 ),
-                const SizedBox(height: 22),
+                const SizedBox(height: 18),
 
                 // Key Stats & Trust Metrics Matrix
-                LayoutBuilder(
-                  builder: (ctx, constraints) {
-                    final isWide = constraints.maxWidth >= 540;
-                    return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.14),
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
-                      ),
-                      child: isWide
-                          ? Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              children: [
-                                _buildHeroMetricItem('5+ Yrs', 'Preschool Legacy'),
-                                _dividerLine(),
-                                _buildHeroMetricItem('1:1 Attention', 'Personal Care'),
-                                _dividerLine(),
-                                _buildHeroMetricItem('100% Safe', 'CCTV Campus'),
-                                _dividerLine(),
-                                _buildHeroMetricItem('Live ERP', 'Parent App'),
-                              ],
-                            )
-                          : GridView.count(
-                              crossAxisCount: 2,
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              mainAxisSpacing: 10,
-                              crossAxisSpacing: 10,
-                              childAspectRatio: 2.1,
-                              children: [
-                                _buildHeroMetricItem('5+ Yrs', 'Preschool Legacy'),
-                                _buildHeroMetricItem('1:1 Attention', 'Personal Care'),
-                                _buildHeroMetricItem('100% Safe', 'CCTV Campus'),
-                                _buildHeroMetricItem('Live ERP', 'Parent App'),
-                              ],
-                            ),
-                    );
-                  },
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildHeroMetricItem('5+ Yrs', 'Legacy'),
+                      _dividerLine(),
+                      _buildHeroMetricItem('1:1 Care', 'Attention'),
+                      _dividerLine(),
+                      _buildHeroMetricItem('100% Safe', 'CCTV'),
+                      _dividerLine(),
+                      _buildHeroMetricItem('4.7 ★', 'Google'),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
 
                 Row(
                   children: [
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: () => _showEnquirySheet(),
-                        icon: const Icon(Icons.assignment_turned_in_rounded, size: 16),
+                        icon: const Icon(Icons.assignment_turned_in_rounded, size: 15),
                         label: const Text(
                           'Apply Online',
-                          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
                         ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
                           foregroundColor: AppColors.primaryDark,
                           elevation: 0,
-                          padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 8),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: () => _launchWhatsApp(),
-                        icon: const Icon(Icons.chat_bubble_rounded, size: 16, color: Colors.white),
+                        icon: const Icon(Icons.chat_bubble_rounded, size: 15, color: Colors.white),
                         label: const Text(
                           'WhatsApp',
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12.5),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12),
                         ),
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(color: Colors.white, width: 1.5),
-                          padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 8),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 10),
+                Center(
+                  child: TextButton.icon(
+                    onPressed: () => _scrollToKey(_tourKey),
+                    icon: const Icon(Icons.photo_library_rounded, color: Colors.white, size: 18),
+                    label: const Text(
+                      'View Campus Photo Gallery 📸',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        decoration: TextDecoration.underline,
+                        decorationColor: Colors.white,
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -976,18 +1390,442 @@ class _AuthScreenState extends State<AuthScreen>
     );
   }
 
-  // ── UX Pillar 2: Dynamic Programs Offered (From Categories) ───────────
-  Widget _buildProgramsSection(int columns) {
+  // ── UX Pillar 2: Complete School Story & Philosophy (From About Page) ──
+  Widget _buildAboutSchoolSection(bool isDesktop) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      key: _aboutKey,
+      padding: EdgeInsets.all(isDesktop ? 32 : 20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 12,
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section Header Tag
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.primarySoft,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Text(
+                  'WELCOME TO STRAWBERRY',
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.8,
+                    color: AppColors.primaryDark,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text(
+                  'Sector 85, Faridabad',
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Nurturing With Love, Care & Joyful Discovery',
+            style: TextStyle(
+              fontSize: isDesktop ? 26 : 20,
+              fontWeight: FontWeight.w900,
+              color: AppColors.textDark,
+              letterSpacing: -0.3,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '“${_aboutInfo.schoolTagline.isNotEmpty ? _aboutInfo.schoolTagline : "Nurturing young minds with love, care & joyful discovery."}”',
+            style: const TextStyle(
+              fontSize: 13.5,
+              fontStyle: FontStyle.italic,
+              color: AppColors.primaryDark,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          if (isDesktop)
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Left Column: School Philosophy & 4 Highlights Grid
+                Expanded(
+                  flex: 6,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _aboutInfo.aboutSchool.isNotEmpty
+                            ? _aboutInfo.aboutSchool
+                            : 'Welcome to Strawberry Playschool & Daycare! We are dedicated to creating a vibrant, safe, and happy learning sanctuary where each child can explore their natural curiosity, build early cognitive and social skills, and blossom with confidence.',
+                        textAlign: TextAlign.justify,
+                        style: const TextStyle(
+                          color: AppColors.textBody,
+                          fontSize: 14.5,
+                          height: 1.65,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // 4 Core Highlights
+                      GridView.count(
+                        crossAxisCount: 2,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisSpacing: 14,
+                        mainAxisSpacing: 14,
+                        childAspectRatio: 2.8,
+                        children: [
+                          _buildHighlightTile(
+                            Icons.security_rounded,
+                            'Child-Safe Campus',
+                            '24/7 Monitored & Secure',
+                            AppColors.emerald,
+                          ),
+                          _buildHighlightTile(
+                            Icons.palette_rounded,
+                            'Activity-Based',
+                            'Montessori Curriculum',
+                            AppColors.violet,
+                          ),
+                          _buildHighlightTile(
+                            Icons.favorite_rounded,
+                            'Loving Mentors',
+                            'Trained & Caring Educators',
+                            AppColors.primary,
+                          ),
+                          _buildHighlightTile(
+                            Icons.wb_sunny_rounded,
+                            'Hygienic Daycare',
+                            'Clean & Healthy Spaces',
+                            AppColors.amberDark,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 32),
+
+                // Right Column: Aarti Arora's Founder Journey Card
+                Expanded(
+                  flex: 5,
+                  child: _buildFounderCard(),
+                ),
+              ],
+            )
+          else ...[
+            Text(
+              _aboutInfo.aboutSchool.isNotEmpty
+                  ? _aboutInfo.aboutSchool
+                  : 'Welcome to Strawberry Playschool & Daycare! We are dedicated to creating a vibrant, safe, and happy learning sanctuary where each child can explore their natural curiosity, build early cognitive and social skills, and blossom with confidence.',
+              textAlign: TextAlign.justify,
+              style: const TextStyle(
+                color: AppColors.textBody,
+                fontSize: 13.5,
+                height: 1.6,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+            const SizedBox(height: 18),
+
+            // 4 Core Highlights (Mobile)
+            ListView(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              children: [
+                _buildHighlightTile(
+                  Icons.security_rounded,
+                  'Child-Safe Campus',
+                  '24/7 Monitored & Secure',
+                  AppColors.emerald,
+                ),
+                const SizedBox(height: 10),
+                _buildHighlightTile(
+                  Icons.palette_rounded,
+                  'Activity-Based',
+                  'Montessori Curriculum',
+                  AppColors.violet,
+                ),
+                const SizedBox(height: 10),
+                _buildHighlightTile(
+                  Icons.favorite_rounded,
+                  'Loving Mentors',
+                  'Trained & Caring Educators',
+                  AppColors.primary,
+                ),
+                const SizedBox(height: 10),
+                _buildHighlightTile(
+                  Icons.wb_sunny_rounded,
+                  'Hygienic Daycare',
+                  'Clean & Healthy Spaces',
+                  AppColors.amberDark,
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            _buildFounderCard(),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHighlightTile(IconData icon, String title, String subtitle, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 13,
+                    color: AppColors.textDark,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textMuted,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFounderCard() {
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF7F9),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: AppColors.primarySoft.withValues(alpha: 0.9)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.05),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 62,
+                height: 62,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.primary, width: 2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.2),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: ClipOval(
+                  child: Image.asset(
+                    'assets/images/founder.jpg',
+                    fit: BoxFit.cover,
+                    alignment: Alignment.topCenter,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _aboutInfo.founderName.isNotEmpty ? _aboutInfo.founderName : 'Aarti Arora',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textDark,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.primarySoft,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        _aboutInfo.founderTitle.isNotEmpty ? _aboutInfo.founderTitle : 'Founder & Director',
+                        style: const TextStyle(
+                          color: AppColors.primaryDark,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.primary.withValues(alpha: 0.15)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.format_quote_rounded, color: AppColors.primary, size: 24),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    _aboutInfo.founderJourney.isNotEmpty
+                        ? _aboutInfo.founderJourney
+                        : 'Strawberry Playschool was born out of a heartfelt dream to provide children with a warm, joyful "second home" filled with love and encouragement.\n\nBeginning with a humble classroom and a handful of eager young learners, our mission has always been deeply personal: ensuring every child feels cherished, valued, and excited to learn.',
+                    textAlign: TextAlign.justify,
+                    style: const TextStyle(
+                      color: AppColors.textDark,
+                      fontSize: 12.5,
+                      height: 1.6,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── UX Pillar 3: Academic Programs Grid (Responsive 3-Col Desktop) ─────
+  Widget _buildProgramsSection(bool isDesktop, [double? screenWidth]) {
+    final programs = [
+      {
+        'title': 'Playgroup',
+        'age': 'Age 1.5 - 2.5 Yrs',
+        'desc': 'Sensory play, tactile motor stimulation, rhymes, social comfort & joyful curiosity.',
+        'icon': Icons.child_care_rounded,
+        'bg': AppColors.primarySoft,
+        'accent': AppColors.primary,
+      },
+      {
+        'title': 'Nursery',
+        'age': 'Age 2.5 - 3.5 Yrs',
+        'desc': 'Vocabulary expansion, colors, creative arts, rhythm movements & basic phonics sounds.',
+        'icon': Icons.palette_rounded,
+        'bg': AppColors.violetSoft,
+        'accent': AppColors.violetDark,
+      },
+      {
+        'title': 'LKG (Junior KG)',
+        'age': 'Age 3.5 - 4.5 Yrs',
+        'desc': 'Phonics mastery, pre-math concepts, pencil grip, logic puzzles & environmental studies.',
+        'icon': Icons.menu_book_rounded,
+        'bg': AppColors.emeraldSoft,
+        'accent': AppColors.emeraldDark,
+      },
+      {
+        'title': 'UKG (Senior KG)',
+        'age': 'Age 4.5 - 6.0 Yrs',
+        'desc': 'Primary school readiness, sentence reading, mathematical fluency & independent thinking.',
+        'icon': Icons.auto_stories_rounded,
+        'bg': AppColors.amberSoft,
+        'accent': AppColors.amberDark,
+      },
+      {
+        'title': 'Daycare & Creche',
+        'age': 'Ages 1.5 - 10 Yrs',
+        'desc': 'Safe home sanctuary, warm meal assistance, supervised resting pods & homework guidance.',
+        'icon': Icons.wb_sunny_rounded,
+        'bg': AppColors.skySoft,
+        'accent': AppColors.skyDark,
+      },
+      {
+        'title': 'Tuition Classes',
+        'age': 'Class 1st - 8th • All Subjects',
+        'desc': 'Personalized academic coaching, daily homework guidance, concept clarity & focused exam preparation.',
+        'icon': Icons.school_rounded,
+        'bg': const Color(0xFFEDE9FE),
+        'accent': const Color(0xFF6D28D9),
+      },
+    ];
+
+    return Container(
+      key: _programsKey,
+      padding: EdgeInsets.all(isDesktop ? 32 : 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 14,
             offset: const Offset(0, 4),
           ),
         ],
@@ -999,71 +1837,85 @@ class _AuthScreenState extends State<AuthScreen>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(8),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppColors.primarySoft,
-                        borderRadius: BorderRadius.circular(12),
+                        color: AppColors.violetSoft,
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(Icons.school_rounded, color: AppColors.primary, size: 20),
+                      child: const Text(
+                        'OUR CURRICULUM',
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.8,
+                          color: AppColors.violetDark,
+                        ),
+                      ),
                     ),
-                    const SizedBox(width: 12),
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Academic Programs',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.textDark,
-                            ),
-                          ),
-                          Text(
-                            'Curriculum tailored for Ages 1.5 to 6 Years',
-                            style: TextStyle(fontSize: 11.5, color: AppColors.textMuted),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
+                    const SizedBox(height: 8),
+                    Text(
+                      'Programs Designed for Every Milestone',
+                      style: TextStyle(
+                        fontSize: isDesktop ? 24 : 18,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.textDark,
+                        letterSpacing: -0.3,
                       ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Playgroup to UKG • Daycare & Creche • Class 1st to 8th Tuitions',
+                      style: TextStyle(fontSize: 12.5, color: AppColors.textMuted),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
-              TextButton(
+              ElevatedButton(
                 onPressed: () => _showEnquirySheet(),
-                child: const Text(
-                  'Enquire All →',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.primary,
-                  ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
+                child: const Text('Enquire All →', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800)),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
 
-          if (_loadingData)
-            const Padding(
-              padding: EdgeInsets.all(24),
-              child: StrawberryLoader(message: 'Scooping up categories... 🍓'),
+          if (isDesktop)
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                childAspectRatio: (screenWidth != null && screenWidth >= 1500)
+                    ? 1.85
+                    : ((screenWidth != null && screenWidth >= 1200) ? 1.7 : 1.55),
+              ),
+              itemCount: programs.length,
+              itemBuilder: (ctx, i) {
+                final p = programs[i];
+                return _buildProgramCardDesktop(p);
+              },
             )
           else
             ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: _categories.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 10),
+              itemCount: programs.length,
+              separatorBuilder: (_, _) => const SizedBox(height: 12),
               itemBuilder: (ctx, i) {
-                final cat = _categories[i];
-                return _buildProgramCard(cat, i);
+                final p = programs[i];
+                return _buildProgramCardMobile(p);
               },
             ),
         ],
@@ -1071,48 +1923,107 @@ class _AuthScreenState extends State<AuthScreen>
     );
   }
 
-  Widget _buildProgramCard(String programName, int index) {
-    final palettes = [
-      {
-        'bg': AppColors.primarySoft,
-        'accent': AppColors.primary,
-        'icon': Icons.child_care_rounded,
-        'age': 'Age 1.5 - 2.5 Yrs',
-        'desc': 'Sensory exploration, motor coordination & joyful social habits.',
-      },
-      {
-        'bg': AppColors.violetSoft,
-        'accent': AppColors.violetDark,
-        'icon': Icons.palette_rounded,
-        'age': 'Age 2.5 - 3.5 Yrs',
-        'desc': 'Creative expression, vocabulary building, rhymes & rhythm play.',
-      },
-      {
-        'bg': AppColors.emeraldSoft,
-        'accent': AppColors.emeraldDark,
-        'icon': Icons.menu_book_rounded,
-        'age': 'Age 3.5 - 4.5 Yrs',
-        'desc': 'Phonics fundamentals, number concepts & hands-on discovery.',
-      },
-      {
-        'bg': AppColors.amberSoft,
-        'accent': AppColors.amberDark,
-        'icon': Icons.auto_stories_rounded,
-        'age': 'Age 4.5 - 6.0 Yrs',
-        'desc': 'Primary school readiness, reading fluency & logical thinking.',
-      },
-      {
-        'bg': AppColors.skySoft,
-        'accent': AppColors.skyDark,
-        'icon': Icons.wb_sunny_rounded,
-        'age': 'Daycare & Creche',
-        'desc': 'Hygienic warm environment, meal assistance & supervised naps.',
-      },
-    ];
+  Widget _buildProgramCardDesktop(Map<String, dynamic> p) {
+    final title = p['title'] as String;
+    final age = p['age'] as String;
+    final desc = p['desc'] as String;
+    final icon = p['icon'] as IconData;
+    final bg = p['bg'] as Color;
+    final accent = p['accent'] as Color;
 
-    final meta = palettes[index % palettes.length];
-    final accent = meta['accent'] as Color;
-    final bg = meta['bg'] as Color;
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: bg,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(icon, color: accent, size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textDark,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: bg,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        age,
+                        style: TextStyle(
+                          color: accent,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 10,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Expanded(
+            child: Text(
+              desc,
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.textMuted,
+                height: 1.4,
+              ),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: () => _showEnquirySheet(title),
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: accent.withValues(alpha: 0.5)),
+                foregroundColor: accent,
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: const Text('Enquire for Admission', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProgramCardMobile(Map<String, dynamic> p) {
+    final title = p['title'] as String;
+    final age = p['age'] as String;
+    final desc = p['desc'] as String;
+    final icon = p['icon'] as IconData;
+    final bg = p['bg'] as Color;
+    final accent = p['accent'] as Color;
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -1129,7 +2040,7 @@ class _AuthScreenState extends State<AuthScreen>
               color: bg,
               borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(meta['icon'] as IconData, color: accent, size: 22),
+            child: Icon(icon, color: accent, size: 22),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -1142,7 +2053,7 @@ class _AuthScreenState extends State<AuthScreen>
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     Text(
-                      programName,
+                      title,
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w800,
@@ -1156,7 +2067,7 @@ class _AuthScreenState extends State<AuthScreen>
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        meta['age'] as String,
+                        age,
                         style: TextStyle(
                           color: accent,
                           fontWeight: FontWeight.w800,
@@ -1168,7 +2079,7 @@ class _AuthScreenState extends State<AuthScreen>
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  meta['desc'] as String,
+                  desc,
                   style: const TextStyle(
                     fontSize: 11.5,
                     color: AppColors.textMuted,
@@ -1182,7 +2093,7 @@ class _AuthScreenState extends State<AuthScreen>
           ),
           const SizedBox(width: 10),
           ElevatedButton(
-            onPressed: () => _showEnquirySheet(programName),
+            onPressed: () => _showEnquirySheet(title),
             style: ElevatedButton.styleFrom(
               backgroundColor: accent,
               foregroundColor: Colors.white,
@@ -1197,8 +2108,189 @@ class _AuthScreenState extends State<AuthScreen>
     );
   }
 
-  // ── UX Pillar 3: Why Choose Strawberry Pillars ────────────────────────
-  Widget _buildWhyChooseSection(int columns) {
+  // ── UX Pillar 4: Campus Moments & Photo Gallery Showcase ───
+  Widget _buildCampusVideoAndGallerySection(bool isDesktop) {
+    return Container(
+      key: _tourKey,
+      padding: EdgeInsets.all(isDesktop ? 32 : 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.skySoft,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Text(
+                        'CAMPUS MEMORIES',
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.8,
+                          color: AppColors.skyDark,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Campus Moments & Photo Gallery',
+                      style: TextStyle(
+                        fontSize: isDesktop ? 24 : 18,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.textDark,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Take a peek inside our vibrant classrooms, play areas, and festive celebrations',
+                      style: TextStyle(fontSize: 12.5, color: AppColors.textMuted),
+                    ),
+                  ],
+                ),
+              ),
+              TextButton.icon(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const GalleryPage()),
+                ),
+                icon: const Icon(Icons.photo_library_rounded, size: 16, color: AppColors.primary),
+                label: const Text(
+                  'Full Gallery →',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+
+          _buildGalleryReel(isDesktop),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGalleryReel(bool isDesktop) {
+    return SizedBox(
+      height: isDesktop ? 220 : 160,
+      child: _loadingData
+          ? const SectionShimmer(height: 160, message: 'Loading gallery memories... 📸')
+          : _galleryPhotos.isEmpty
+              ? Container(
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Text(
+                    'Gallery photos syncing...',
+                    style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                  ),
+                )
+              : ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  itemCount: _galleryPhotos.length,
+                  separatorBuilder: (_, _) => const SizedBox(width: 14),
+                  itemBuilder: (ctx, i) {
+                    final photo = _galleryPhotos[i];
+                    final url = photo['image_url'] as String? ?? '';
+                    final title = photo['title'] as String? ?? 'Campus Activity';
+
+                    return MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: GestureDetector(
+                        onTap: () => _openPhotoLightbox(url),
+                        child: Container(
+                          width: isDesktop ? 220 : 180,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.14),
+                                blurRadius: 10,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                Image.network(
+                                  url,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, _, _) => Container(
+                                    color: AppColors.primarySoft,
+                                    child: const Icon(Icons.photo_rounded, color: AppColors.primary),
+                                  ),
+                                ),
+                                Positioned(
+                                  bottom: 0,
+                                  left: 0,
+                                  right: 0,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomCenter,
+                                        colors: [
+                                          Colors.transparent,
+                                          Colors.black.withValues(alpha: 0.8),
+                                        ],
+                                      ),
+                                    ),
+                                    child: Text(
+                                      title,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+    );
+  }
+
+  // ── UX Pillar 5: Why Choose Strawberry Pillars ────────────────────────
+  Widget _buildWhyChooseSection(bool isDesktop) {
     final features = [
       {
         'icon': Icons.sentiment_very_satisfied_rounded,
@@ -1221,21 +2313,22 @@ class _AuthScreenState extends State<AuthScreen>
       {
         'icon': Icons.groups_rounded,
         'color': AppColors.amberDark,
-        'title': '1:1 Personal Attention',
+        'title': '1:1 Personal Care',
         'sub': 'Individual care, affectionate mentoring, and dedicated personal attention.',
       },
     ];
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      key: _whyUsKey,
+      padding: EdgeInsets.all(isDesktop ? 32 : 20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 12,
+            blurRadius: 14,
             offset: const Offset(0, 4),
           ),
         ],
@@ -1243,152 +2336,169 @@ class _AuthScreenState extends State<AuthScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.violetSoft,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.stars_rounded, color: AppColors.violetDark, size: 20),
-              ),
-              const SizedBox(width: 12),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Why Parents Choose Strawberry',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textDark,
-                      ),
-                    ),
-                    Text(
-                      'Core pillars of early childhood excellence',
-                      style: TextStyle(fontSize: 11.5, color: AppColors.textMuted),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: columns,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              mainAxisExtent: columns == 1 ? 84 : 124,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppColors.emeraldSoft,
+              borderRadius: BorderRadius.circular(10),
             ),
-            itemCount: features.length,
-            itemBuilder: (ctx, i) {
-              final f = features[i];
-              final color = f['color'] as Color;
-              return Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: columns == 1
-                    ? Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(9),
-                            decoration: BoxDecoration(
-                              color: color.withValues(alpha: 0.12),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(f['icon'] as IconData, color: color, size: 20),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  f['title'] as String,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 13,
-                                    color: AppColors.textDark,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  f['sub'] as String,
-                                  style: const TextStyle(fontSize: 11, color: AppColors.textMuted, height: 1.25),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      )
-                    : Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: color.withValues(alpha: 0.12),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(f['icon'] as IconData, color: color, size: 18),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            f['title'] as String,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w800,
-                              fontSize: 12.5,
-                              color: AppColors.textDark,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            f['sub'] as String,
-                            style: const TextStyle(fontSize: 10.5, color: AppColors.textMuted, height: 1.25),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-              );
-            },
+            child: const Text(
+              'WHY STRAWBERRY',
+              style: TextStyle(
+                fontSize: 10.5,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 0.8,
+                color: AppColors.emeraldDark,
+              ),
+            ),
           ),
+          const SizedBox(height: 8),
+          Text(
+            'Why Parents in Faridabad Choose Us',
+            style: TextStyle(
+              fontSize: isDesktop ? 24 : 18,
+              fontWeight: FontWeight.w900,
+              color: AppColors.textDark,
+              letterSpacing: -0.3,
+            ),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Core pillars of early childhood excellence and unwavering parent trust',
+            style: TextStyle(fontSize: 12.5, color: AppColors.textMuted),
+          ),
+          const SizedBox(height: 24),
+
+          if (isDesktop)
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 4,
+                crossAxisSpacing: 14,
+                mainAxisSpacing: 14,
+                mainAxisExtent: 152,
+              ),
+              itemCount: features.length,
+              itemBuilder: (ctx, i) {
+                final f = features[i];
+                final color = f['color'] as Color;
+                return Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: color.withValues(alpha: 0.12),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(f['icon'] as IconData, color: color, size: 22),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        f['title'] as String,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13.5,
+                          color: AppColors.textDark,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        f['sub'] as String,
+                        style: const TextStyle(fontSize: 11, color: AppColors.textMuted, height: 1.3),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                );
+              },
+            )
+          else
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: features.length,
+              separatorBuilder: (_, _) => const SizedBox(height: 10),
+              itemBuilder: (ctx, i) {
+                final f = features[i];
+                final color = f['color'] as Color;
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: color.withValues(alpha: 0.12),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(f['icon'] as IconData, color: color, size: 20),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              f['title'] as String,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 13.5,
+                                color: AppColors.textDark,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              f['sub'] as String,
+                              style: const TextStyle(
+                                fontSize: 11.5,
+                                color: AppColors.textMuted,
+                                height: 1.3,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
         ],
       ),
     );
   }
 
-  // ── UX Pillar 4: Founder's Story Spotlight Card ───────────────────────
-  Widget _buildFounderSpotlight() {
+  // ── UX Pillar 6: Campus Location & Contact Hub (Faridabad Local SEO) ──
+  Widget _buildLocationAndContactHub(bool isDesktop, [double? screenWidth]) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      key: _locationKey,
+      padding: EdgeInsets.all(isDesktop ? 32 : 20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 12,
+            blurRadius: 14,
             offset: const Offset(0, 4),
           ),
         ],
@@ -1396,134 +2506,428 @@ class _AuthScreenState extends State<AuthScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  color: AppColors.primarySoft,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.primary, width: 2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.18),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: ClipOval(
-                  child: _aboutInfo.founderImageUrl.isNotEmpty
-                      ? (_aboutInfo.founderImageUrl.startsWith('assets/')
-                          ? Image.asset(
-                              _aboutInfo.founderImageUrl,
-                              fit: BoxFit.cover,
-                              alignment: Alignment.topCenter,
-                            )
-                          : Image.network(
-                              _aboutInfo.founderImageUrl,
-                              fit: BoxFit.cover,
-                              alignment: Alignment.topCenter,
-                              errorBuilder: (_, __, ___) => Image.asset(
-                                'assets/images/founder.jpg',
-                                fit: BoxFit.cover,
-                                alignment: Alignment.topCenter,
-                              ),
-                            ))
-                      : Image.asset(
-                          'assets/images/founder.jpg',
-                          fit: BoxFit.cover,
-                          alignment: Alignment.topCenter,
-                        ),
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Founder\'s Message',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textDark,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      _aboutInfo.founderName.isNotEmpty ? _aboutInfo.founderName : 'Aarti Arora • Founder & Director',
-                      style: const TextStyle(
-                        fontSize: 11.5,
-                        color: AppColors.primaryDark,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
           Container(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
+              color: AppColors.primarySoft,
+              borderRadius: BorderRadius.circular(10),
             ),
-            child: Text(
-              _aboutInfo.aboutSchool.isNotEmpty
-                  ? _aboutInfo.aboutSchool
-                  : '"Every child deserves a warm second home filled with encouragement, discovery, and joyful memories."',
-              style: const TextStyle(
-                color: AppColors.textDark,
-                fontStyle: FontStyle.italic,
-                fontSize: 12.5,
-                height: 1.45,
+            child: const Text(
+              'CAMPUS LOCATION & VISITING HOURS',
+              style: TextStyle(
+                fontSize: 10.5,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 0.8,
+                color: AppColors.primaryDark,
               ),
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
             ),
           ),
-          const SizedBox(height: 12),
-          InkWell(
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const AboutPage()),
+          const SizedBox(height: 8),
+          Text(
+            'Conveniently Located in Sector 85, Faridabad',
+            style: TextStyle(
+              fontSize: isDesktop ? 24 : 18,
+              fontWeight: FontWeight.w900,
+              color: AppColors.textDark,
+              letterSpacing: -0.3,
             ),
-            borderRadius: BorderRadius.circular(8),
-            child: const Padding(
-              padding: EdgeInsets.symmetric(vertical: 4),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'We welcome parents for guided campus visits, counseling, and admission walkthroughs',
+            style: TextStyle(fontSize: 12.5, color: AppColors.textMuted),
+          ),
+          const SizedBox(height: 24),
+
+          if (isDesktop)
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Left 5 Flex: Address & Contact Details
+                Expanded(
+                  flex: 5,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildContactDetailItem(
+                        Icons.location_on_rounded,
+                        'Campus Address',
+                        'BPTP Parklands, C-22, Sector 85, Faridabad, Haryana 121007',
+                        AppColors.primary,
+                        () => _launchExternalUrl('https://maps.app.goo.gl/efvVwz7AMGXp1EC68'),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildContactDetailItem(
+                        Icons.access_time_filled_rounded,
+                        'Visiting Hours',
+                        'Monday to Saturday: 8:30 AM – 4:00 PM',
+                        AppColors.emerald,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildContactDetailItem(
+                        Icons.phone_in_talk_rounded,
+                        'Helpline & WhatsApp Desk',
+                        '+91 99992 49495',
+                        AppColors.violet,
+                        _launchCall,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildContactDetailItem(
+                        Icons.email_rounded,
+                        'Official Email',
+                        'daycarestrawberry@gmail.com',
+                        AppColors.amberDark,
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Social and Map Action Buttons
+                      Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
+                        children: [
+                          ElevatedButton.icon(
+                            onPressed: () => _launchExternalUrl('https://maps.app.goo.gl/efvVwz7AMGXp1EC68'),
+                            icon: SvgPicture.asset('assets/images/google_maps.svg', width: 18, height: 18),
+                            label: const Text('Open in Google Maps', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                          ),
+                          OutlinedButton.icon(
+                            onPressed: () => _launchExternalUrl('https://www.instagram.com/strawberry.preschool/'),
+                            icon: SvgPicture.asset('assets/images/instagram.svg', width: 18, height: 18),
+                            label: const Text('Instagram', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: Color(0xFFE1306C))),
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: Color(0xFFE1306C), width: 1.2),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                          ),
+                          OutlinedButton.icon(
+                            onPressed: () => _launchExternalUrl('https://www.facebook.com/daycare.strawberry'),
+                            icon: SvgPicture.asset('assets/images/facebook.svg', width: 18, height: 18),
+                            label: const Text('Facebook', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: Color(0xFF1877F2))),
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: Color(0xFF1877F2), width: 1.2),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 28),
+
+                // Right 5 Flex: Visual Map Card
+                Expanded(
+                  flex: 5,
+                  child: _buildInteractiveMapCard(isDesktop, screenWidth),
+                ),
+              ],
+            )
+          else ...[
+            _buildContactDetailItem(
+              Icons.location_on_rounded,
+              'Campus Address',
+              'BPTP Parklands, C-22, Sector 85, Faridabad, Haryana 121007',
+              AppColors.primary,
+              () => _launchExternalUrl('https://maps.app.goo.gl/efvVwz7AMGXp1EC68'),
+            ),
+            const SizedBox(height: 10),
+            _buildContactDetailItem(
+              Icons.access_time_filled_rounded,
+              'Visiting Hours',
+              'Monday to Saturday: 8:30 AM – 4:00 PM',
+              AppColors.emerald,
+            ),
+            const SizedBox(height: 10),
+            _buildContactDetailItem(
+              Icons.phone_in_talk_rounded,
+              'Helpline & WhatsApp Desk',
+              '+91 99992 49495',
+              AppColors.violet,
+              _launchCall,
+            ),
+            const SizedBox(height: 14),
+
+            // Mobile Social and Map Buttons
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: () => _launchExternalUrl('https://maps.app.goo.gl/efvVwz7AMGXp1EC68'),
+                  icon: SvgPicture.asset('assets/images/google_maps.svg', width: 16, height: 16),
+                  label: const Text('Google Maps', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () => _launchExternalUrl('https://www.instagram.com/strawberry.preschool/'),
+                  icon: SvgPicture.asset('assets/images/instagram.svg', width: 16, height: 16),
+                  label: const Text('Instagram', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFFE1306C))),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Color(0xFFE1306C), width: 1.2),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () => _launchExternalUrl('https://www.facebook.com/daycare.strawberry'),
+                  icon: SvgPicture.asset('assets/images/facebook.svg', width: 16, height: 16),
+                  label: const Text('Facebook', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF1877F2))),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Color(0xFF1877F2), width: 1.2),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _buildInteractiveMapCard(false),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContactDetailItem(
+    IconData icon,
+    String title,
+    String subtitle,
+    Color color, [
+    VoidCallback? onTap,
+  ]) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(9),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: color, size: 20),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Read Full Campus Story & Values',
-                    style: TextStyle(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w800,
+                    title,
+                    style: const TextStyle(
                       fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textMuted,
                     ),
                   ),
-                  SizedBox(width: 6),
-                  Icon(Icons.arrow_forward_rounded, size: 14, color: AppColors.primary),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textDark,
+                    ),
+                  ),
                 ],
               ),
             ),
-          ),
-        ],
+            if (onTap != null)
+              const Icon(Icons.arrow_forward_ios_rounded, size: 13, color: AppColors.textMuted),
+          ],
+        ),
       ),
     );
   }
 
-  // ── UX Pillar: Campus Life Gallery Reel ──────────────────────────────
-  Widget _buildGallerySection() {
+  Widget _buildInteractiveMapCard(bool isDesktop, [double? screenWidth]) {
+    return InkWell(
+      onTap: () => _launchExternalUrl('https://maps.app.goo.gl/efvVwz7AMGXp1EC68'),
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        height: isDesktop ? ((screenWidth != null && screenWidth >= 1400) ? 360 : 300) : 230,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFCBD5E1)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 16,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // Real Google Map of Sector 85 Faridabad
+              Image.asset(
+                'assets/images/campus_map.jpg',
+                fit: BoxFit.cover,
+                alignment: Alignment.center,
+              ),
+
+              // Top Left Floating Card: Google Maps Marker Badge
+              Positioned(
+                top: 12,
+                left: 12,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.95),
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.12),
+                        blurRadius: 10,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SvgPicture.asset(
+                        'assets/images/google_maps.svg',
+                        width: 20,
+                        height: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Strawberry Playschool',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w900,
+                              color: AppColors.textDark,
+                            ),
+                          ),
+                          Text(
+                            'BPTP Parklands, Sector 85',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: AppColors.textMuted,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Top Right: Live Open on Google Maps link
+              Positioned(
+                top: 12,
+                right: 12,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.95),
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.open_in_new_rounded, size: 13, color: AppColors.primary),
+                      SizedBox(width: 4),
+                      Text(
+                        'View on Maps',
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Bottom Gradient & Driving Directions Bar
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Colors.black.withValues(alpha: 0.8),
+                      ],
+                    ),
+                  ),
+                  child: ElevatedButton.icon(
+                    onPressed: () => _launchExternalUrl('https://maps.app.goo.gl/efvVwz7AMGXp1EC68'),
+                    icon: SvgPicture.asset('assets/images/google_maps.svg', width: 18, height: 18),
+                    label: const Text(
+                      'Get Driving Directions on Google Maps 🗺️',
+                      style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: AppColors.textDark,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Bottom Banner Card to Switch to Parent Portal ──────────────────────
+  Widget _buildPortalBannerCard() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
           BoxShadow(
@@ -1533,273 +2937,200 @@ class _AuthScreenState extends State<AuthScreen>
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Row(
+      child: LayoutBuilder(
+        builder: (ctx, constraints) {
+          final isWide = constraints.maxWidth >= 600;
+          return isWide
+              ? Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppColors.skySoft,
-                        borderRadius: BorderRadius.circular(12),
+                      padding: const EdgeInsets.all(10),
+                      decoration: const BoxDecoration(
+                        color: AppColors.primarySoft,
+                        shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.photo_library_rounded, color: AppColors.sky, size: 20),
+                      child: const Icon(Icons.lock_person_rounded, color: AppColors.primary, size: 24),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 16),
                     const Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Campus Moments & Activities',
+                            'Enrolled Student, Parent or Staff Member?',
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: 14.5,
                               fontWeight: FontWeight.w800,
                               color: AppColors.textDark,
                             ),
                           ),
+                          SizedBox(height: 2),
                           Text(
-                            'Celebrations, workshops & daily highlights',
-                            style: TextStyle(fontSize: 11.5, color: AppColors.textMuted),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                            'Access real-time attendance, fee receipts, circulars & daily photo updates',
+                            style: TextStyle(fontSize: 12, color: AppColors.textMuted),
                           ),
                         ],
                       ),
                     ),
+                    const SizedBox(width: 14),
+                    ElevatedButton(
+                      onPressed: () => _switchTab(1),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text(
+                        'Sign In to Parent Portal →',
+                        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                      ),
+                    ),
                   ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              TextButton(
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const GalleryPage()),
-                ),
-                child: const Text(
-                  'Full Gallery →',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.primary,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          SizedBox(
-            height: 160,
-            child: _loadingData
-                ? const SectionShimmer(height: 160, message: 'Loading gallery memories... 📸')
-                : _galleryPhotos.isEmpty
-                    ? Container(
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
-                          borderRadius: BorderRadius.circular(16),
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: const BoxDecoration(
+                            color: AppColors.primarySoft,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.lock_person_rounded, color: AppColors.primary, size: 20),
                         ),
-                        child: const Text(
-                          'Gallery photos syncing...',
-                          style: TextStyle(fontSize: 12, color: AppColors.textMuted),
-                        ),
-                      )
-                    : ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        physics: const BouncingScrollPhysics(),
-                        itemCount: _galleryPhotos.length,
-                        separatorBuilder: (_, _) => const SizedBox(width: 14),
-                        itemBuilder: (ctx, i) {
-                          final photo = _galleryPhotos[i];
-                          final url = photo['image_url'] as String? ?? '';
-                          final title = photo['title'] as String? ?? 'Campus Activity';
-
-                          return GestureDetector(
-                            onTap: () => _openPhotoLightbox(url),
-                            child: Container(
-                              width: 180,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(16),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.18),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 3),
-                                  ),
-                                ],
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(16),
-                                child: Stack(
-                                  fit: StackFit.expand,
-                                  children: [
-                                    Image.network(
-                                      url,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, _, _) => Container(
-                                        color: AppColors.primarySoft,
-                                        child: const Icon(Icons.photo_rounded, color: AppColors.primary),
-                                      ),
-                                    ),
-                                    Positioned(
-                                      bottom: 0,
-                                      left: 0,
-                                      right: 0,
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            begin: Alignment.topCenter,
-                                            end: Alignment.bottomCenter,
-                                            colors: [
-                                              Colors.transparent,
-                                              Colors.black.withValues(alpha: 0.8),
-                                            ],
-                                          ),
-                                        ),
-                                        child: Text(
-                                          title,
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 11.5,
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Enrolled Student or Parent?',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.textDark,
                                 ),
                               ),
-                            ),
-                          );
-                        },
+                              Text(
+                                'Live attendance, fee receipts & notices',
+                                style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: () => _switchTab(1),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 11),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-          ),
-        ],
+                      child: const Text(
+                        'Sign In to Parent Portal →',
+                        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                      ),
+                    ),
+                  ],
+                );
+        },
       ),
     );
   }
 
-  // ── UX Pillar: High-Converting Admission Connect Hub ─────────────────
-  Widget _buildAdmissionHub() {
+  // ── Modern 2026 Website Footer ────────────────────────────────────────
+  Widget _buildWebsiteFooter() {
     return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 36),
+      decoration: const BoxDecoration(
+        color: Color(0xFF0F172A),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.emeraldSoft,
-                  borderRadius: BorderRadius.circular(12),
+                width: 34,
+                height: 34,
+                decoration: const BoxDecoration(shape: BoxShape.circle),
+                child: ClipOval(
+                  child: Image.asset('assets/images/logo.png', fit: BoxFit.cover),
                 ),
-                child: const Icon(Icons.support_agent_rounded, color: AppColors.emerald, size: 20),
               ),
-              const SizedBox(width: 12),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Campus Admission Helpline',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textDark,
-                      ),
-                    ),
-                    Text(
-                      'Mon - Sat: 8:30 AM - 4:00 PM',
-                      style: TextStyle(fontSize: 11.5, color: AppColors.textMuted),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+              const SizedBox(width: 10),
+              const Text(
+                'Strawberry Preschool & Daycare',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
-          const Text(
-            'Connect with our counseling team for fee breakdown, daycare availability, or campus tour appointment:',
+          const SizedBox(height: 8),
+          Text(
+            'BPTP Parklands, C-22, Sector 85, Faridabad, Haryana 121007',
             style: TextStyle(
-              fontSize: 12.5,
-              color: AppColors.textDark,
-              height: 1.35,
+              color: Colors.white.withValues(alpha: 0.7),
+              fontSize: 12,
             ),
+            textAlign: TextAlign.center,
           ),
+          const SizedBox(height: 18),
+
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 16,
+            runSpacing: 8,
+            children: [
+              InkWell(
+                onTap: () => _scrollToKey(_aboutKey),
+                child: Text('About School', style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 12)),
+              ),
+              InkWell(
+                onTap: () => _scrollToKey(_programsKey),
+                child: Text('Academic Programs', style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 12)),
+              ),
+              InkWell(
+                onTap: () => _scrollToKey(_tourKey),
+                child: Text('Campus Gallery', style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 12)),
+              ),
+              InkWell(
+                onTap: () => _scrollToKey(_locationKey),
+                child: Text('Location & Map', style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 12)),
+              ),
+              InkWell(
+                onTap: () => _switchTab(1),
+                child: Text('Parent Portal', style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 12)),
+              ),
+              InkWell(
+                onTap: () => _launchExternalUrl('https://strawberrydaycare.co.in/privacy'),
+                child: const Text('Privacy Policy', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 12, fontWeight: FontWeight.w600)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          const Divider(color: Color(0xFF334155), height: 1),
           const SizedBox(height: 16),
 
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () => _launchWhatsApp(),
-                  icon: const Icon(Icons.chat_rounded, size: 16),
-                  label: const Text('WhatsApp Us', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF25D366),
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(vertical: 13),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: _launchCall,
-                  icon: const Icon(Icons.phone_in_talk_rounded, size: 16),
-                  label: const Text('Call Campus', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(vertical: 13),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          OutlinedButton.icon(
-            onPressed: () => _showEnquirySheet(),
-            icon: const Icon(Icons.assignment_rounded, size: 16, color: AppColors.primary),
-            label: const Text(
-              'Submit Online Admission Application Form',
-              style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: AppColors.textDark),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+          Text(
+            '© 2026 Strawberry Preschool & Daycare. All rights reserved. • Designed & Developed by Harshit',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.5),
+              fontSize: 11,
             ),
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: Color(0xFFE2E8F0)),
-              padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -1810,172 +3141,42 @@ class _AuthScreenState extends State<AuthScreen>
   Widget _buildExploreTab(double screenWidth) {
     final isDesktop = screenWidth >= 960;
     final isTablet = screenWidth >= 640 && screenWidth < 960;
+    final horizontalPad = isDesktop ? (screenWidth >= 1200 ? 36.0 : 20.0) : (isTablet ? 24.0 : 16.0);
+    final topPad = isDesktop ? 20.0 : 14.0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _buildHeroBanner(),
-        const SizedBox(height: 20),
-
-        if (isDesktop)
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        Padding(
+          padding: EdgeInsets.fromLTRB(horizontalPad, topPad, horizontalPad, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Left Column: Programs & Founder's Story
-              Expanded(
-                flex: 5,
-                child: Column(
-                  children: [
-                    _buildProgramsSection(1),
-                    const SizedBox(height: 20),
-                    _buildFounderSpotlight(),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 24),
-              // Right Column: Gallery, Why Choose & Admissions
-              Expanded(
-                flex: 5,
-                child: Column(
-                  children: [
-                    _buildGallerySection(),
-                    const SizedBox(height: 20),
-                    _buildWhyChooseSection(2),
-                    const SizedBox(height: 20),
-                    _buildAdmissionHub(),
-                  ],
-                ),
-              ),
-            ],
-          )
-        else ...[
-          _buildProgramsSection(1),
-          const SizedBox(height: 18),
-          _buildGallerySection(),
-          const SizedBox(height: 18),
-          _buildWhyChooseSection(isTablet ? 2 : 1),
-          const SizedBox(height: 18),
-          _buildFounderSpotlight(),
-          const SizedBox(height: 18),
-          _buildAdmissionHub(),
-        ],
-        const SizedBox(height: 24),
+              _buildHeroBanner(isDesktop, screenWidth),
+              SizedBox(height: isDesktop ? 32 : 18),
 
-        // Bottom CTA to switch to Portal
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final isWide = constraints.maxWidth >= 600;
-            return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-              ),
-              child: isWide
-                  ? Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: const BoxDecoration(
-                            color: AppColors.primarySoft,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.lock_person_rounded, color: AppColors.primary, size: 20),
-                        ),
-                        const SizedBox(width: 14),
-                        const Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Enrolled Student, Parent or Staff?',
-                                style: TextStyle(
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.w800,
-                                  color: AppColors.textDark,
-                                ),
-                              ),
-                              Text(
-                                'Access live attendance, fee receipts & notices',
-                                style: TextStyle(fontSize: 11.5, color: AppColors.textMuted),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        ElevatedButton(
-                          onPressed: () => _switchTab(1),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                          child: const Text(
-                            'Sign In to Portal →',
-                            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5),
-                          ),
-                        ),
-                      ],
-                    )
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: const BoxDecoration(
-                                color: AppColors.primarySoft,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(Icons.lock_person_rounded, color: AppColors.primary, size: 20),
-                            ),
-                            const SizedBox(width: 12),
-                            const Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Enrolled Student or Parent?',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w800,
-                                      color: AppColors.textDark,
-                                    ),
-                                  ),
-                                  Text(
-                                    'Live attendance, fee receipts & notices',
-                                    style: TextStyle(fontSize: 11, color: AppColors.textMuted),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        ElevatedButton(
-                          onPressed: () => _switchTab(1),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            padding: const EdgeInsets.symmetric(vertical: 11),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                          child: const Text(
-                            'Sign In to Parent Portal →',
-                            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
-                          ),
-                        ),
-                      ],
-                    ),
-            );
-          },
+              _buildAboutSchoolSection(isDesktop),
+              SizedBox(height: isDesktop ? 32 : 18),
+
+              _buildProgramsSection(isDesktop, screenWidth),
+              SizedBox(height: isDesktop ? 32 : 18),
+
+              _buildCampusVideoAndGallerySection(isDesktop),
+              SizedBox(height: isDesktop ? 32 : 18),
+
+              _buildWhyChooseSection(isDesktop),
+              SizedBox(height: isDesktop ? 32 : 18),
+
+              _buildLocationAndContactHub(isDesktop, screenWidth),
+              SizedBox(height: isDesktop ? 32 : 18),
+
+              _buildPortalBannerCard(),
+              SizedBox(height: isDesktop ? 40 : 28),
+            ],
+          ),
         ),
-        const SizedBox(height: 30),
+
+        _buildWebsiteFooter(),
       ],
     );
   }
@@ -2262,11 +3463,43 @@ class _AuthScreenState extends State<AuthScreen>
                 ),
               ),
             ),
-            const SizedBox(height: 6),
+            if (!kIsWeb) ...[
+              const SizedBox(height: 10),
+              Center(
+                child: InkWell(
+                  onTap: () async {
+                    final uri = Uri.parse('https://strawberrydaycare.co.in');
+                    try {
+                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                    } catch (_) {}
+                  },
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.language_rounded, size: 14, color: AppColors.primary),
+                        const SizedBox(width: 5),
+                        Text(
+                          'Visit Website: strawberrydaycare.co.in 🌐',
+                          style: AppTypography.bodySmall.copyWith(
+                            color: AppColors.primary,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: 4),
             Center(
               child: InkWell(
                 onTap: () async {
-                  final uri = Uri.parse('https://strawberryschool.netlify.app/privacy.html');
+                  final uri = Uri.parse('https://strawberrydaycare.co.in/privacy');
                   try {
                     await launchUrl(uri, mode: LaunchMode.externalApplication);
                   } catch (_) {}
@@ -2333,7 +3566,6 @@ class _AuthScreenState extends State<AuthScreen>
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     final isDesktop = size.width >= 960;
-    final isTablet = size.width >= 640 && size.width < 960;
 
     return Scaffold(
       body: Container(
@@ -2398,7 +3630,7 @@ class _AuthScreenState extends State<AuthScreen>
                                 alignment: Alignment.topCenter,
                                 children: <Widget>[
                                   ...previousChildren,
-                                  if (currentChild != null) currentChild,
+                                  ?currentChild,
                                 ],
                               );
                             },
@@ -2421,11 +3653,9 @@ class _AuthScreenState extends State<AuthScreen>
                             child: _activeTab == 0
                                 ? SingleChildScrollView(
                                     key: const ValueKey(0),
+                                    controller: _exploreScrollController,
                                     physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: isDesktop ? 36.0 : (isTablet ? 24.0 : 16.0),
-                                      vertical: 16.0,
-                                    ),
+                                    padding: EdgeInsets.zero,
                                     child: _buildExploreTab(size.width),
                                   )
                                 : LayoutBuilder(
