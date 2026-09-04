@@ -159,10 +159,42 @@ class _AuthScreenState extends State<AuthScreen>
     } catch (_) {}
   }
 
-  Future<void> _launchWhatsApp([String? program]) async {
-    final text = program != null && program.isNotEmpty
-        ? 'Hello Strawberry Playschool, I am interested in admission for the $program program. Please share details regarding the admission process and campus visit.'
-        : 'Hello Strawberry Playschool, I would like to enquire about new admissions and book a campus visit.';
+  Future<void> _launchWhatsApp({
+    String? program,
+    String? parentName,
+    String? phone,
+    String? childName,
+    String? childAge,
+  }) async {
+    final String text;
+    if (parentName != null && parentName.trim().isNotEmpty) {
+      final buffer = StringBuffer();
+      buffer.writeln('🍓 *New Admission Enquiry - Strawberry Preschool* 🎒');
+      buffer.writeln();
+      buffer.writeln('👤 *Parent / Guardian:* ${parentName.trim()}');
+      if (phone != null && phone.trim().isNotEmpty) {
+        final cleanPhone = phone.trim();
+        final formattedPhone = cleanPhone.startsWith('+') ? cleanPhone : '+91 $cleanPhone';
+        buffer.writeln('📱 *Contact Number:* $formattedPhone');
+      }
+      if (childName != null && childName.trim().isNotEmpty) {
+        buffer.writeln('👶 *Child\'s Name:* ${childName.trim()}');
+      }
+      if (childAge != null && childAge.trim().isNotEmpty) {
+        buffer.writeln('🎂 *Child\'s Age:* ${childAge.trim()}');
+      }
+      if (program != null && program.trim().isNotEmpty) {
+        buffer.writeln('📚 *Interested Program:* ${program.trim()}');
+      }
+      buffer.writeln();
+      buffer.writeln('Hello Strawberry team! Please share admission process, fee structure & curriculum details. We would also like to book a campus visit. Thank you!');
+      text = buffer.toString();
+    } else if (program != null && program.trim().isNotEmpty) {
+      text = 'Hello Strawberry Playschool, I am interested in admission for the ${program.trim()} program. Please share details regarding the admission process and campus visit.';
+    } else {
+      text = 'Hello Strawberry Playschool, I would like to enquire about new admissions and book a campus visit.';
+    }
+
     final uri = Uri.parse(
       'https://wa.me/919999249495?text=${Uri.encodeComponent(text)}',
     );
@@ -429,7 +461,13 @@ class _AuthScreenState extends State<AuthScreen>
                                 ),
                               );
 
-                              _launchWhatsApp(selectedProgram);
+                              _launchWhatsApp(
+                                program: selectedProgram,
+                                parentName: pName,
+                                phone: phone,
+                                childName: childNameCtrl.text.trim(),
+                                childAge: childAgeCtrl.text.trim(),
+                              );
                             },
                       variant: AppButtonVariant.primary,
                       height: 52,
@@ -2671,14 +2709,7 @@ class _AuthScreenState extends State<AuthScreen>
                         children: [
                           ElevatedButton.icon(
                             onPressed: () => _launchExternalUrl('https://maps.app.goo.gl/efvVwz7AMGXp1EC68'),
-                            icon: Container(
-                              padding: const EdgeInsets.all(3),
-                              decoration: const BoxDecoration(
-                                color: Colors.white,
-                                shape: BoxShape.circle,
-                              ),
-                              child: SvgPicture.asset('assets/images/google_maps.svg', width: 15, height: 15),
-                            ),
+                            icon: SvgPicture.asset('assets/images/google_maps.svg', width: 18, height: 18),
                             label: const Text('Open in Google Maps', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800)),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
@@ -2754,14 +2785,7 @@ class _AuthScreenState extends State<AuthScreen>
               children: [
                 ElevatedButton.icon(
                   onPressed: () => _launchExternalUrl('https://maps.app.goo.gl/efvVwz7AMGXp1EC68'),
-                  icon: Container(
-                    padding: const EdgeInsets.all(2.5),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                    ),
-                    child: SvgPicture.asset('assets/images/google_maps.svg', width: 14, height: 14),
-                  ),
+                  icon: SvgPicture.asset('assets/images/google_maps.svg', width: 16, height: 16),
                   label: const Text('Google Maps', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
@@ -3312,40 +3336,48 @@ class _AuthScreenState extends State<AuthScreen>
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Container(
-                            width: 74,
-                            height: 74,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.white,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.18),
-                                  blurRadius: 14,
-                                  offset: const Offset(0, 4),
+                          Center(
+                            child: Container(
+                              width: 74,
+                              height: 74,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.white,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.18),
+                                    blurRadius: 14,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              padding: const EdgeInsets.all(2.5),
+                              child: ClipOval(
+                                child: Image.asset(
+                                  'assets/images/logo.png',
+                                  fit: BoxFit.cover,
                                 ),
-                              ],
-                            ),
-                            padding: const EdgeInsets.all(2.5),
-                            child: ClipOval(
-                              child: Image.asset(
-                                'assets/images/logo.png',
-                                fit: BoxFit.cover,
                               ),
                             ),
                           ),
                           const SizedBox(height: 18),
-                          Text(
-                            'Strawberry ERP',
-                            style: AppTypography.display.copyWith(color: Colors.white, fontSize: 26),
+                          Center(
+                            child: Text(
+                              'Strawberry ERP',
+                              textAlign: TextAlign.center,
+                              style: AppTypography.display.copyWith(color: Colors.white, fontSize: 26),
+                            ),
                           ),
                           const SizedBox(height: 8),
-                          Text(
-                            'Smart School Management & Real-Time Parent Connect Platform.',
-                            style: AppTypography.bodyMedium.copyWith(
-                              color: Colors.white.withValues(alpha: 0.92),
-                              height: 1.4,
-                              fontSize: 13.5,
+                          Center(
+                            child: Text(
+                              'Smart School Management & Real-Time Parent Connect Platform.',
+                              textAlign: TextAlign.center,
+                              style: AppTypography.bodyMedium.copyWith(
+                                color: Colors.white.withValues(alpha: 0.92),
+                                height: 1.4,
+                                fontSize: 13.5,
+                              ),
                             ),
                           ),
                           const SizedBox(height: 22),
