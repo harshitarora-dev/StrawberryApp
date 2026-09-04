@@ -1,4 +1,5 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:strawberry/core/theme/app_colors.dart';
@@ -89,6 +90,15 @@ class _PayFeesPageState extends State<PayFeesPage> {
       cursor = DateTime(cursor.year, cursor.month + 1, 1);
     }
     return months;
+  }
+
+  bool get _canLaunchUpiApp {
+    // Only show direct UPI deep link button on mobile phones (Android / iOS),
+    // whether running as a native app or accessed via mobile browser.
+    // Laptops / desktop PCs (Windows, macOS, Linux) do not have UPI apps,
+    // so they pay via QR code & UPI ID instead.
+    return defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS;
   }
 
   List<String> get _payableMonths {
@@ -912,25 +922,6 @@ class _PayFeesPageState extends State<PayFeesPage> {
                                         prefixStyle: AppTypography.h2.copyWith(color: AppColors.primary),
                                       ),
                                     ),
-                                    const SizedBox(height: 20),
-                                    if (!kIsWeb) ...[
-                                      AppButton(
-                                        label: _paying ? 'Opening UPI App...' : 'Pay Instant via UPI',
-                                        icon: Icons.bolt_rounded,
-                                        loading: _paying,
-                                        onPressed: _paying ? null : _startPayment,
-                                        variant: AppButtonVariant.primary,
-                                        height: 52,
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Center(
-                                        child: Text(
-                                          'Compatible with Google Pay, PhonePe, Paytm & BHIM UPI',
-                                          textAlign: TextAlign.center,
-                                          style: AppTypography.caption,
-                                        ),
-                                      ),
-                                    ],
                                   ],
                                 ],
                               ),
@@ -1085,7 +1076,7 @@ class _PayFeesPageState extends State<PayFeesPage> {
 
                           const SizedBox(height: 24),
 
-                          if (!kIsWeb) ...[
+                          if (_canLaunchUpiApp) ...[
                             AppButton(
                               label: _paying ? 'Opening UPI App...' : 'Pay Instant via UPI',
                               icon: Icons.bolt_rounded,

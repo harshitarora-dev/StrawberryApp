@@ -252,74 +252,100 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   Future<void> _logout() async {
     final shouldLogout = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => Dialog(
         backgroundColor: Colors.white,
+        elevation: 8,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-        titlePadding: const EdgeInsets.fromLTRB(22, 22, 22, 8),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 22, vertical: 8),
-        actionsPadding: const EdgeInsets.fromLTRB(16, 12, 18, 18),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: const BoxDecoration(
-                color: AppColors.dangerSoft,
-                shape: BoxShape.circle,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        child: Padding(
+          padding: const EdgeInsets.all(22),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: const BoxDecoration(
+                      color: AppColors.dangerSoft,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.logout_rounded, color: AppColors.danger, size: 22),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'Heading out, Superstar? 🎒',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textDark,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              child: const Icon(Icons.logout_rounded, color: AppColors.danger, size: 22),
-            ),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Text(
-                'Heading out, Superstar? 🎒',
+              const SizedBox(height: 14),
+              const Text(
+                'Don\'t forget to pack your curiosity & smiles for tomorrow. See you soon!',
                 style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textDark,
+                  fontSize: 13.5,
+                  color: AppColors.textMuted,
+                  height: 1.45,
                 ),
               ),
-            ),
-          ],
-        ),
-        content: const Text(
-          'Don\'t forget to pack your curiosity & smiles for tomorrow. See you soon!',
-          style: TextStyle(
-            fontSize: 13.5,
-            color: AppColors.textMuted,
-            height: 1.4,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            child: const Text(
-              'Keep Exploring',
-              style: TextStyle(
-                color: AppColors.textDark,
-                fontWeight: FontWeight.w700,
-                fontSize: 13,
+              const SizedBox(height: 22),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.textDark,
+                        side: const BorderSide(color: Color(0xFFCBD5E1), width: 1.2),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text(
+                        'Keep Exploring',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.danger,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text(
+                        'Sign Out 👋',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w800,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.danger,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            child: const Text(
-              'Sign Out 👋',
-              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
-            ),
-          ),
-        ],
+        ),
       ),
     );
 
@@ -630,28 +656,42 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                 _buildWebsiteFooter(),
                               ],
                             )
-                          : ListView(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: horizontalPadding,
-                                vertical: 20.0,
-                              ),
+                          : SingleChildScrollView(
                               physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-                              children: [
-                                _buildProfileHero(isDesktop),
-                                const SizedBox(height: 20),
-                                _buildAttendanceCard(),
-                                const SizedBox(height: 16),
-                                _buildFeeCard(),
-                                const SizedBox(height: 16),
-                                _buildQuickActionsGrid(),
-                                const SizedBox(height: 16),
-                                _buildPreschoolMemoriesCard(),
-                                const SizedBox(height: 16),
-                                _buildRecentNoticesCard(),
-                                const SizedBox(height: 16),
-                                _buildCampusSupportCard(),
-                                const SizedBox(height: 80),
-                              ],
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Padding(
+                                    padding: EdgeInsets.fromLTRB(
+                                      horizontalPadding,
+                                      20.0,
+                                      horizontalPadding,
+                                      20.0,
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                                      children: [
+                                        _buildProfileHero(isDesktop),
+                                        const SizedBox(height: 20),
+                                        _buildAttendanceCard(),
+                                        const SizedBox(height: 16),
+                                        _buildFeeCard(),
+                                        const SizedBox(height: 16),
+                                        _buildQuickActionsGrid(),
+                                        const SizedBox(height: 16),
+                                        _buildPreschoolMemoriesCard(),
+                                        const SizedBox(height: 16),
+                                        _buildRecentNoticesCard(),
+                                        const SizedBox(height: 16),
+                                        _buildCampusSupportCard(),
+                                        const SizedBox(height: 12),
+                                      ],
+                                    ),
+                                  ),
+                                  _buildWebsiteFooter(),
+                                  const SizedBox(height: 80),
+                                ],
+                              ),
                             ),
                     ),
                     if (_isFabOpen)
@@ -1071,27 +1111,34 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.emeraldSoft,
-                      borderRadius: BorderRadius.circular(12),
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.emeraldSoft,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.account_balance_wallet_rounded, color: AppColors.emerald, size: 20),
                     ),
-                    child: const Icon(Icons.account_balance_wallet_rounded, color: AppColors.emerald, size: 20),
-                  ),
-                  const SizedBox(width: 10),
-                  const Text(
-                    'Fee & Payment Center',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textDark,
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Text(
+                        'Fee & Payment Center',
+                        style: TextStyle(
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textDark,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
@@ -1117,45 +1164,52 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    const Text(
-                      'Monthly Tuition Fee',
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textMuted,
+                    const Expanded(
+                      child: Text(
+                        'Monthly Tuition Fee',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textMuted,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '₹$fee / month',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w900,
-                        color: AppColors.textDark,
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: const Text(
+                        'Session 2026–27',
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textDark,
+                        ),
                       ),
                     ),
                   ],
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: const Text(
-                    'Session 2026-27',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textDark,
-                    ),
+                const SizedBox(height: 6),
+                Text(
+                  '₹$fee / month',
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.textDark,
+                    letterSpacing: -0.5,
                   ),
                 ),
               ],
@@ -1218,27 +1272,34 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.skySoft,
-                      borderRadius: BorderRadius.circular(12),
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.skySoft,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.calendar_month_rounded, color: AppColors.sky, size: 20),
                     ),
-                    child: const Icon(Icons.calendar_month_rounded, color: AppColors.sky, size: 20),
-                  ),
-                  const SizedBox(width: 10),
-                  const Text(
-                    'Attendance & Holidays',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textDark,
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Text(
+                        'Attendance & Holidays',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textDark,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
@@ -1314,7 +1375,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     required Color color,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       decoration: BoxDecoration(
         color: const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(12),
@@ -1325,13 +1386,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         children: [
           Row(
             children: [
-              Text(emoji, style: const TextStyle(fontSize: 12)),
+              Text(emoji, style: const TextStyle(fontSize: 11)),
               const SizedBox(width: 4),
               Flexible(
                 child: Text(
                   label,
                   style: const TextStyle(
-                    fontSize: 10.5,
+                    fontSize: 10,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textMuted,
                   ),
@@ -1345,7 +1406,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           Text(
             value,
             style: TextStyle(
-              fontSize: 12.5,
+              fontSize: 12,
               fontWeight: FontWeight.w800,
               color: color,
             ),
@@ -1529,38 +1590,60 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Row(
-                children: [
-                  Icon(Icons.photo_camera_rounded, color: AppColors.amberDark, size: 20),
-                  SizedBox(width: 8),
-                  Text(
-                    'Preschool Memories',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textDark,
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(7),
+                      decoration: BoxDecoration(
+                        color: AppColors.amberSoft,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.photo_camera_rounded, color: AppColors.amberDark, size: 18),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'Preschool Memories',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textDark,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               InkWell(
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const GalleryPage()),
                 ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'All Albums',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.primary,
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.primarySoft,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'All Albums',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primary,
+                        ),
                       ),
-                    ),
-                    SizedBox(width: 2),
-                    Icon(Icons.arrow_forward_rounded, size: 14, color: AppColors.primary),
-                  ],
+                      SizedBox(width: 3),
+                      Icon(Icons.arrow_forward_rounded, size: 12, color: AppColors.primary),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -1708,38 +1791,60 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Row(
-                children: [
-                  Icon(Icons.campaign_rounded, color: AppColors.primary, size: 20),
-                  SizedBox(width: 8),
-                  Text(
-                    'Official Announcements',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textDark,
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(7),
+                      decoration: BoxDecoration(
+                        color: AppColors.primarySoft,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.campaign_rounded, color: AppColors.primary, size: 18),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'Official Announcements',
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textDark,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               InkWell(
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const NoticeBoardPage()),
                 ).then((_) => _loadUnreadNoticesCount()),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Notice Board',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.primary,
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.primarySoft,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Notice Board',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primary,
+                        ),
                       ),
-                    ),
-                    SizedBox(width: 2),
-                    Icon(Icons.arrow_forward_rounded, size: 14, color: AppColors.primary),
-                  ],
+                      SizedBox(width: 3),
+                      Icon(Icons.arrow_forward_rounded, size: 12, color: AppColors.primary),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -2162,31 +2267,38 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   Widget _buildWebsiteFooter() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 36),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
       decoration: const BoxDecoration(
         color: Color(0xFF0F172A),
       ),
       child: Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          Wrap(
+            alignment: WrapAlignment.center,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 10,
+            runSpacing: 6,
             children: [
               Container(
-                width: 34,
-                height: 34,
-                decoration: const BoxDecoration(shape: BoxShape.circle),
+                width: 32,
+                height: 32,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white,
+                ),
+                padding: const EdgeInsets.all(1.5),
                 child: ClipOval(
                   child: Image.asset('assets/images/logo.png', fit: BoxFit.cover),
                 ),
               ),
-              const SizedBox(width: 10),
               const Text(
                 'Strawberry Preschool & Daycare',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 16,
+                  fontSize: 15.5,
                   fontWeight: FontWeight.w900,
                 ),
+                textAlign: TextAlign.center,
               ),
             ],
           ),

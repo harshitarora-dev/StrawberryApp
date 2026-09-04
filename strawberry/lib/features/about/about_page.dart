@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:strawberry/core/theme/app_colors.dart';
 import 'package:strawberry/features/auth/auth_service.dart';
@@ -106,18 +107,26 @@ class _AboutPageState extends State<AboutPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Container(
-                      width: 56,
-                      height: 56,
-                      padding: const EdgeInsets.all(2),
+                      width: 76,
+                      height: 76,
+                      padding: const EdgeInsets.all(2.5),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
+                        color: Colors.white,
+                        border: Border.all(color: Colors.white, width: 3),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.15),
-                            blurRadius: 12,
+                            color: Colors.black.withValues(alpha: 0.22),
+                            blurRadius: 16,
                             offset: const Offset(0, 4),
+                          ),
+                          BoxShadow(
+                            color: Colors.white.withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            spreadRadius: 1,
                           ),
                         ],
                       ),
@@ -583,37 +592,110 @@ class _AboutPageState extends State<AboutPage> {
           ),
           const SizedBox(height: 10),
           Wrap(
-            spacing: 8,
-            runSpacing: 8,
+            spacing: 10,
+            runSpacing: 10,
             children: [
               if (!kIsWeb && _info.websiteUrl.isNotEmpty)
-                _socialBadge(
-                  label: 'Official Website',
-                  icon: Icons.language_rounded,
-                  color: const Color(0xFF0F9D58),
-                  bgColor: const Color(0xFFE6F4EA),
-                  url: _info.websiteUrl,
+                OutlinedButton.icon(
+                  onPressed: () => _launchExternal(_info.websiteUrl),
+                  icon: const Icon(Icons.language_rounded, size: 16, color: Color(0xFF0F9D58)),
+                  label: const Text(
+                    'Official Website',
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF0F9D58),
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Color(0xFF0F9D58), width: 1.2),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    shape: const StadiumBorder(),
+                  ),
                 ),
-              _socialBadge(
-                label: 'Google Maps',
-                icon: Icons.map_rounded,
-                color: const Color(0xFF1A73E8),
-                bgColor: const Color(0xFFE8F0FE),
-                url: _info.googleMapsUrl,
+              ElevatedButton.icon(
+                onPressed: () => _launchExternal(
+                  _info.googleMapsUrl.isNotEmpty
+                      ? _info.googleMapsUrl
+                      : 'https://maps.app.goo.gl/efvVwz7AMGXp1EC68',
+                ),
+                icon: Container(
+                  padding: const EdgeInsets.all(2.5),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                  child: SvgPicture.asset(
+                    'assets/images/google_maps.svg',
+                    width: 14,
+                    height: 14,
+                  ),
+                ),
+                label: const Text(
+                  'Google Maps',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  shape: const StadiumBorder(),
+                ),
               ),
-              _socialBadge(
-                label: 'Instagram',
-                icon: Icons.camera_alt_rounded,
-                color: const Color(0xFFE1306C),
-                bgColor: const Color(0xFFFDE8EF),
-                url: _info.instagramUrl,
+              OutlinedButton.icon(
+                onPressed: () => _launchExternal(
+                  _info.instagramUrl.isNotEmpty
+                      ? _info.instagramUrl
+                      : 'https://www.instagram.com/strawberry.preschool/',
+                ),
+                icon: SvgPicture.asset(
+                  'assets/images/instagram.svg',
+                  width: 16,
+                  height: 16,
+                ),
+                label: const Text(
+                  'Instagram',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFFE1306C),
+                  ),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Color(0xFFE1306C), width: 1.2),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  shape: const StadiumBorder(),
+                ),
               ),
-              _socialBadge(
-                label: 'Facebook',
-                icon: Icons.facebook_rounded,
-                color: const Color(0xFF1877F2),
-                bgColor: const Color(0xFFE7F0FE),
-                url: _info.facebookUrl,
+              OutlinedButton.icon(
+                onPressed: () => _launchExternal(
+                  _info.facebookUrl.isNotEmpty
+                      ? _info.facebookUrl
+                      : 'https://www.facebook.com/daycare.strawberry',
+                ),
+                icon: SvgPicture.asset(
+                  'assets/images/facebook.svg',
+                  width: 16,
+                  height: 16,
+                ),
+                label: const Text(
+                  'Facebook',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF1877F2),
+                  ),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Color(0xFF1877F2), width: 1.2),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  shape: const StadiumBorder(),
+                ),
               ),
             ],
           ),
@@ -672,46 +754,12 @@ class _AboutPageState extends State<AboutPage> {
     return row;
   }
 
-  Widget _socialBadge({
-    required String label,
-    required IconData icon,
-    required Color color,
-    required Color bgColor,
-    required String url,
-  }) {
-    return InkWell(
-      onTap: () async {
-        if (url.isEmpty) return;
-        final uri = Uri.parse(url);
-        try {
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
-        } catch (_) {}
-      },
-      borderRadius: BorderRadius.circular(10),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: color.withValues(alpha: 0.3)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 15, color: color),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: color,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+  Future<void> _launchExternal(String url) async {
+    if (url.isEmpty) return;
+    final uri = Uri.parse(url);
+    try {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {}
   }
 
   Widget _buildDeveloperCard() {

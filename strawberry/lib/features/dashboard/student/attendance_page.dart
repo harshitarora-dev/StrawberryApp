@@ -237,7 +237,7 @@ class _AttendancePageState extends State<AttendancePage> {
             : AppColors.danger;
 
     return Container(
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: AppDecorations.radiusXl,
@@ -248,53 +248,67 @@ class _AttendancePageState extends State<AttendancePage> {
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        isStar ? '🌟 Star Attendance' : 'Attendance Rate',
-                        style: AppTypography.caption.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: isStar ? AppColors.amberDark : AppColors.textMuted,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            isStar ? '🌟 Star Attendance' : 'Attendance Rate',
+                            style: AppTypography.caption.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: isStar ? AppColors.amberDark : AppColors.textMuted,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                      ),
-                      if (isStar) ...[
-                        const SizedBox(width: 4),
-                        const PlayfulSparkle(size: 14, color: Colors.amber),
+                        if (isStar) ...[
+                          const SizedBox(width: 4),
+                          const PlayfulSparkle(size: 14, color: Colors.amber),
+                        ],
                       ],
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Text(
-                        '$pctStr%',
-                        style: AppTypography.display.copyWith(color: color, fontSize: 32),
-                      ),
-                      const SizedBox(width: 8),
-                      AppBadge(
-                        label: _attendancePercentage >= 85
-                            ? '⭐ Outstanding'
-                            : (_attendancePercentage >= 70 ? '👍 Great' : '🌱 Growing'),
-                        type: _attendancePercentage >= 70 ? AppBadgeType.success : AppBadgeType.warning,
-                      ),
-                    ],
-                  ),
-                ],
+                    ),
+                    const SizedBox(height: 4),
+                    Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: [
+                        Text(
+                          '$pctStr%',
+                          style: AppTypography.display.copyWith(
+                            color: color,
+                            fontSize: 30,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        AppBadge(
+                          label: _attendancePercentage >= 85
+                              ? '⭐ Outstanding'
+                              : (_attendancePercentage >= 70 ? '👍 Great' : '🌱 Growing'),
+                          type: _attendancePercentage >= 70 ? AppBadgeType.success : AppBadgeType.warning,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 12),
               // Circular Progress Badge
               Stack(
                 alignment: Alignment.center,
                 children: [
                   SizedBox(
-                    width: 62,
-                    height: 62,
+                    width: 56,
+                    height: 56,
                     child: CircularProgressIndicator(
                       value: _totalWorkingDaysMarked == 0 ? 0 : _attendancePercentage / 100,
-                      strokeWidth: 6,
+                      strokeWidth: 5.5,
                       backgroundColor: AppColors.background,
                       color: color,
                     ),
@@ -304,7 +318,7 @@ class _AttendancePageState extends State<AttendancePage> {
                     duration: const Duration(milliseconds: 2000),
                     child: Text(
                       _attendancePercentage >= 85 ? '🌟' : (_attendancePercentage >= 70 ? '🍓' : '🌱'),
-                      style: const TextStyle(fontSize: 22),
+                      style: const TextStyle(fontSize: 20),
                     ),
                   ),
                 ],
@@ -318,12 +332,22 @@ class _AttendancePageState extends State<AttendancePage> {
 
           // Mini metrics breakdown row
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildMiniMetric('Present', '$_presentCount', AppColors.emerald, AppColors.emeraldSoft, '🟢'),
-              _buildMiniMetric('Late', '$_lateCount', AppColors.amber, AppColors.amberSoft, '🟡'),
-              _buildMiniMetric('Absent', '$_absentCount', AppColors.danger, AppColors.dangerSoft, '🔴'),
-              _buildMiniMetric('Total Days', '$_totalWorkingDaysMarked', AppColors.primary, AppColors.primarySoft, '🎒'),
+              Expanded(
+                child: _buildMiniMetric('Present', '$_presentCount', AppColors.emerald, AppColors.emeraldSoft, '🟢'),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: _buildMiniMetric('Late', '$_lateCount', AppColors.amber, AppColors.amberSoft, '🟡'),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: _buildMiniMetric('Absent', '$_absentCount', AppColors.danger, AppColors.dangerSoft, '🔴'),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: _buildMiniMetric('Total Days', '$_totalWorkingDaysMarked', AppColors.primary, AppColors.primarySoft, '🎒'),
+              ),
             ],
           ),
         ],
@@ -336,19 +360,25 @@ class _AttendancePageState extends State<AttendancePage> {
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
             decoration: BoxDecoration(
               color: bg,
               borderRadius: AppDecorations.radiusSm,
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(emoji, style: const TextStyle(fontSize: 10)),
                 const SizedBox(width: 4),
-                Text(
-                  value,
-                  style: AppTypography.h3.copyWith(color: color, fontSize: 14),
+                Flexible(
+                  child: Text(
+                    value,
+                    style: AppTypography.h3.copyWith(color: color, fontSize: 13),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
             ),
@@ -356,7 +386,10 @@ class _AttendancePageState extends State<AttendancePage> {
           const SizedBox(height: 4),
           Text(
             label,
-            style: AppTypography.caption.copyWith(fontSize: 11),
+            style: AppTypography.caption.copyWith(fontSize: 10.5),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -661,18 +694,29 @@ class _AttendancePageState extends State<AttendancePage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  const Icon(Icons.event_note_rounded, color: AppColors.primary, size: 18),
-                  const SizedBox(width: 8),
-                  Text(formattedTitle, style: AppTypography.h3),
-                ],
+              Expanded(
+                child: Row(
+                  children: [
+                    const Icon(Icons.event_note_rounded, color: AppColors.primary, size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        formattedTitle,
+                        style: AppTypography.h3,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              if (isHoliday)
+              if (isHoliday) ...[
+                const SizedBox(width: 8),
                 const AppBadge(
                   label: 'Holiday',
                   type: AppBadgeType.info,
                 ),
+              ],
             ],
           ),
           const SizedBox(height: 12),
@@ -737,24 +781,35 @@ class _AttendancePageState extends State<AttendancePage> {
                   color: AppColors.surfaceAlt,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Row(
+                child: Wrap(
+                  spacing: 12,
+                  runSpacing: 6,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     if (rec['in_time'] != null) ...[
-                      const Icon(Icons.login_rounded, size: 14, color: AppColors.textMuted),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Check In: ${_formatTimeString(rec['in_time'])}',
-                        style: AppTypography.bodySmall.copyWith(fontWeight: FontWeight.w600),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.login_rounded, size: 14, color: AppColors.textMuted),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Check In: ${_formatTimeString(rec['in_time'])}',
+                            style: AppTypography.bodySmall.copyWith(fontWeight: FontWeight.w600),
+                          ),
+                        ],
                       ),
                     ],
-                    if (rec['in_time'] != null && rec['out_time'] != null)
-                      const SizedBox(width: 16),
                     if (rec['out_time'] != null) ...[
-                      const Icon(Icons.logout_rounded, size: 14, color: AppColors.textMuted),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Check Out: ${_formatTimeString(rec['out_time'])}',
-                        style: AppTypography.bodySmall.copyWith(fontWeight: FontWeight.w600),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.logout_rounded, size: 14, color: AppColors.textMuted),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Check Out: ${_formatTimeString(rec['out_time'])}',
+                            style: AppTypography.bodySmall.copyWith(fontWeight: FontWeight.w600),
+                          ),
+                        ],
                       ),
                     ],
                   ],
@@ -772,9 +827,11 @@ class _AttendancePageState extends State<AttendancePage> {
                 children: [
                   const Icon(Icons.info_outline_rounded, size: 16, color: AppColors.textMuted),
                   const SizedBox(width: 8),
-                  Text(
-                    'No attendance record marked for this date.',
-                    style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+                  Expanded(
+                    child: Text(
+                      'No attendance record marked for this date.',
+                      style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+                    ),
                   ),
                 ],
               ),

@@ -167,74 +167,100 @@ class _AdminDashboardState extends State<AdminDashboard> {
   Future<void> _logout() async {
     final shouldLogout = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => Dialog(
         backgroundColor: Colors.white,
+        elevation: 8,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-        titlePadding: const EdgeInsets.fromLTRB(22, 22, 22, 8),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 22, vertical: 8),
-        actionsPadding: const EdgeInsets.fromLTRB(16, 12, 18, 18),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: const BoxDecoration(
-                color: AppColors.dangerSoft,
-                shape: BoxShape.circle,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        child: Padding(
+          padding: const EdgeInsets.all(22),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: const BoxDecoration(
+                      color: AppColors.dangerSoft,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.logout_rounded, color: AppColors.danger, size: 22),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'Leaving the cockpit, Chief? ☕',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: _Palette.textDark,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              child: const Icon(Icons.logout_rounded, color: AppColors.danger, size: 22),
-            ),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Text(
-                'Leaving the cockpit, Chief? ☕',
+              const SizedBox(height: 14),
+              const Text(
+                'We\'ll keep the school fort locked & safe while you take a breather.',
                 style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: _Palette.textDark,
+                  fontSize: 13.5,
+                  color: _Palette.textMuted,
+                  height: 1.45,
                 ),
               ),
-            ),
-          ],
-        ),
-        content: const Text(
-          'We\'ll keep the school fort locked & safe while you take a breather.',
-          style: TextStyle(
-            fontSize: 13.5,
-            color: _Palette.textMuted,
-            height: 1.4,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            child: const Text(
-              'Stay Here',
-              style: TextStyle(
-                color: _Palette.textDark,
-                fontWeight: FontWeight.w700,
-                fontSize: 13,
+              const SizedBox(height: 22),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: _Palette.textDark,
+                        side: const BorderSide(color: Color(0xFFCBD5E1), width: 1.2),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text(
+                        'Stay Here',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _Palette.danger,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text(
+                        'Log Out 👋',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w800,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _Palette.danger,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            child: const Text(
-              'Log Out 👋',
-              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
-            ),
-          ),
-        ],
+        ),
       ),
     );
 
@@ -1554,25 +1580,25 @@ class _AdminDashboardState extends State<AdminDashboard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: _Palette.amber.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(Icons.pending_actions_rounded, color: _Palette.amber, size: 20),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    'Admissions (${_pendingRequests.length})',
-                    style: _AdminTextStyles.cardTitle,
-                  ),
-                ],
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: _Palette.amber.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.pending_actions_rounded, color: _Palette.amber, size: 20),
               ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Admissions (${_pendingRequests.length})',
+                  style: _AdminTextStyles.cardTitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 8),
               InkWell(
                 onTap: () => _goToNav(1),
                 child: const Row(
@@ -1695,22 +1721,25 @@ class _AdminDashboardState extends State<AdminDashboard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: _Palette.leafGreen.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(Icons.event_available_rounded, color: _Palette.leafGreen, size: 20),
-                  ),
-                  const SizedBox(width: 10),
-                  const Text('Attendance Management', style: _AdminTextStyles.cardTitle),
-                ],
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: _Palette.leafGreen.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.event_available_rounded, color: _Palette.leafGreen, size: 20),
               ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  'Attendance Management',
+                  style: _AdminTextStyles.cardTitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
@@ -1725,34 +1754,70 @@ class _AdminDashboardState extends State<AdminDashboard> {
             ],
           ),
           const SizedBox(height: 14),
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: _openAttendancePage,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _Palette.primary,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isNarrow = constraints.maxWidth < 360;
+              if (isNarrow) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: _openAttendancePage,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _Palette.primary,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      icon: const Icon(Icons.check_circle_outline_rounded, size: 16),
+                      label: const Text('Mark Daily Attendance', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700)),
+                    ),
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: _openHolidayPage,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: _Palette.textDark,
+                        side: const BorderSide(color: _Palette.border),
+                        padding: const EdgeInsets.symmetric(vertical: 11),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      icon: const Icon(Icons.beach_access_rounded, size: 16, color: _Palette.leafGreen),
+                      label: const Text('Holidays & Calendar', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700)),
+                    ),
+                  ],
+                );
+              }
+              return Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _openAttendancePage,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _Palette.primary,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      icon: const Icon(Icons.check_circle_outline_rounded, size: 16),
+                      label: const Text('Mark Daily Attendance', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700)),
+                    ),
                   ),
-                  icon: const Icon(Icons.check_circle_outline_rounded, size: 16),
-                  label: const Text('Mark Daily Attendance', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700)),
-                ),
-              ),
-              const SizedBox(width: 10),
-              OutlinedButton(
-                onPressed: _openHolidayPage,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: _Palette.textDark,
-                  side: const BorderSide(color: _Palette.border),
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: const Text('Holidays', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700)),
-              ),
-            ],
+                  const SizedBox(width: 10),
+                  OutlinedButton(
+                    onPressed: _openHolidayPage,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: _Palette.textDark,
+                      side: const BorderSide(color: _Palette.border),
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: const Text('Holidays', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700)),
+                  ),
+                ],
+              );
+            },
           ),
         ],
       ),
@@ -1778,22 +1843,25 @@ class _AdminDashboardState extends State<AdminDashboard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: _Palette.blueAccent.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(Icons.account_balance_wallet_rounded, color: _Palette.blueAccent, size: 20),
-                  ),
-                  const SizedBox(width: 10),
-                  const Text('Fee Records & UPI Logs', style: _AdminTextStyles.cardTitle),
-                ],
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: _Palette.blueAccent.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.account_balance_wallet_rounded, color: _Palette.blueAccent, size: 20),
               ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  'Fee Records & UPI Logs',
+                  style: _AdminTextStyles.cardTitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 8),
               InkWell(
                 onTap: _openFeePaymentsPage,
                 child: const Row(
@@ -1836,22 +1904,25 @@ class _AdminDashboardState extends State<AdminDashboard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: _Palette.violet.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(Icons.chat_bubble_rounded, color: _Palette.violet, size: 20),
-                  ),
-                  const SizedBox(width: 10),
-                  Text('Parent Inquiries (${_chatStudents.length})', style: _AdminTextStyles.cardTitle),
-                ],
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: _Palette.violet.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.chat_bubble_rounded, color: _Palette.violet, size: 20),
               ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Parent Inquiries (${_chatStudents.length})',
+                  style: _AdminTextStyles.cardTitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 8),
               InkWell(
                 onTap: () => _goToNav(3),
                 child: const Row(
@@ -1954,22 +2025,25 @@ class _AdminDashboardState extends State<AdminDashboard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: _Palette.amber.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(Icons.campaign_rounded, color: _Palette.amber, size: 20),
-                  ),
-                  const SizedBox(width: 10),
-                  const Text('Notice Board Broadcast', style: _AdminTextStyles.cardTitle),
-                ],
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: _Palette.amber.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.campaign_rounded, color: _Palette.amber, size: 20),
               ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  'Notice Board Broadcast',
+                  style: _AdminTextStyles.cardTitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 8),
               InkWell(
                 onTap: _openNoticePage,
                 child: const Row(

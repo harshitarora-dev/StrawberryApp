@@ -1466,7 +1466,10 @@ class _AuthScreenState extends State<AuthScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Section Header Tag
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -1484,7 +1487,6 @@ class _AuthScreenState extends State<AuthScreen>
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
@@ -1591,7 +1593,7 @@ class _AuthScreenState extends State<AuthScreen>
                 // Right Column: Aarti Arora's Founder Journey Card
                 Expanded(
                   flex: 5,
-                  child: _buildFounderCard(),
+                  child: _buildFounderCard(true),
                 ),
               ],
             )
@@ -1600,7 +1602,7 @@ class _AuthScreenState extends State<AuthScreen>
               _aboutInfo.aboutSchool.isNotEmpty
                   ? _aboutInfo.aboutSchool
                   : 'Welcome to Strawberry Playschool & Daycare! We are dedicated to creating a vibrant, safe, and happy learning sanctuary where each child can explore their natural curiosity, build early cognitive and social skills, and blossom with confidence.',
-              textAlign: TextAlign.justify,
+              textAlign: TextAlign.start,
               style: const TextStyle(
                 color: AppColors.textBody,
                 fontSize: 13.5,
@@ -1646,7 +1648,7 @@ class _AuthScreenState extends State<AuthScreen>
             ),
             const SizedBox(height: 20),
 
-            _buildFounderCard(),
+            _buildFounderCard(false),
           ],
         ],
       ),
@@ -1706,13 +1708,17 @@ class _AuthScreenState extends State<AuthScreen>
     );
   }
 
-  Widget _buildFounderCard() {
+  Widget _buildFounderCard([bool isDesktop = false]) {
     return Container(
-      padding: const EdgeInsets.all(22),
+      padding: EdgeInsets.all(isDesktop ? 22 : 16),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF7F9),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.primarySoft.withValues(alpha: 0.9)),
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFFF9FA), Color(0xFFFFF2F5)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.primarySoft),
         boxShadow: [
           BoxShadow(
             color: AppColors.primary.withValues(alpha: 0.05),
@@ -1727,8 +1733,8 @@ class _AuthScreenState extends State<AuthScreen>
           Row(
             children: [
               Container(
-                width: 62,
-                height: 62,
+                width: isDesktop ? 62 : 52,
+                height: isDesktop ? 62 : 52,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(color: AppColors.primary, width: 2),
@@ -1748,31 +1754,33 @@ class _AuthScreenState extends State<AuthScreen>
                   ),
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       _aboutInfo.founderName.isNotEmpty ? _aboutInfo.founderName : 'Aarti Arora',
-                      style: const TextStyle(
-                        fontSize: 18,
+                      style: TextStyle(
+                        fontSize: isDesktop ? 18 : 16,
                         fontWeight: FontWeight.w800,
                         color: AppColors.textDark,
+                        letterSpacing: -0.2,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: AppColors.primarySoft,
+                        color: Colors.white,
                         borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppColors.primarySoft),
                       ),
                       child: Text(
                         _aboutInfo.founderTitle.isNotEmpty ? _aboutInfo.founderTitle : 'Founder & Director',
                         style: const TextStyle(
                           color: AppColors.primaryDark,
-                          fontSize: 11.5,
+                          fontSize: 11,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
@@ -1782,31 +1790,51 @@ class _AuthScreenState extends State<AuthScreen>
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           Container(
-            padding: const EdgeInsets.all(16),
+            width: double.infinity,
+            padding: EdgeInsets.all(isDesktop ? 16 : 14),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.primary.withValues(alpha: 0.15)),
+              border: Border.all(color: AppColors.primary.withValues(alpha: 0.12)),
             ),
-            child: Row(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.format_quote_rounded, color: AppColors.primary, size: 24),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    _aboutInfo.founderJourney.isNotEmpty
-                        ? _aboutInfo.founderJourney
-                        : 'Strawberry was born out of a heartfelt dream to provide children with a warm, joyful "second home" filled with love and encouragement.\n\nBeginning with a humble classroom and a handful of eager young learners, our mission has always been deeply personal: ensuring every child feels cherished, valued, and excited to learn.',
-                    textAlign: TextAlign.justify,
-                    style: const TextStyle(
-                      color: AppColors.textDark,
-                      fontSize: 12.5,
-                      height: 1.6,
-                      fontStyle: FontStyle.italic,
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: AppColors.primarySoft,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Icon(Icons.format_quote_rounded, color: AppColors.primary, size: 16),
                     ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Founder’s Vision & Message',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.primaryDark,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  _aboutInfo.founderJourney.isNotEmpty
+                      ? _aboutInfo.founderJourney
+                      : 'Strawberry was born out of a heartfelt dream to provide children with a warm, joyful "second home" filled with love and encouragement.\n\nBeginning with a humble classroom and a handful of eager young learners, our mission has always been deeply personal: ensuring every child feels cherished, valued, and excited to learn.',
+                  textAlign: TextAlign.start,
+                  style: TextStyle(
+                    color: AppColors.textDark.withValues(alpha: 0.88),
+                    fontSize: isDesktop ? 13 : 12.5,
+                    height: 1.6,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
               ],
@@ -2642,7 +2670,14 @@ class _AuthScreenState extends State<AuthScreen>
                         children: [
                           ElevatedButton.icon(
                             onPressed: () => _launchExternalUrl('https://maps.app.goo.gl/efvVwz7AMGXp1EC68'),
-                            icon: SvgPicture.asset('assets/images/google_maps.svg', width: 18, height: 18),
+                            icon: Container(
+                              padding: const EdgeInsets.all(3),
+                              decoration: const BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                              ),
+                              child: SvgPicture.asset('assets/images/google_maps.svg', width: 15, height: 15),
+                            ),
                             label: const Text('Open in Google Maps', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800)),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
@@ -2718,7 +2753,14 @@ class _AuthScreenState extends State<AuthScreen>
               children: [
                 ElevatedButton.icon(
                   onPressed: () => _launchExternalUrl('https://maps.app.goo.gl/efvVwz7AMGXp1EC68'),
-                  icon: SvgPicture.asset('assets/images/google_maps.svg', width: 16, height: 16),
+                  icon: Container(
+                    padding: const EdgeInsets.all(2.5),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: SvgPicture.asset('assets/images/google_maps.svg', width: 14, height: 14),
+                  ),
                   label: const Text('Google Maps', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
@@ -3270,18 +3312,20 @@ class _AuthScreenState extends State<AuthScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Container(
-                            width: 56,
-                            height: 56,
+                            width: 74,
+                            height: 74,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
+                              color: Colors.white,
                               boxShadow: [
                                 BoxShadow(
                                   color: Colors.black.withValues(alpha: 0.18),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 3),
+                                  blurRadius: 14,
+                                  offset: const Offset(0, 4),
                                 ),
                               ],
                             ),
+                            padding: const EdgeInsets.all(2.5),
                             child: ClipOval(
                               child: Image.asset(
                                 'assets/images/logo.png',
@@ -3415,18 +3459,20 @@ class _AuthScreenState extends State<AuthScreen>
           children: [
             Center(
               child: Container(
-                width: 60,
-                height: 60,
+                width: 88,
+                height: 88,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
+                  color: Colors.white,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.12),
-                      blurRadius: 10,
-                      offset: const Offset(0, 3),
+                      color: AppColors.primary.withValues(alpha: 0.18),
+                      blurRadius: 16,
+                      offset: const Offset(0, 5),
                     ),
                   ],
                 ),
+                padding: const EdgeInsets.all(3),
                 child: ClipOval(
                   child: Image.asset(
                     'assets/images/logo.png',
@@ -3435,7 +3481,7 @@ class _AuthScreenState extends State<AuthScreen>
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 18),
 
             Text(
               'Parent & Staff Portal 🍓',

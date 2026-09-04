@@ -588,17 +588,19 @@ class _StudentAttendanceHistoryPageState
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         const Text(
                           'Overall Attendance',
                           style: TextStyle(
-                            fontSize: 15,
+                            fontSize: 14.5,
                             fontWeight: FontWeight.w800,
                             color: _textDark,
                           ),
                         ),
-                        const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
