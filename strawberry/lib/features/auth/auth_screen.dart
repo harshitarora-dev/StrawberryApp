@@ -16,6 +16,7 @@ import 'package:strawberry/features/dashboard/student/home_screen.dart';
 import 'package:strawberry/features/dashboard/student/gallery_page.dart';
 import 'package:strawberry/features/dashboard/admin/admin_dashboard.dart';
 import 'package:strawberry/core/widgets/playschool_animations.dart';
+import 'package:strawberry/core/utils/url_navigation.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -3212,7 +3213,7 @@ class _AuthScreenState extends State<AuthScreen>
                 child: Text('Parent Portal', style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 12)),
               ),
               InkWell(
-                onTap: () => _launchExternalUrl('https://strawberrydaycare.co.in/privacy'),
+                onTap: () => openPrivacyPolicy(),
                 child: const Text('Privacy Policy', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 12, fontWeight: FontWeight.w600)),
               ),
             ],
@@ -3599,12 +3600,7 @@ class _AuthScreenState extends State<AuthScreen>
             const SizedBox(height: 4),
             Center(
               child: InkWell(
-                onTap: () async {
-                  final uri = Uri.parse('https://strawberrydaycare.co.in/privacy');
-                  try {
-                    await launchUrl(uri, mode: LaunchMode.externalApplication);
-                  } catch (_) {}
-                },
+                onTap: () => openPrivacyPolicy(),
                 borderRadius: BorderRadius.circular(8),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),

@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:strawberry/core/theme/app_colors.dart';
 import 'package:strawberry/features/auth/auth_service.dart';
+import 'package:strawberry/core/utils/url_navigation.dart';
 import 'about_model.dart';
 import 'about_service.dart';
 import 'edit_about_page.dart';
@@ -619,17 +620,10 @@ class _AboutPageState extends State<AboutPage> {
                       ? _info.googleMapsUrl
                       : 'https://maps.app.goo.gl/efvVwz7AMGXp1EC68',
                 ),
-                icon: Container(
-                  padding: const EdgeInsets.all(2.5),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                  ),
-                  child: SvgPicture.asset(
-                    'assets/images/google_maps.svg',
-                    width: 14,
-                    height: 14,
-                  ),
+                icon: SvgPicture.asset(
+                  'assets/images/google_maps.svg',
+                  width: 16,
+                  height: 16,
                 ),
                 label: const Text(
                   'Google Maps',
@@ -915,12 +909,7 @@ class _AboutPageState extends State<AboutPage> {
 
   Widget _buildPrivacyPolicyCard() {
     return InkWell(
-      onTap: () async {
-        final uri = Uri.parse('https://strawberrydaycare.co.in/privacy');
-        try {
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
-        } catch (_) {}
-      },
+      onTap: () => openPrivacyPolicy(),
       borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),

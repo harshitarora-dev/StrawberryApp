@@ -77,6 +77,36 @@
       text-transform: uppercase;
     }
 
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #FFFFFF;
+      color: var(--primary-dark);
+      border: 1px solid #FFE4E8;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      text-decoration: none;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .back-btn:hover {
+      background: #FFF0F3;
+      transform: translateX(-2px);
+    }
+
     .title {
       font-size: 28px;
       font-weight: 800;
@@ -229,7 +259,10 @@
 
   <header class="header">
     <div class="header-content">
-      <span class="brand-pill">🍓 Strawberry Preschool</span>
+      <div class="header-top">
+        <a href="/" onclick="if (window.history.length > 1) { window.history.back(); return false; }" class="back-btn">← Back to App</a>
+        <span class="brand-pill">🍓 Strawberry Preschool</span>
+      </div>
       <h1 class="title">Privacy Policy</h1>
       <p class="subtitle">Effective Date: September 2, 2026 &bull; Last Updated: September 2026</p>
     </div>
