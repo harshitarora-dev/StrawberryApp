@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:strawberry/core/theme/app_colors.dart';
 import 'package:strawberry/core/theme/app_typography.dart';
 import 'package:strawberry/core/theme/app_decorations.dart';
@@ -14,6 +15,7 @@ import 'package:strawberry/features/about/about_page.dart';
 import 'package:strawberry/features/chat/chat_page.dart';
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -338,6 +340,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         final isDesktop = constraints.maxWidth >= 960;
         final isTablet = constraints.maxWidth >= 640 && constraints.maxWidth < 960;
         final horizontalPadding = isDesktop ? 32.0 : (isTablet ? 24.0 : 16.0);
+        final showWebsiteFooter = kIsWeb && isDesktop;
 
         final studentName = _profile?['name'] ?? 'Student';
         final studentType = _profile?['student_type'] as String? ?? 'Preschool';
@@ -579,63 +582,77 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     RefreshIndicator(
                       onRefresh: _loadProfile,
                       color: AppColors.primary,
-                      child: ListView(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: horizontalPadding,
-                          vertical: 20.0,
-                        ),
-                        physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-                        children: [
-                          _buildProfileHero(isDesktop),
-                          const SizedBox(height: 20),
-                          if (isDesktop)
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                      child: showWebsiteFooter
+                          ? ListView(
+                              padding: EdgeInsets.zero,
+                              physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
                               children: [
-                                // Left Column: Attendance, Finance & Tools
-                                Expanded(
+                                Padding(
+                                  padding: EdgeInsets.fromLTRB(horizontalPadding, 20.0, horizontalPadding, 28.0),
                                   child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.stretch,
                                     children: [
-                                      _buildAttendanceCard(),
-                                      const SizedBox(height: 18),
-                                      _buildFeeCard(),
-                                      const SizedBox(height: 18),
-                                      _buildQuickActionsGrid(),
+                                      _buildProfileHero(isDesktop),
+                                      const SizedBox(height: 20),
+                                      Row(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          // Left Column: Attendance, Finance & Tools
+                                          Expanded(
+                                            child: Column(
+                                              children: [
+                                                _buildAttendanceCard(),
+                                                const SizedBox(height: 18),
+                                                _buildFeeCard(),
+                                                const SizedBox(height: 18),
+                                                _buildQuickActionsGrid(),
+                                              ],
+                                            ),
+                                          ),
+                                          const SizedBox(width: 24),
+                                          // Right Column: Memories, Notices & School Info
+                                          Expanded(
+                                            child: Column(
+                                              children: [
+                                                _buildPreschoolMemoriesCard(),
+                                                const SizedBox(height: 18),
+                                                _buildRecentNoticesCard(),
+                                                const SizedBox(height: 18),
+                                                _buildCampusSupportCard(),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ],
                                   ),
                                 ),
-                                const SizedBox(width: 24),
-                                // Right Column: Memories, Notices & School Info
-                                Expanded(
-                                  child: Column(
-                                    children: [
-                                      _buildPreschoolMemoriesCard(),
-                                      const SizedBox(height: 18),
-                                      _buildRecentNoticesCard(),
-                                      const SizedBox(height: 18),
-                                      _buildCampusSupportCard(),
-                                    ],
-                                  ),
-                                ),
+                                _buildWebsiteFooter(),
                               ],
                             )
-                          else ...[
-                            _buildAttendanceCard(),
-                            const SizedBox(height: 16),
-                            _buildFeeCard(),
-                            const SizedBox(height: 16),
-                            _buildQuickActionsGrid(),
-                            const SizedBox(height: 16),
-                            _buildPreschoolMemoriesCard(),
-                            const SizedBox(height: 16),
-                            _buildRecentNoticesCard(),
-                            const SizedBox(height: 16),
-                            _buildCampusSupportCard(),
-                            const SizedBox(height: 80),
-                          ],
-                          const SizedBox(height: 30),
-                        ],
-                      ),
+                          : ListView(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: horizontalPadding,
+                                vertical: 20.0,
+                              ),
+                              physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                              children: [
+                                _buildProfileHero(isDesktop),
+                                const SizedBox(height: 20),
+                                _buildAttendanceCard(),
+                                const SizedBox(height: 16),
+                                _buildFeeCard(),
+                                const SizedBox(height: 16),
+                                _buildQuickActionsGrid(),
+                                const SizedBox(height: 16),
+                                _buildPreschoolMemoriesCard(),
+                                const SizedBox(height: 16),
+                                _buildRecentNoticesCard(),
+                                const SizedBox(height: 16),
+                                _buildCampusSupportCard(),
+                                const SizedBox(height: 80),
+                              ],
+                            ),
                     ),
                     if (_isFabOpen)
                       Positioned.fill(
@@ -2139,5 +2156,105 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         ),
       ),
     );
+  }
+
+  // ── Modern 2026 Website Footer ────────────────────────────────────────
+  Widget _buildWebsiteFooter() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 36),
+      decoration: const BoxDecoration(
+        color: Color(0xFF0F172A),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: const BoxDecoration(shape: BoxShape.circle),
+                child: ClipOval(
+                  child: Image.asset('assets/images/logo.png', fit: BoxFit.cover),
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Text(
+                'Strawberry Preschool & Daycare',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'BPTP Parklands, C-22, Sector 85, Faridabad, Haryana 121007',
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 12,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 18),
+
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 16,
+            runSpacing: 8,
+            children: [
+              InkWell(
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const AboutPage()),
+                ),
+                child: const Text('About School', style: TextStyle(color: Colors.white70, fontSize: 12)),
+              ),
+              InkWell(
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const NoticeBoardPage()),
+                ),
+                child: const Text('Notice Board', style: TextStyle(color: Colors.white70, fontSize: 12)),
+              ),
+              InkWell(
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const GalleryPage()),
+                ),
+                child: const Text('Campus Gallery', style: TextStyle(color: Colors.white70, fontSize: 12)),
+              ),
+              InkWell(
+                onTap: () => _launchExternalUrl('https://maps.app.goo.gl/efvVwz7AMGXp1EC68'),
+                child: const Text('Location & Map', style: TextStyle(color: Colors.white70, fontSize: 12)),
+              ),
+              InkWell(
+                onTap: () => _launchExternalUrl('https://strawberrydaycare.co.in/privacy'),
+                child: const Text('Privacy Policy', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 12, fontWeight: FontWeight.w600)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          const Divider(color: Color(0xFF334155), height: 1),
+          const SizedBox(height: 16),
+
+          const Text(
+            '© 2026 Strawberry Preschool & Daycare. All rights reserved. • Designed & Developed by Harshit',
+            style: TextStyle(
+              color: Colors.white54,
+              fontSize: 11,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _launchExternalUrl(String url) async {
+    final uri = Uri.parse(url);
+    try {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {}
   }
 }

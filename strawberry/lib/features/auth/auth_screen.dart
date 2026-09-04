@@ -874,32 +874,85 @@ class _AuthScreenState extends State<AuthScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Location & Admission badge
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.22),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.45)),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.location_on_rounded, color: Colors.white, size: 14),
-                        SizedBox(width: 6),
-                        Text(
-                          'BPTP Parklands, Sector 85, Faridabad • Admissions Open 2026-27',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.2,
+                  // Top Brand Row: Large Round Logo + School Title & Location Badge
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // Round School Logo (bada size)
+                      Container(
+                        width: 116,
+                        height: 116,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.22),
+                              blurRadius: 20,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                        ),
+                        padding: const EdgeInsets.all(4),
+                        child: ClipOval(
+                          child: Image.asset(
+                            'assets/images/logo.png',
+                            fit: BoxFit.cover,
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(width: 22),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              _aboutInfo.schoolName.isNotEmpty
+                                  ? _aboutInfo.schoolName
+                                  : 'Strawberry Preschool & Daycare',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 26,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 0.3,
+                                height: 1.15,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.22),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: Colors.white.withValues(alpha: 0.45)),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.location_on_rounded, color: Colors.white, size: 14),
+                                  SizedBox(width: 6),
+                                  Flexible(
+                                    child: Text(
+                                      'BPTP Parklands, Sector 85, Faridabad • Admissions Open 2026-27',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 0.2,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 22),
+                  const SizedBox(height: 24),
 
                   // Big Headline
                   const Text(
@@ -1013,7 +1066,7 @@ class _AuthScreenState extends State<AuthScreen>
                 clipBehavior: Clip.none,
                 children: [
                   Container(
-                    height: (screenWidth != null && screenWidth >= 1400) ? 440 : 400,
+                    height: (screenWidth != null && screenWidth >= 1400) ? 480 : 450,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(26),
                       boxShadow: [
@@ -1170,18 +1223,20 @@ class _AuthScreenState extends State<AuthScreen>
                 Row(
                   children: [
                     Container(
-                      width: 52,
-                      height: 52,
+                      width: 72,
+                      height: 72,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
+                        color: Colors.white,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.18),
-                            blurRadius: 10,
-                            offset: const Offset(0, 3),
+                            color: Colors.black.withValues(alpha: 0.20),
+                            blurRadius: 14,
+                            offset: const Offset(0, 4),
                           ),
                         ],
                       ),
+                      padding: const EdgeInsets.all(3),
                       child: ClipOval(
                         child: Image.asset(
                           'assets/images/logo.png',
@@ -1744,7 +1799,7 @@ class _AuthScreenState extends State<AuthScreen>
                   child: Text(
                     _aboutInfo.founderJourney.isNotEmpty
                         ? _aboutInfo.founderJourney
-                        : 'Strawberry Playschool was born out of a heartfelt dream to provide children with a warm, joyful "second home" filled with love and encouragement.\n\nBeginning with a humble classroom and a handful of eager young learners, our mission has always been deeply personal: ensuring every child feels cherished, valued, and excited to learn.',
+                        : 'Strawberry was born out of a heartfelt dream to provide children with a warm, joyful "second home" filled with love and encouragement.\n\nBeginning with a humble classroom and a handful of eager young learners, our mission has always been deeply personal: ensuring every child feels cherished, valued, and excited to learn.',
                     textAlign: TextAlign.justify,
                     style: const TextStyle(
                       color: AppColors.textDark,

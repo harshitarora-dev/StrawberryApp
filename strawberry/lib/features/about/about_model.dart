@@ -48,7 +48,7 @@ class AboutInfo {
       founderTitle: 'Founder & Director',
       founderImageUrl: 'assets/images/founder.jpg',
       founderJourney:
-          'Strawberry Playschool was born out of a heartfelt dream to provide children with a warm, joyful "second home" filled with love and encouragement.\n\nBeginning with a humble classroom and a handful of eager young learners, our mission has always been deeply personal: ensuring every child feels cherished, valued, and excited to learn. Over the years, with the unwavering trust of parents, Strawberry has blossomed into a cherished early childhood institute known for holistic care, modern pedagogies, and joyful childhood memories.',
+          'Strawberry was born out of a heartfelt dream to provide children with a warm, joyful "second home" filled with love and encouragement.\n\nBeginning with a humble classroom and a handful of eager young learners, our mission has always been deeply personal: ensuring every child feels cherished, valued, and excited to learn. Over the years, with the unwavering trust of parents, Strawberry has blossomed into a cherished early childhood institute known for holistic care, modern pedagogies, and joyful childhood memories.',
       developerCredit:
           'Designed & Developed by Harshit\nNeed app or website solutions? Contact: dev.harshitcreations@gmail.com',
       contactEmail: 'daycarestrawberry@gmail.com',

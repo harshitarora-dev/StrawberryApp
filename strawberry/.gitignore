@@ -48,3 +48,8 @@ app.*.map.json
 *.keystore
 **/android/key.properties
 **/android/local.properties
+
+# Vercel & CI
+.vercel/
+/flutter/
+
