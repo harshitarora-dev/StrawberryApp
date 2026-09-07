@@ -5,7 +5,6 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:io';
 import 'dart:async';
-import 'package:image_picker/image_picker.dart' show XFile;
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:strawberry/features/auth/push_notification_service.dart';
 
@@ -804,7 +803,11 @@ class AuthService {
           continue;
         }
 
-        final fileName = '${DateTime.now().millisecondsSinceEpoch}_$rawName';
+        // Encode category into filename as resilient backup
+        final catSlug = (category != null && category.isNotEmpty)
+            ? 'cat_${Uri.encodeComponent(category)}_'
+            : '';
+        final fileName = '${DateTime.now().millisecondsSinceEpoch}_$catSlug$rawName';
 
         await Supabase.instance.client.storage
             .from('gallery')
@@ -828,7 +831,8 @@ class AuthService {
             insertData['title'] = title;
           }
           await _supabaseClient.from('gallery').insert(insertData);
-        } catch (_) {
+        } catch (e) {
+          debugPrint("Gallery insert with category/title failed ($e), fallback to basic insert");
           await _supabaseClient.from('gallery').insert({
             'image_url': publicUrl,
             'uploaded_by': currentUserId,
@@ -879,7 +883,24 @@ class AuthService {
         .from('gallery')
         .select('*')
         .order('created_at', ascending: false);
-    return List<Map<String, dynamic>>.from(response as List);
+    final list = List<Map<String, dynamic>>.from(response as List);
+
+    // Resilient fallback: parse category from URL if category column is null
+    for (final img in list) {
+      if (img['category'] == null || (img['category'] as String).trim().isEmpty) {
+        final url = img['image_url'] as String? ?? '';
+        final match = RegExp(r'cat_([^_/]+(?:_[^_/]+)*)_').firstMatch(url);
+        if (match != null) {
+          img['category'] = Uri.decodeComponent(match.group(1)!);
+        }
+      }
+    }
+    return list;
+  }
+
+  // Update a gallery image's category
+  Future<void> updateGalleryImageCategory(int id, String category) async {
+    await _supabaseClient.from('gallery').update({'category': category}).eq('id', id);
   }
 
   // Delete a gallery image from database and storage

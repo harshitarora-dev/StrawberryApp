@@ -1091,23 +1091,6 @@ class _AuthScreenState extends State<AuthScreen>
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         ),
                       ),
-                      TextButton.icon(
-                        onPressed: () => _scrollToKey(_tourKey),
-                        icon: const Icon(Icons.photo_library_rounded, size: 20, color: Colors.white),
-                        label: const Text(
-                          'Explore Photo Gallery',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 14,
-                            decoration: TextDecoration.underline,
-                            decorationColor: Colors.white,
-                          ),
-                        ),
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                        ),
-                      ),
                     ],
                   ),
                 ],
@@ -1361,21 +1344,23 @@ class _AuthScreenState extends State<AuthScreen>
                 ),
                 const SizedBox(height: 18),
                 const Text(
-                  'Nurturing Young Minds with Love, Discovery & Joyful Learning! 🍓',
+                  'Where Happy Childhoods Begin & Little Minds Blossom! 🍓',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 15,
-                    height: 1.4,
-                    fontWeight: FontWeight.w700,
+                    fontSize: 18,
+                    height: 1.3,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.3,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'A warm, child-centric second home offering activity-based preschool education and reliable daycare with real-time parent updates.',
+                  'Faridabad’s leading early learning sanctuary. We offer playgroup, nursery, kindergarten, and full-day daycare with joyful Montessori methods, personal attention, and live parent updates.',
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.9),
+                    color: Colors.white.withValues(alpha: 0.94),
                     fontSize: 12.5,
-                    height: 1.45,
+                    height: 1.5,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
                 const SizedBox(height: 18),
@@ -1439,23 +1424,6 @@ class _AuthScreenState extends State<AuthScreen>
                       ),
                     ),
                   ],
-                ),
-                const SizedBox(height: 10),
-                Center(
-                  child: TextButton.icon(
-                    onPressed: () => _scrollToKey(_tourKey),
-                    icon: const Icon(Icons.photo_library_rounded, color: Colors.white, size: 18),
-                    label: const Text(
-                      'View Campus Photo Gallery 📸',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                        decoration: TextDecoration.underline,
-                        decorationColor: Colors.white,
-                      ),
-                    ),
-                  ),
                 ),
               ],
             ),

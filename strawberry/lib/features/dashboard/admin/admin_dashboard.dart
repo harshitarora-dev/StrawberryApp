@@ -1425,18 +1425,21 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       icon: Icons.school_rounded,
                       label: 'Students',
                       value: '${_allStudents.length}',
+                      onTap: () => _goToNav(2),
                     ),
                     const SizedBox(width: 10),
                     _buildAdminHeaderPill(
                       icon: Icons.pending_actions_rounded,
                       label: 'Pending',
                       value: '${_pendingRequests.length}',
+                      onTap: () => _goToNav(1),
                     ),
                     const SizedBox(width: 10),
                     _buildAdminHeaderPill(
                       icon: Icons.chat_bubble_rounded,
                       label: 'Inquiries',
                       value: '${_chatStudents.length}',
+                      onTap: () => _goToNav(3),
                     ),
                   ],
                 ),
@@ -1492,6 +1495,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         icon: Icons.school_rounded,
                         label: 'Students',
                         value: '${_allStudents.length}',
+                        onTap: () => _goToNav(2),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -1500,6 +1504,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         icon: Icons.pending_actions_rounded,
                         label: 'Pending',
                         value: '${_pendingRequests.length}',
+                        onTap: () => _goToNav(1),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -1508,6 +1513,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         icon: Icons.chat_bubble_rounded,
                         label: 'Inquiries',
                         value: '${_chatStudents.length}',
+                        onTap: () => _goToNav(3),
                       ),
                     ),
                   ],
@@ -1521,43 +1527,64 @@ class _AdminDashboardState extends State<AdminDashboard> {
     required IconData icon,
     required String label,
     required String value,
+    VoidCallback? onTap,
   }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.18),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
+        splashColor: Colors.white.withValues(alpha: 0.25),
+        highlightColor: Colors.white.withValues(alpha: 0.12),
+        mouseCursor: SystemMouseCursors.click,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.18),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, color: Colors.white, size: 14),
-              const SizedBox(width: 4),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, color: Colors.white, size: 13),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.9),
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 3),
+                  Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    color: Colors.white.withValues(alpha: 0.55),
+                    size: 8.5,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 3),
               Text(
-                label,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.85),
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w600,
+                value,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 3),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

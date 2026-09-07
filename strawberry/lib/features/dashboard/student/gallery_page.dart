@@ -24,6 +24,7 @@ class _GalleryPageState extends State<GalleryPage> {
 
   static const List<({String name, String emoji, Color color})> _categoryFilters = [
     (name: 'All', emoji: '🌟', color: AppColors.primary),
+    (name: 'Campus Life', emoji: '🏫', color: AppColors.primaryDark),
     (name: 'Little Artists', emoji: '🎨', color: AppColors.sky),
     (name: 'Rhymes & Music', emoji: '🎪', color: AppColors.amber),
     (name: 'Play Zone & Fun', emoji: '🛝', color: AppColors.emerald),
@@ -56,7 +57,7 @@ class _GalleryPageState extends State<GalleryPage> {
   List<Map<String, dynamic>> get _filteredImages {
     if (_selectedCategory == 'All') return _allImages;
     return _allImages.where((img) {
-      final cat = (img['category'] as String?) ?? 'Fun Moment';
+      final cat = (img['category'] as String?) ?? 'Campus Life';
       return cat.toLowerCase().contains(_selectedCategory.toLowerCase());
     }).toList();
   }
@@ -64,7 +65,7 @@ class _GalleryPageState extends State<GalleryPage> {
   int _countForCategory(String category) {
     if (category == 'All') return _allImages.length;
     return _allImages.where((img) {
-      final cat = (img['category'] as String?) ?? 'Fun Moment';
+      final cat = (img['category'] as String?) ?? 'Campus Life';
       return cat.toLowerCase().contains(category.toLowerCase());
     }).length;
   }
@@ -78,6 +79,7 @@ class _GalleryPageState extends State<GalleryPage> {
     if (lower.contains('celebrat') || lower.contains('event') || lower.contains('festival')) return '🎉';
     if (lower.contains('snack') || lower.contains('circle') || lower.contains('fruit')) return '🍎';
     if (lower.contains('daycare') || lower.contains('tot') || lower.contains('tiny') || lower.contains('playgroup')) return '🧸';
+    if (lower.contains('campus') || lower.contains('life') || lower.contains('school')) return '🏫';
     return '🍓';
   }
 

@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:image_picker/image_picker.dart' show XFile;
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -56,19 +55,20 @@ class AboutService {
 
   /// Updates About info in both Supabase and local cache.
   Future<void> saveAboutInfo(AboutInfo info) async {
-    // 1. Cache immediately
+    // 1. Cache immediately for responsive local UI
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_prefsKey, info.toJson());
     } catch (_) {}
 
-    // 2. Persist to Supabase
+    // 2. Persist to Supabase cloud
     try {
       final data = info.toMap();
       data['id'] = 1; // Single row key
       await _client.from(_tableName).upsert(data);
-    } catch (_) {
-      // If table doesn't exist, we still have local cache and can log
+    } catch (e) {
+      debugPrint("Error persisting about_info to Supabase: $e");
+      rethrow;
     }
   }
 

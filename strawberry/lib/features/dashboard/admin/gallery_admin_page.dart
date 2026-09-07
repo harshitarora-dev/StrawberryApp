@@ -25,6 +25,7 @@ class _GalleryAdminPageState extends State<GalleryAdminPage> {
 
   static const List<({String name, String emoji, Color color})> _categoryFilters = [
     (name: 'All', emoji: '🌟', color: AppColors.primary),
+    (name: 'Campus Life', emoji: '🏫', color: AppColors.primaryDark),
     (name: 'Little Artists', emoji: '🎨', color: AppColors.sky),
     (name: 'Rhymes & Music', emoji: '🎪', color: AppColors.amber),
     (name: 'Play Zone & Fun', emoji: '🛝', color: AppColors.emerald),
@@ -52,7 +53,7 @@ class _GalleryAdminPageState extends State<GalleryAdminPage> {
   List<Map<String, dynamic>> get _filteredImages {
     if (_selectedCategory == 'All') return _images;
     return _images.where((img) {
-      final cat = (img['category'] as String?) ?? 'Fun Moment';
+      final cat = (img['category'] as String?) ?? 'Campus Life';
       return cat.toLowerCase().contains(_selectedCategory.toLowerCase());
     }).toList();
   }
@@ -60,7 +61,7 @@ class _GalleryAdminPageState extends State<GalleryAdminPage> {
   int _countForCategory(String category) {
     if (category == 'All') return _images.length;
     return _images.where((img) {
-      final cat = (img['category'] as String?) ?? 'Fun Moment';
+      final cat = (img['category'] as String?) ?? 'Campus Life';
       return cat.toLowerCase().contains(category.toLowerCase());
     }).length;
   }
@@ -74,6 +75,7 @@ class _GalleryAdminPageState extends State<GalleryAdminPage> {
     if (lower.contains('celebrat') || lower.contains('event') || lower.contains('festival')) return '🎉';
     if (lower.contains('snack') || lower.contains('circle') || lower.contains('fruit')) return '🍎';
     if (lower.contains('daycare') || lower.contains('tot') || lower.contains('tiny') || lower.contains('playgroup')) return '🧸';
+    if (lower.contains('campus') || lower.contains('life') || lower.contains('school')) return '🏫';
     return '🍓';
   }
 
@@ -745,30 +747,36 @@ class _GalleryAdminPageState extends State<GalleryAdminPage> {
                   Row(
                     children: [
                       Flexible(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.25),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(emoji, style: const TextStyle(fontSize: 10)),
-                              const SizedBox(width: 4),
-                              Flexible(
-                                child: Text(
-                                  cat,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w700,
+                        child: InkWell(
+                          onTap: () => _showChangeCategorySheet(img),
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.25),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(emoji, style: const TextStyle(fontSize: 10)),
+                                const SizedBox(width: 4),
+                                Flexible(
+                                  child: Text(
+                                    cat,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
+                                const SizedBox(width: 3),
+                                const Icon(Icons.edit_rounded, color: Colors.white70, size: 10),
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -789,6 +797,84 @@ class _GalleryAdminPageState extends State<GalleryAdminPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _showChangeCategorySheet(Map<String, dynamic> img) async {
+    final id = img['id'] as int;
+    final currentCat = (img['category'] as String?) ?? 'Campus Life';
+
+    await showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            const Text(
+              'Change Photo Album / Category',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textDark),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Select the album where this photo should appear:',
+              style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _categoryFilters.where((c) => c.name != 'All').map((c) {
+                final isSelected = c.name == currentCat;
+                return ActionChip(
+                  avatar: Text(c.emoji, style: const TextStyle(fontSize: 12)),
+                  label: Text(c.name),
+                  backgroundColor: isSelected ? AppColors.primarySoft : AppColors.surfaceAlt,
+                  labelStyle: TextStyle(
+                    color: isSelected ? AppColors.primaryDark : AppColors.textDark,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    fontSize: 12,
+                  ),
+                  onPressed: () async {
+                    Navigator.pop(ctx);
+                    setState(() => _loading = true);
+                    try {
+                      await widget.authService.updateGalleryImageCategory(id, c.name);
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        _snack('Category updated to ${c.name}!', success: true),
+                      );
+                    } catch (e) {
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        _snack('Failed to update category: $e (Run SQL to add category column)', success: false),
+                      );
+                    } finally {
+                      if (mounted) await _loadGallery();
+                    }
+                  },
+                );
+              }).toList(),
+            ),
+          ],
+        ),
       ),
     );
   }
