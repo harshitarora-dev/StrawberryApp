@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -373,10 +374,16 @@ class _AuthScreenState extends State<AuthScreen>
                     TextField(
                       controller: phoneCtrl,
                       keyboardType: TextInputType.phone,
+                      maxLength: 10,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(10),
+                      ],
                       decoration: const InputDecoration(
                         labelText: 'Mobile Number *',
                         prefixIcon: Icon(Icons.phone_rounded, color: AppColors.primary),
                         prefixText: '+91 ',
+                        counterText: '',
                       ),
                     ),
                     const SizedBox(height: 14),
@@ -435,6 +442,16 @@ class _AuthScreenState extends State<AuthScreen>
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
                                     content: Text('Hold up! We need your Parent Name & Mobile Number 🎒✨'),
+                                    backgroundColor: AppColors.danger,
+                                  ),
+                                );
+                                return;
+                              }
+
+                              if (phone.length != 10) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Please enter a valid 10-digit mobile number 📱'),
                                     backgroundColor: AppColors.danger,
                                   ),
                                 );
@@ -3298,7 +3315,7 @@ class _AuthScreenState extends State<AuthScreen>
           ),
         ),
 
-        _buildWebsiteFooter(),
+        if (kIsWeb) _buildWebsiteFooter(),
       ],
     );
   }

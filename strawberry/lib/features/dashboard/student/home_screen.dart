@@ -370,7 +370,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         final isDesktop = constraints.maxWidth >= 960;
         final isTablet = constraints.maxWidth >= 640 && constraints.maxWidth < 960;
         final horizontalPadding = isDesktop ? 32.0 : (isTablet ? 24.0 : 16.0);
-        final showWebsiteFooter = kIsWeb && isDesktop;
+        final isDesktopLayout = isDesktop;
 
         final studentName = _profile?['name'] ?? 'Student';
         final studentType = _profile?['student_type'] as String? ?? 'Preschool';
@@ -612,7 +612,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     RefreshIndicator(
                       onRefresh: _loadProfile,
                       color: AppColors.primary,
-                      child: showWebsiteFooter
+                      child: isDesktopLayout
                           ? ListView(
                               padding: EdgeInsets.zero,
                               physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
@@ -657,7 +657,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                     ],
                                   ),
                                 ),
-                                _buildWebsiteFooter(),
+                                if (kIsWeb) _buildWebsiteFooter(),
                               ],
                             )
                           : SingleChildScrollView(
@@ -692,7 +692,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                       ],
                                     ),
                                   ),
-                                  _buildWebsiteFooter(),
+                                  if (kIsWeb) _buildWebsiteFooter(),
                                   const SizedBox(height: 80),
                                 ],
                               ),
