@@ -667,8 +667,7 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
               ),
             ),
             actions: [
-              if (widget.authService.currentUserEmail ==
-                  'dev.harshitcreations@gmail.com')
+              if (AuthService.isPrimaryAdmin(widget.authService.currentUserEmail))
                 IconButton(
                   icon: const Icon(
                     Icons.delete_outline_rounded,

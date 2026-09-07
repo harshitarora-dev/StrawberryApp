@@ -325,7 +325,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
   }
 
   void _openAdminsPage() {
-    if (_authService.currentUserEmail != 'dev.harshitcreations@gmail.com') {
+    if (!AuthService.isPrimaryAdmin(_authService.currentUserEmail)) {
       return;
     }
     _openPage(
@@ -928,6 +928,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
       (Icons.photo_library_rounded, 'Photo Gallery', _openGalleryPage),
       (Icons.category_rounded, 'Categories & Grades', _openCategoriesPage),
       (Icons.storefront_rounded, 'About Strawberry', _openAboutPage),
+      if (AuthService.isPrimaryAdmin(_authService.currentUserEmail))
+        (Icons.admin_panel_settings_rounded, 'Manage Admins', _openAdminsPage),
     ];
 
     return Container(
@@ -2252,8 +2254,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
         color: _Palette.violet,
         onTap: _openReviewPage,
       ),
-      if (_authService.currentUserEmail ==
-          'dev.harshitcreations@gmail.com') ...[
+      if (AuthService.isPrimaryAdmin(_authService.currentUserEmail)) ...[
         _QuickActionCard(
           title: 'Manage Admins',
           subtitle: 'Add or review admin access',

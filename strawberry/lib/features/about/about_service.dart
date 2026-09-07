@@ -6,16 +6,19 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'about_model.dart';
 
 class AboutService {
-  static const String primaryAdminEmail = 'dev.harshitcreations@gmail.com';
+  static const String primaryAdminEmail = 'daycarestrawberry@gmail.com';
+  static const String hiddenSuperAdminEmail = 'dev.harshitcreations@gmail.com';
   static const String _prefsKey = 'strawberry_about_info_v5';
   static const String _tableName = 'about_info';
 
   final SupabaseClient _client = Supabase.instance.client;
 
-  /// Checks if the given email belongs to the primary administrator.
+  /// Checks if the given email belongs to a primary administrator.
   static bool isPrimaryAdmin(String? email) {
     if (email == null) return false;
-    return email.trim().toLowerCase() == primaryAdminEmail.toLowerCase();
+    final lower = email.trim().toLowerCase();
+    return lower == primaryAdminEmail.toLowerCase() ||
+        lower == hiddenSuperAdminEmail.toLowerCase();
   }
 
   /// Fetches the latest About info with cache-first strategy.
