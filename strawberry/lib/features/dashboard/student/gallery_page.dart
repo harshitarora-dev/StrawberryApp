@@ -475,9 +475,10 @@ class _LightboxViewerState extends State<_LightboxViewer> {
   }
 
   void _shareImage(String url) {
+    final shareUrl = AppImageUtils.getPublicShareUrl(url);
     SharePlus.instance.share(
       ShareParams(
-        text: 'Check out this photo from Strawberry Preschool & Daycare! 🍓 $url',
+        text: 'Check out this photo from Strawberry Preschool & Daycare! 🍓 $shareUrl',
       ),
     );
   }

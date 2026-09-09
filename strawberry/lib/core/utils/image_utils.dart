@@ -25,4 +25,28 @@ class AppImageUtils {
 
     return trimmed;
   }
+
+  /// Converts an internal Supabase storage URL into an official branded website URL
+  /// e.g. https://tbsmesdqigeajrwswlkj.supabase.co/storage/v1/object/public/gallery/123_abc.jpg
+  /// -> https://strawberrydaycare.co.in/photos/123_abc.jpg
+  /// Handled seamlessly via reverse-proxy in vercel.json.
+  static String getPublicShareUrl(String? url) {
+    if (url == null || url.trim().isEmpty) return '';
+    final trimmed = url.trim();
+
+    if (trimmed.contains('supabase.co') && trimmed.contains('/gallery/')) {
+      final uri = Uri.tryParse(trimmed);
+      if (uri != null && uri.pathSegments.isNotEmpty) {
+        final fileName = uri.pathSegments.last;
+        final host = kIsWeb &&
+                Uri.base.host.isNotEmpty &&
+                !Uri.base.host.contains('localhost') &&
+                !Uri.base.host.contains('127.0.0.1')
+            ? Uri.base.host
+            : 'strawberrydaycare.co.in';
+        return 'https://$host/photos/$fileName';
+      }
+    }
+    return trimmed;
+  }
 }
