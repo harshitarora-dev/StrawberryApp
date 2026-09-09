@@ -18,9 +18,17 @@ import 'package:strawberry/features/dashboard/student/gallery_page.dart';
 import 'package:strawberry/features/dashboard/admin/admin_dashboard.dart';
 import 'package:strawberry/core/widgets/playschool_animations.dart';
 import 'package:strawberry/core/utils/url_navigation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthScreen extends StatefulWidget {
-  const AuthScreen({super.key});
+  final int initialTab;
+  final bool isCompletingLogin;
+
+  const AuthScreen({
+    super.key,
+    this.initialTab = 0,
+    this.isCompletingLogin = false,
+  });
 
   @override
   State<AuthScreen> createState() => _AuthScreenState();
@@ -31,9 +39,9 @@ class _AuthScreenState extends State<AuthScreen>
   final _authService = AuthService();
   final _aboutService = AboutService();
 
-  int _activeTab = 0; // 0: 🌟 Explore School, 1: 🔐 Parent Portal
-  int _previousTab = 0;
-  bool _loading = false;
+  late int _activeTab; // 0: 🌟 Explore School, 1: 🔐 Parent Portal
+  late int _previousTab;
+  late bool _loading;
   String? _error;
 
   List<String> _categories = [];
@@ -59,6 +67,10 @@ class _AuthScreenState extends State<AuthScreen>
   @override
   void initState() {
     super.initState();
+    _activeTab = widget.initialTab;
+    _previousTab = widget.initialTab;
+    _loading = widget.isCompletingLogin;
+
     _animController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 650),
@@ -76,6 +88,17 @@ class _AuthScreenState extends State<AuthScreen>
         );
     _animController.forward();
     _loadDiscoveryData();
+
+    if (kIsWeb) {
+      SharedPreferences.getInstance().then((prefs) {
+        if (mounted && (prefs.getBool('pending_portal_login') ?? false)) {
+          setState(() {
+            _activeTab = 1;
+            _loading = true;
+          });
+        }
+      }).catchError((_) {});
+    }
 
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser != null) {
@@ -504,6 +527,13 @@ class _AuthScreenState extends State<AuthScreen>
     setState(() => _loading = true);
 
     try {
+      if (kIsWeb) {
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.remove('pending_portal_login');
+        } catch (_) {}
+      }
+
       final profile = await _authService.getCurrentProfile();
       if (!mounted) return;
 
@@ -582,6 +612,13 @@ class _AuthScreenState extends State<AuthScreen>
     });
 
     try {
+      if (kIsWeb) {
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setBool('pending_portal_login', true);
+        } catch (_) {}
+      }
+
       final userCredential = await _authService.signInWithGoogle();
 
       if (userCredential == null) {
@@ -591,7 +628,11 @@ class _AuthScreenState extends State<AuthScreen>
           await _routeUser(current);
           return;
         }
-        if (mounted) {
+
+        final isMobileWeb = kIsWeb &&
+            (defaultTargetPlatform == TargetPlatform.android ||
+                defaultTargetPlatform == TargetPlatform.iOS);
+        if (!isMobileWeb && mounted) {
           setState(() {
             _loading = false;
             _error = null;
@@ -605,6 +646,12 @@ class _AuthScreenState extends State<AuthScreen>
         await _routeUser(userCredential.user!);
       }
     } catch (e) {
+      if (kIsWeb) {
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.remove('pending_portal_login');
+        } catch (_) {}
+      }
       if (mounted) {
         final msg = e.toString().toLowerCase();
         if (msg.contains('popup-closed') ||
@@ -623,7 +670,10 @@ class _AuthScreenState extends State<AuthScreen>
         }
       }
     } finally {
-      if (mounted && _loading && FirebaseAuth.instance.currentUser == null) {
+      final isMobileWeb = kIsWeb &&
+          (defaultTargetPlatform == TargetPlatform.android ||
+              defaultTargetPlatform == TargetPlatform.iOS);
+      if (mounted && _loading && !isMobileWeb && FirebaseAuth.instance.currentUser == null) {
         setState(() {
           _loading = false;
         });

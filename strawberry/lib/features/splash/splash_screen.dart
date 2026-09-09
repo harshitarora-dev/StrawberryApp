@@ -7,6 +7,7 @@ import 'package:strawberry/features/auth/auth_service.dart';
 import 'package:strawberry/features/dashboard/student/home_screen.dart';
 import 'package:strawberry/features/dashboard/student/wait_screen.dart';
 import 'package:strawberry/features/dashboard/admin/admin_dashboard.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -98,6 +99,12 @@ class _SplashScreenState extends State<SplashScreen>
       final auth = FirebaseAuth.instance;
       User? user = auth.currentUser;
 
+      bool wasPendingLogin = false;
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        wasPendingLogin = prefs.getBool('pending_portal_login') ?? false;
+      } catch (_) {}
+
       if (kIsWeb) {
         try {
           final redirectResult = await auth.getRedirectResult();
@@ -109,8 +116,10 @@ class _SplashScreenState extends State<SplashScreen>
 
       if (user == null) {
         try {
-          user = await auth.authStateChanges().first.timeout(
-            const Duration(milliseconds: 2500),
+          user = await auth.authStateChanges().firstWhere(
+            (u) => u != null,
+          ).timeout(
+            Duration(milliseconds: wasPendingLogin ? 3500 : 2500),
             onTimeout: () => auth.currentUser,
           );
         } catch (_) {
@@ -118,11 +127,20 @@ class _SplashScreenState extends State<SplashScreen>
         }
       }
 
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('pending_portal_login');
+      } catch (_) {}
+
       if (!mounted) return;
 
       if (user == null) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const AuthScreen()),
+          MaterialPageRoute(
+            builder: (_) => AuthScreen(
+              initialTab: wasPendingLogin ? 1 : 0,
+            ),
+          ),
         );
         return;
       }

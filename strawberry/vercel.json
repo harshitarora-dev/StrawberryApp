@@ -5,6 +5,10 @@
   "framework": null,
   "rewrites": [
     {
+      "source": "/__/auth/:path*",
+      "destination": "https://strawberrymobile-ea8a1.firebaseapp.com/__/auth/:path*"
+    },
+    {
       "source": "/privacy",
       "destination": "/privacy.html"
     },

@@ -17,6 +17,7 @@ import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:strawberry/core/utils/url_navigation.dart';
+import 'package:strawberry/core/widgets/student_avatar.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -85,6 +86,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     setState(() => _loading = true);
     try {
       final profile = await _authService.getCurrentProfile();
+      if (profile != null) {
+        final photo = _authService.currentUserPhotoUrl;
+        if ((profile['photo_url'] == null || (profile['photo_url'] as String).isEmpty) &&
+            photo != null && photo.isNotEmpty) {
+          profile['photo_url'] = photo;
+        }
+      }
       setState(() {
         _profile = profile;
         _loading = false;
@@ -374,7 +382,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
         final studentName = _profile?['name'] ?? 'Student';
         final studentType = _profile?['student_type'] as String? ?? 'Preschool';
-        final photoUrl = _profile?['photo_url'] as String?;
+        final rawPhoto = _profile?['photo_url'] as String?;
+        final photoUrl = (rawPhoto != null && rawPhoto.trim().isNotEmpty)
+            ? rawPhoto.trim()
+            : _authService.currentUserPhotoUrl;
 
         return PopScope(
           canPop: false,
@@ -498,33 +509,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      ClipOval(
-                        child: SizedBox(
-                          width: 26,
-                          height: 26,
-                          child: (photoUrl != null && photoUrl.isNotEmpty)
-                              ? Image.network(
-                                  photoUrl,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) => Container(
-                                    color: AppColors.primarySoft,
-                                    alignment: Alignment.center,
-                                    child: Text(
-                                      studentName.isNotEmpty ? studentName[0].toUpperCase() : '🍓',
-                                      style: const TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w800,
-                                        color: AppColors.primary,
-                                      ),
-                                    ),
-                                  ),
-                                )
-                              : Container(
-                                  color: AppColors.primarySoft,
-                                  alignment: Alignment.center,
-                                  child: const Icon(Icons.person_rounded, color: AppColors.primary, size: 14),
-                                ),
-                        ),
+                      StudentAvatar(
+                        photoUrl: photoUrl,
+                        name: studentName,
+                        size: 26,
+                        fontSize: 11,
                       ),
                       const SizedBox(width: 8),
                       Column(
@@ -735,8 +724,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   Widget _buildProfileHero(bool isDesktop) {
-    final photoUrl = _profile?['photo_url'] as String?;
-    final hasPhoto = photoUrl != null && photoUrl.isNotEmpty;
+    final rawPhoto = _profile?['photo_url'] as String?;
+    final photoUrl = (rawPhoto != null && rawPhoto.trim().isNotEmpty)
+        ? rawPhoto.trim()
+        : _authService.currentUserPhotoUrl;
     final name = _profile?['name'] ?? 'Student';
     final studentType = _profile?['student_type'] as String? ?? 'Preschool';
     final emoji = _getCategoryEmoji(studentType);
@@ -773,40 +764,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     color: Colors.white.withValues(alpha: 0.35),
                     border: Border.all(color: Colors.white, width: 2),
                   ),
-                  child: ClipOval(
-                    child: SizedBox(
-                      width: 64,
-                      height: 64,
-                      child: hasPhoto
-                          ? Image.network(
-                              photoUrl,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) => Container(
-                                color: Colors.white.withValues(alpha: 0.25),
-                                alignment: Alignment.center,
-                                child: Text(
-                                  name.isNotEmpty ? name[0].toUpperCase() : '🍓',
-                                  style: const TextStyle(
-                                    fontSize: 28,
-                                    fontWeight: FontWeight.w800,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            )
-                          : Container(
-                              color: Colors.white.withValues(alpha: 0.25),
-                              alignment: Alignment.center,
-                              child: Text(
-                                name.isNotEmpty ? name[0].toUpperCase() : '🍓',
-                                style: const TextStyle(
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                    ),
+                  child: StudentAvatar(
+                    photoUrl: photoUrl,
+                    name: name,
+                    size: 64,
+                    fontSize: 28,
                   ),
                 ),
                 const SizedBox(width: 18),
@@ -935,40 +897,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         color: Colors.white.withValues(alpha: 0.35),
                         border: Border.all(color: Colors.white, width: 2),
                       ),
-                      child: ClipOval(
-                        child: SizedBox(
-                          width: 52,
-                          height: 52,
-                          child: hasPhoto
-                              ? Image.network(
-                                  photoUrl,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) => Container(
-                                    color: Colors.white.withValues(alpha: 0.25),
-                                    alignment: Alignment.center,
-                                    child: Text(
-                                      name.isNotEmpty ? name[0].toUpperCase() : '🍓',
-                                      style: const TextStyle(
-                                        fontSize: 22,
-                                        fontWeight: FontWeight.w800,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                )
-                              : Container(
-                                  color: Colors.white.withValues(alpha: 0.25),
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    name.isNotEmpty ? name[0].toUpperCase() : '🍓',
-                                    style: const TextStyle(
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.w800,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),
-                        ),
+                      child: StudentAvatar(
+                        photoUrl: photoUrl,
+                        name: name,
+                        size: 52,
+                        fontSize: 22,
                       ),
                     ),
                     const SizedBox(width: 12),

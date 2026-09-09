@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:strawberry/core/theme/app_colors.dart';
 
 class StudentAvatar extends StatelessWidget {
   final String? photoUrl;
@@ -23,7 +22,8 @@ class StudentAvatar extends StatelessWidget {
     if (url == null || url.trim().isEmpty) return '';
     final trimmed = url.trim();
     if (kIsWeb) {
-      if (trimmed.contains('googleusercontent.com')) {
+      if (trimmed.contains('googleusercontent.com') ||
+          trimmed.contains('ggpht.com')) {
         return 'https://images.weserv.nl/?url=${Uri.encodeComponent(trimmed)}';
       }
     }

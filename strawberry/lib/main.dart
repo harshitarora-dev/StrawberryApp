@@ -13,13 +13,17 @@ void main() async {
 
   try {
     if (kIsWeb) {
+      final host = Uri.base.host;
+      final isCustomDomain = host.isNotEmpty &&
+          !host.contains('localhost') &&
+          !host.contains('127.0.0.1');
       await Firebase.initializeApp(
-        options: const FirebaseOptions(
+        options: FirebaseOptions(
           apiKey: 'AIzaSyCb-CwE-hMPQ6Ofbq9Ag0im719tc_7Z2u4',
           appId: '1:246316625668:web:8ad5313a1874fdfa99aa51',
           messagingSenderId: '246316625668',
           projectId: 'strawberrymobile-ea8a1',
-          authDomain: 'strawberrymobile-ea8a1.firebaseapp.com',
+          authDomain: isCustomDomain ? host : 'strawberrymobile-ea8a1.firebaseapp.com',
           storageBucket: 'strawberrymobile-ea8a1.firebasestorage.app',
         ),
       );
