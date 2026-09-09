@@ -13,6 +13,8 @@ import 'fee_payments_admin_page.dart';
 import 'holiday_admin_page.dart';
 import 'package:strawberry/features/about/about_page.dart';
 import 'package:strawberry/features/chat/chat_page.dart';
+import 'package:strawberry/features/payments/fee_head_field.dart';
+import 'package:strawberry/core/widgets/student_avatar.dart';
 
 import 'package:strawberry/core/theme/app_colors.dart';
 import 'package:strawberry/core/widgets/playschool_animations.dart';
@@ -123,6 +125,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
     setState(() => _loadingStudents = true);
     try {
       final list = await _authService.getAllStudents();
+      for (final s in list) {
+        debugPrint('STUDENT LOADED: name=${s['name']}, photo=${s['photo_url']}');
+      }
       if (!mounted) return;
       setState(() {
         _allStudents = list;
@@ -394,6 +399,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
     String? selectedStudentType;
     final feesController = TextEditingController();
+    bool chargeAdmissionFee = true;
+    final admissionTitleController = TextEditingController(text: 'Admission Fee');
+    final admissionFeeController = TextEditingController(text: '5000');
+    String admissionFeeType = 'one_time'; // 'one_time' or 'annual'
+
+    final List<Map<String, dynamic>> extraFeeHeads = [];
     final formKey = GlobalKey<FormState>();
 
     showModalBottomSheet(
@@ -416,230 +427,453 @@ class _AdminDashboardState extends State<AdminDashboard> {
               ),
               child: Form(
                 key: formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Drag handle
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        margin: const EdgeInsets.only(bottom: 18),
-                        decoration: BoxDecoration(
-                          color: _Palette.border,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Roll out the Red Carpet! ⭐',
-                          style: _AdminTextStyles.title,
-                        ),
-                        InkWell(
-                          borderRadius: BorderRadius.circular(20),
-                          onTap: () => Navigator.pop(context),
-                          child: Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: _Palette.bg,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.close_rounded,
-                              color: _Palette.textMuted,
-                              size: 20,
-                            ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Drag handle
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          margin: const EdgeInsets.only(bottom: 18),
+                          decoration: BoxDecoration(
+                            color: _Palette.border,
+                            borderRadius: BorderRadius.circular(4),
                           ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 18),
-
-                    // Student summary chip
-                    Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [_Palette.primarySoft, Colors.white],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(color: _Palette.border),
                       ),
-                      child: Row(
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.all(2),
-                            decoration: const BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  _Palette.primary,
-                                  _Palette.accentPeach,
-                                ],
-                              ),
-                              shape: BoxShape.circle,
-                            ),
-                            child: ClipOval(
-                              child: Container(
-                                width: 40,
-                                height: 40,
-                                color: Colors.white,
-                                child: ((request['photo_url'] as String?) != null &&
-                                        (request['photo_url'] as String).trim().isNotEmpty)
-                                    ? Image.network(
-                                        request['photo_url'] as String,
-                                        width: 40,
-                                        height: 40,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stackTrace) => const Center(
-                                          child: Icon(
-                                            Icons.person_rounded,
-                                            color: _Palette.primary,
-                                            size: 20,
-                                          ),
-                                        ),
-                                      )
-                                    : const Center(
-                                        child: Icon(
-                                          Icons.person_rounded,
-                                          color: _Palette.primary,
-                                          size: 20,
-                                        ),
-                                      ),
-                              ),
-                            ),
+                          const Text(
+                            'Roll out the Red Carpet! ⭐',
+                            style: _AdminTextStyles.title,
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  name,
-                                  style: const TextStyle(
-                                    fontSize: 15.5,
-                                    fontWeight: FontWeight.w700,
-                                    color: _Palette.textDark,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  request['email'] ?? '',
-                                  style: _AdminTextStyles.cardSubtitle,
-                                ),
-                              ],
+                          InkWell(
+                            borderRadius: BorderRadius.circular(20),
+                            onTap: () => Navigator.pop(context),
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: _Palette.bg,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.close_rounded,
+                                color: _Palette.textMuted,
+                                size: 20,
+                              ),
                             ),
                           ),
                         ],
                       ),
-                    ),
-                    const SizedBox(height: 20),
+                      const SizedBox(height: 18),
 
-                    // Student Type Dropdown
-                    DropdownButtonFormField<String>(
-                      value: selectedStudentType,
-                      dropdownColor: _Palette.surface,
-                      style: const TextStyle(
-                        color: _Palette.textDark,
-                        fontSize: 15,
-                      ),
-                      decoration: _adminInputDecoration(
-                        label: 'Student Type',
-                        icon: Icons.school_rounded,
-                      ),
-                      items: _categories.map((cat) {
-                        return DropdownMenuItem<String>(
-                          value: cat,
-                          child: Text(cat),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setModalState(() {
-                          selectedStudentType = value;
-                        });
-                      },
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please select student type';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Fees
-                    TextFormField(
-                      controller: feesController,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      style: const TextStyle(color: _Palette.textDark),
-                      decoration: _adminInputDecoration(
-                        label: 'Fees',
-                        icon: Icons.currency_rupee_rounded,
-                      ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Please enter fees';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 22),
-                    SizedBox(
-                      height: 54,
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          if (!formKey.currentState!.validate()) return;
-
-                          final type = selectedStudentType!;
-                          final fees =
-                              double.tryParse(feesController.text.trim()) ??
-                              0.0;
-
-                          try {
-                            await _authService.approveStudent(uid, type, fees);
-                            if (!mounted) return;
-                            Navigator.of(context).pop(); // Close bottom sheet
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              _adminSnackBar(
-                                'Woohoo! $name is now officially part of the Strawberry family! 🎉',
-                                success: true,
+                      // Student summary chip
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [_Palette.primarySoft, Colors.white],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(color: _Palette.border),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(2),
+                              decoration: const BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    _Palette.primary,
+                                    _Palette.accentPeach,
+                                  ],
+                                ),
+                                shape: BoxShape.circle,
                               ),
-                            );
-                            _loadRequests();
-                          } catch (e) {
-                            if (!mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              _adminSnackBar(
-                                'Oops! Couldn\'t approve right now. Give it another tap! 🔄',
-                                success: false,
+                              child: StudentAvatar(
+                                photoUrl: request['photo_url'] as String?,
+                                name: name,
+                                size: 40,
                               ),
-                            );
-                          }
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    name,
+                                    style: const TextStyle(
+                                      fontSize: 15.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: _Palette.textDark,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    request['email'] ?? '',
+                                    style: _AdminTextStyles.cardSubtitle,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+
+                      // Student Type Dropdown
+                      DropdownButtonFormField<String>(
+                        initialValue: selectedStudentType,
+                        dropdownColor: _Palette.surface,
+                        style: const TextStyle(
+                          color: _Palette.textDark,
+                          fontSize: 15,
+                        ),
+                        decoration: _adminInputDecoration(
+                          label: 'Student Type / Class',
+                          icon: Icons.school_rounded,
+                        ),
+                        items: _categories.map((cat) {
+                          return DropdownMenuItem<String>(
+                            value: cat,
+                            child: Text(cat),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setModalState(() {
+                            selectedStudentType = value;
+                          });
                         },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _Palette.primary,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(18),
-                          ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please select student type';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Monthly Fees
+                      TextFormField(
+                        controller: feesController,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                        style: const TextStyle(color: _Palette.textDark),
+                        decoration: _adminInputDecoration(
+                          label: 'Monthly Tuition Fee (₹)',
+                          icon: Icons.currency_rupee_rounded,
                         ),
-                        child: const Text(
-                          'Approve & Welcome to Strawberry 🎓',
-                          style: TextStyle(
-                            fontSize: 15.5,
-                            fontWeight: FontWeight.w700,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Please enter monthly fee';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Admission Fee Card (Configurable / Waivable)
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: _Palette.bg,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: _Palette.border),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Checkbox(
+                                  value: chargeAdmissionFee,
+                                  activeColor: _Palette.primary,
+                                  onChanged: (v) {
+                                    setModalState(() {
+                                      chargeAdmissionFee = v ?? false;
+                                    });
+                                  },
+                                ),
+                                const Expanded(
+                                  child: Text(
+                                    'Charge Admission Fee',
+                                    style: TextStyle(
+                                      fontSize: 13.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: _Palette.textDark,
+                                    ),
+                                  ),
+                                ),
+                                if (chargeAdmissionFee)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: _Palette.primarySoft,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: DropdownButton<String>(
+                                      value: admissionFeeType,
+                                      underline: const SizedBox.shrink(),
+                                      isDense: true,
+                                      items: const [
+                                        DropdownMenuItem(value: 'one_time', child: Text('One-Time', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: _Palette.primaryDark))),
+                                        DropdownMenuItem(value: 'annual', child: Text('Annual', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: _Palette.primaryDark))),
+                                      ],
+                                      onChanged: (v) {
+                                        if (v != null) {
+                                          setModalState(() => admissionFeeType = v);
+                                        }
+                                      },
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            if (chargeAdmissionFee) ...[
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    flex: 3,
+                                    child: FeeHeadField(
+                                      controller: admissionTitleController,
+                                      labelText: 'Fee Head Name',
+                                      fontSize: 13,
+                                      borderRadius: 10,
+                                      borderColor: _Palette.border,
+                                      textColor: _Palette.textDark,
+                                      primaryColor: _Palette.primary,
+                                      fillColor: Colors.white,
+                                      validator: (v) => (v == null || v.trim().isEmpty) ? 'Enter fee head' : null,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    flex: 2,
+                                    child: TextFormField(
+                                      controller: admissionFeeController,
+                                      keyboardType: TextInputType.number,
+                                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                      style: const TextStyle(fontSize: 13, color: _Palette.textDark),
+                                      decoration: InputDecoration(
+                                        labelText: 'Amount (₹)',
+                                        isDense: true,
+                                        prefixText: '₹',
+                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Extra Custom Fee Heads
+                      if (extraFeeHeads.isNotEmpty) ...[
+                        const Text(
+                          'Additional Fee Heads',
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: _Palette.textDark),
+                        ),
+                        const SizedBox(height: 8),
+                        ...extraFeeHeads.asMap().entries.map((entry) {
+                          final idx = entry.key;
+                          final item = entry.value;
+                          final titleCtrl = item['titleCtrl'] as TextEditingController;
+                          final amountCtrl = item['amountCtrl'] as TextEditingController;
+                          final type = item['type'] as String;
+
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: _Palette.bg,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: _Palette.border),
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  flex: 3,
+                                  child: FeeHeadField(
+                                    controller: titleCtrl,
+                                    labelText: 'Fee Name (e.g. Uniform)',
+                                    fontSize: 12.5,
+                                    borderRadius: 8,
+                                    borderColor: _Palette.border,
+                                    textColor: _Palette.textDark,
+                                    primaryColor: _Palette.primary,
+                                    fillColor: Colors.white,
+                                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Enter fee name' : null,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  flex: 2,
+                                  child: TextFormField(
+                                    controller: amountCtrl,
+                                    keyboardType: TextInputType.number,
+                                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                    style: const TextStyle(fontSize: 12.5, color: _Palette.textDark),
+                                    decoration: InputDecoration(
+                                      labelText: 'Amount (₹)',
+                                      isDense: true,
+                                      prefixText: '₹',
+                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                DropdownButton<String>(
+                                  value: type,
+                                  underline: const SizedBox.shrink(),
+                                  isDense: true,
+                                  items: const [
+                                    DropdownMenuItem(value: 'one_time', child: Text('1-Time', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600))),
+                                    DropdownMenuItem(value: 'annual', child: Text('Annual', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600))),
+                                    DropdownMenuItem(value: 'monthly', child: Text('Monthly', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600))),
+                                  ],
+                                  onChanged: (newType) {
+                                    if (newType != null) {
+                                      setModalState(() {
+                                        extraFeeHeads[idx]['type'] = newType;
+                                      });
+                                    }
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline_rounded, size: 18, color: _Palette.danger),
+                                  onPressed: () {
+                                    setModalState(() {
+                                      extraFeeHeads.removeAt(idx);
+                                    });
+                                  },
+                                ),
+                              ],
+                            ),
+                          );
+                        }),
+                      ],
+
+                      // Button to add more fee heads
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton.icon(
+                          onPressed: () {
+                            setModalState(() {
+                              extraFeeHeads.add({
+                                'titleCtrl': TextEditingController(),
+                                'amountCtrl': TextEditingController(),
+                                'type': 'one_time',
+                              });
+                            });
+                          },
+                          icon: const Icon(Icons.add_circle_outline_rounded, size: 16, color: _Palette.primary),
+                          label: const Text('+ Add Custom Fee Item (Books, Uniform, etc.)', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: _Palette.primary)),
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+
+                      SizedBox(
+                        height: 54,
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            if (!formKey.currentState!.validate()) return;
+
+                            final type = selectedStudentType!;
+                            final monthlyFee = double.tryParse(feesController.text.trim()) ?? 0.0;
+
+                            // Construct fee items
+                            final List<Map<String, dynamic>> itemsToInsert = [];
+                            final now = DateTime.now();
+                            final currentMonthKey = '${now.year}-${now.month.toString().padLeft(2, '0')}';
+                            final currentAnnualKey = '${now.year}-${(now.year + 1).toString().substring(2)}';
+
+                            if (chargeAdmissionFee) {
+                              final admAmount = double.tryParse(admissionFeeController.text.trim()) ?? 0.0;
+                              if (admAmount > 0) {
+                                itemsToInsert.add({
+                                  'student_id': uid,
+                                  'title': admissionTitleController.text.trim().isNotEmpty ? admissionTitleController.text.trim() : 'Admission Fee',
+                                  'fee_type': admissionFeeType,
+                                  'amount': admAmount,
+                                  'period_key': admissionFeeType == 'annual' ? currentAnnualKey : 'ONE_TIME',
+                                  'status': 'pending',
+                                  'created_by': _authService.currentUserEmail,
+                                });
+                              }
+                            }
+
+                            for (final extra in extraFeeHeads) {
+                              final t = (extra['titleCtrl'] as TextEditingController).text.trim();
+                              final a = double.tryParse((extra['amountCtrl'] as TextEditingController).text.trim()) ?? 0.0;
+                              final fType = extra['type'] as String;
+                              if (t.isNotEmpty && a > 0) {
+                                itemsToInsert.add({
+                                  'student_id': uid,
+                                  'title': t,
+                                  'fee_type': fType,
+                                  'amount': a,
+                                  'period_key': fType == 'annual' ? currentAnnualKey : (fType == 'monthly' ? currentMonthKey : 'ONE_TIME'),
+                                  'status': 'pending',
+                                  'created_by': _authService.currentUserEmail,
+                                });
+                              }
+                            }
+
+                            try {
+                              await _authService.approveStudent(
+                                uid,
+                                type,
+                                monthlyFee,
+                                initialFeeItems: itemsToInsert,
+                              );
+                              if (!mounted) return;
+                              Navigator.of(context).pop(); // Close bottom sheet
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                _adminSnackBar(
+                                  'Woohoo! $name is now officially part of the Strawberry family! 🎉',
+                                  success: true,
+                                ),
+                              );
+                              _loadRequests();
+                            } catch (e) {
+                              debugPrint('Approval failed error: $e');
+                              if (!mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                _adminSnackBar(
+                                  'Oops! Couldn\'t approve: $e',
+                                  success: false,
+                                ),
+                              );
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _Palette.primary,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                          ),
+                          child: const Text(
+                            'Approve & Welcome to Strawberry 🎓',
+                            style: TextStyle(
+                              fontSize: 15.5,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 10),
+                      const SizedBox(height: 10),
                     // Reject button
                     SizedBox(
                       height: 48,
@@ -735,6 +969,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     ),
                     const SizedBox(height: 8),
                   ],
+                ),
                 ),
               ),
             );
@@ -1710,25 +1945,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   ),
                   child: Row(
                     children: [
-                      ClipOval(
-                        child: Container(
-                          width: 36,
-                          height: 36,
-                          color: _Palette.primarySoft,
-                          child: (photoUrl != null && photoUrl.trim().isNotEmpty)
-                              ? Image.network(
-                                  photoUrl,
-                                  width: 36,
-                                  height: 36,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) => const Center(
-                                    child: Icon(Icons.person_rounded, color: _Palette.primary, size: 16),
-                                  ),
-                                )
-                              : const Center(
-                                  child: Icon(Icons.person_rounded, color: _Palette.primary, size: 16),
-                                ),
-                        ),
+                      StudentAvatar(
+                        photoUrl: photoUrl,
+                        name: name,
+                        size: 36,
                       ),
                       const SizedBox(width: 10),
                       Expanded(
@@ -2461,33 +2681,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   child: Row(
                     children: [
-                      ClipOval(
-                        child: Container(
-                          width: 44,
-                          height: 44,
-                          color: _Palette.primarySoft,
-                          child: (photoUrl != null && photoUrl.trim().isNotEmpty)
-                              ? Image.network(
-                                  photoUrl,
-                                  width: 44,
-                                  height: 44,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) => const Center(
-                                    child: Icon(
-                                      Icons.person_rounded,
-                                      color: _Palette.primary,
-                                      size: 20,
-                                    ),
-                                  ),
-                                )
-                              : const Center(
-                                  child: Icon(
-                                    Icons.person_rounded,
-                                    color: _Palette.primary,
-                                    size: 20,
-                                  ),
-                                ),
-                        ),
+                      StudentAvatar(
+                        photoUrl: photoUrl,
+                        name: name,
+                        size: 44,
                       ),
                       const SizedBox(width: 14),
                       Expanded(
@@ -2801,35 +2998,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                                 horizontal: 16,
                                                 vertical: 2,
                                               ),
-                                              leading: ClipOval(
-                                                child: Container(
-                                                  width: 38,
-                                                  height: 38,
-                                                  color: _Palette.primarySoft,
-                                                  child: (photo != null && photo.trim().isNotEmpty)
-                                                      ? Image.network(
-                                                          photo,
-                                                          width: 38,
-                                                          height: 38,
-                                                          fit: BoxFit.cover,
-                                                          errorBuilder: (context, error, stackTrace) {
-                                                            return const Center(
-                                                              child: Icon(
-                                                                Icons.person_rounded,
-                                                                color: _Palette.primary,
-                                                                size: 20,
-                                                              ),
-                                                            );
-                                                          },
-                                                        )
-                                                      : const Center(
-                                                          child: Icon(
-                                                            Icons.person_rounded,
-                                                            color: _Palette.primary,
-                                                            size: 20,
-                                                          ),
-                                                        ),
-                                                ),
+                                              leading: StudentAvatar(
+                                                photoUrl: photo,
+                                                name: sName,
+                                                size: 38,
                                               ),
                                               title: Text(
                                                 sName,

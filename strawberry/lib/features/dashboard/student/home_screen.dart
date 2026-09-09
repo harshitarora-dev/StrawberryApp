@@ -1243,7 +1243,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   ),
                   icon: const Icon(Icons.bolt_rounded, size: 18),
                   label: const Text(
-                    'Pay Monthly Fees via UPI',
+                    'Pay Academic Fees via UPI',
                     style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
                   ),
                 ),

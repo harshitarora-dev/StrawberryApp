@@ -32,7 +32,7 @@ class AuthService {
 
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     clientId: kIsWeb ? _webClientId : null,
-    scopes: ['email'],
+    scopes: ['email', 'profile'],
   );
   final SupabaseClient _supabaseClient = Supabase.instance.client;
 
@@ -159,6 +159,11 @@ class AuthService {
           .maybeSingle();
       if (data != null) {
         unawaited(PushNotificationService().registerDeviceToken());
+        final photo = currentUserPhotoUrl;
+        if (photo != null && photo.isNotEmpty && (data['photo_url'] == null || (data['photo_url'] as String).isEmpty)) {
+          unawaited(_supabaseClient.from('profiles').update({'photo_url': photo}).eq('id', userId));
+          data['photo_url'] = photo;
+        }
         return data;
       }
 
@@ -171,10 +176,16 @@ class AuthService {
             .eq('email', email)
             .maybeSingle();
         if (emailData != null) {
+          final photo = currentUserPhotoUrl;
+          final updates = <String, dynamic>{'id': userId};
+          if (photo != null && photo.isNotEmpty && (emailData['photo_url'] == null || (emailData['photo_url'] as String).isEmpty)) {
+            updates['photo_url'] = photo;
+            emailData['photo_url'] = photo;
+          }
           try {
             await _supabaseClient
                 .from('profiles')
-                .update({'id': userId})
+                .update(updates)
                 .eq('email', email);
           } catch (_) {}
           return emailData;
@@ -250,11 +261,28 @@ class AuthService {
   }
 
   // Approve a pending request and assign type and fees (Admins only)
-  Future<void> approveStudent(String uid, String type, double fees) async {
+  Future<void> approveStudent(
+    String uid,
+    String type,
+    double fees, {
+    List<Map<String, dynamic>>? initialFeeItems,
+  }) async {
     await _supabaseClient
         .from('profiles')
-        .update({'status': 'approved', 'student_type': type, 'fees': fees})
+        .update({
+          'status': 'approved',
+          'student_type': type,
+          'fees': fees,
+        })
         .eq('id', uid);
+
+    if (initialFeeItems != null && initialFeeItems.isNotEmpty) {
+      try {
+        await _supabaseClient.from('student_fee_items').insert(initialFeeItems);
+      } catch (e) {
+        debugPrint('Error inserting initial fee items: $e');
+      }
+    }
   }
 
   // Add an email to allowed_admins (Admins only)

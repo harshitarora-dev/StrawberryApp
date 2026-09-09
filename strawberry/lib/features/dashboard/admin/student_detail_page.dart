@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:strawberry/features/auth/auth_service.dart';
+import 'package:strawberry/features/payments/fee_service.dart';
+import 'package:strawberry/features/payments/fee_head_field.dart';
+import 'package:strawberry/core/widgets/student_avatar.dart';
 import 'package:strawberry/features/dashboard/admin/student_attendance_history_page.dart';
 
 import 'package:strawberry/core/theme/app_colors.dart';
@@ -38,12 +41,16 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
   static const _danger = AppColors.danger;
 
   List<String> _categories = [];
+  final FeeService _feeService = FeeService();
+  List<FeeItem> _feeItems = [];
+  bool _loadingFeeItems = false;
 
   @override
   void initState() {
     super.initState();
     _student = Map<String, dynamic>.from(widget.student);
     _loadCategories();
+    _loadFeeItems();
   }
 
   Future<void> _loadCategories() async {
@@ -58,10 +65,25 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
     }
   }
 
+  Future<void> _loadFeeItems() async {
+    setState(() => _loadingFeeItems = true);
+    try {
+      final items = await _feeService.getStudentFeeItems(_student['id']?.toString() ?? '');
+      if (mounted) {
+        setState(() {
+          _feeItems = items;
+          _loadingFeeItems = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loadingFeeItems = false);
+    }
+  }
+
   List<String> get _paidMonths =>
       List<String>.from((_student['fees_paid_months'] as List?) ?? []);
 
-  // ── Mark month as paid ──────────────────────────────────────────────
+  // ── Mark fee as paid (Tuition and/or Custom Fee items) ───────────────
   Future<void> _showMarkFeeDialog() async {
     final now = DateTime.now();
     DateTime startMonth;
@@ -77,9 +99,7 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
       startMonth = DateTime(now.year, now.month, 1);
     }
 
-    // Allow from admission month up to next month (advance payment)
     final endMonth = DateTime(now.year, now.month + 1, 1);
-
     final List<String> allEligibleMonths = [];
     DateTime cur = endMonth;
     while (!cur.isBefore(startMonth)) {
@@ -88,101 +108,197 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
       cur = DateTime(cur.year, cur.month - 1, 1);
     }
 
-    // Only show months that haven't been paid yet
     final availableMonths = allEligibleMonths
         .where((m) => !_paidMonths.contains(m))
         .toList();
+    final pendingFeeItems = _feeItems.where((item) => item.isPending).toList();
 
-    if (availableMonths.isEmpty) {
+    if (availableMonths.isEmpty && pendingFeeItems.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          _snack('All fees are already marked as paid up to date!', success: true),
+          _snack('All fees and dues are already marked as paid!', success: true),
         );
       }
       return;
     }
 
-    String? selected = availableMonths.first;
+    final Set<String> selectedMonths = {};
+    if (availableMonths.isNotEmpty) {
+      selectedMonths.add(availableMonths.first);
+    }
+    final Set<String> selectedItemIds = {};
+    String selectedMode = 'Cash';
+    final refController = TextEditingController();
+
     await showDialog<void>(
       context: context,
       builder: (ctx) {
         return StatefulBuilder(
           builder: (ctx, setDlg) {
+            final isPrimary = AuthService.isPrimaryAdmin(widget.authService.currentUserEmail);
             return AlertDialog(
               backgroundColor: _surface,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(24),
               ),
               title: const Text(
-                'Mark Month as Paid',
+                'Mark Payment Received',
                 style: TextStyle(
                   color: _textDark,
                   fontSize: 17,
                   fontWeight: FontWeight.w800,
                 ),
               ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'Select the month for which fees have been received:',
-                    style: TextStyle(color: _textMuted, fontSize: 13),
-                  ),
-                  const SizedBox(height: 14),
-                  DropdownButtonFormField<String>(
-                    value: selected,
-                    dropdownColor: _surface,
-                    style: const TextStyle(color: _textDark),
-                    decoration: InputDecoration(
-                      labelText: 'Month',
-                      labelStyle: const TextStyle(color: _textMuted),
-                      prefixIcon: const Icon(
-                        Icons.calendar_month_rounded,
-                        color: _primary,
-                        size: 20,
+              content: SizedBox(
+                width: double.maxFinite,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Select the dues for which payment has been received:',
+                        style: TextStyle(color: _textMuted, fontSize: 12.5),
                       ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: _border),
+                      const SizedBox(height: 14),
+
+                      // Section 1: Monthly Tuition
+                      if (availableMonths.isNotEmpty) ...[
+                        const Text(
+                          'Monthly Tuition',
+                          style: TextStyle(
+                            color: _primaryDark,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        ...availableMonths.take(4).map((m) {
+                          final isChecked = selectedMonths.contains(m);
+                          final feeAmt = _student['fees'];
+                          final feeSuffix = (isPrimary && feeAmt != null) ? ' (₹${(feeAmt as num).toInt()})' : '';
+                          return CheckboxListTile(
+                            contentPadding: EdgeInsets.zero,
+                            dense: true,
+                            activeColor: _primary,
+                            value: isChecked,
+                            title: Text(
+                              '${_formatMonthKey(m)}$feeSuffix',
+                              style: const TextStyle(fontSize: 13.5, color: _textDark, fontWeight: FontWeight.w600),
+                            ),
+                            onChanged: (val) {
+                              setDlg(() {
+                                if (val == true) {
+                                  selectedMonths.add(m);
+                                } else {
+                                  selectedMonths.remove(m);
+                                }
+                              });
+                            },
+                          );
+                        }),
+                        const SizedBox(height: 10),
+                      ],
+
+                      // Section 2: Custom Fee Items (Picnic, Admission, Uniform, etc.)
+                      if (pendingFeeItems.isNotEmpty) ...[
+                        const Text(
+                          'Configured Fee Heads',
+                          style: TextStyle(
+                            color: _primaryDark,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        ...pendingFeeItems.map((item) {
+                          final isChecked = selectedItemIds.contains(item.id);
+                          final typeLabel = item.feeType == 'one_time'
+                              ? 'One-Time'
+                              : (item.feeType == 'annual' ? 'Annual' : 'Monthly');
+                          return CheckboxListTile(
+                            contentPadding: EdgeInsets.zero,
+                            dense: true,
+                            activeColor: _primary,
+                            value: isChecked,
+                            title: Text(
+                              item.title,
+                              style: const TextStyle(fontSize: 13.5, color: _textDark, fontWeight: FontWeight.w600),
+                            ),
+                            subtitle: Text(
+                              isPrimary
+                                  ? '$typeLabel • ₹${item.amount.toStringAsFixed(0)}'
+                                  : typeLabel,
+                              style: const TextStyle(fontSize: 11.5, color: _textMuted),
+                            ),
+                            onChanged: (val) {
+                              setDlg(() {
+                                if (val == true) {
+                                  selectedItemIds.add(item.id);
+                                } else {
+                                  selectedItemIds.remove(item.id);
+                                }
+                              });
+                            },
+                          );
+                        }),
+                        const SizedBox(height: 10),
+                      ],
+
+                      // Payment Mode
+                      const Divider(color: _border),
+                      const SizedBox(height: 6),
+                      const Text(
+                        'Payment Mode',
+                        style: TextStyle(color: _textMuted, fontSize: 12, fontWeight: FontWeight.w600),
                       ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: _primary,
-                          width: 1.6,
+                      const SizedBox(height: 6),
+                      DropdownButtonFormField<String>(
+                        initialValue: selectedMode,
+                        dropdownColor: _surface,
+                        style: const TextStyle(color: _textDark, fontSize: 13.5),
+                        decoration: _inputDecor(
+                          label: 'Received Via',
+                          icon: Icons.payments_rounded,
+                        ),
+                        items: const [
+                          DropdownMenuItem(value: 'Cash', child: Text('Cash')),
+                          DropdownMenuItem(value: 'UPI', child: Text('UPI / QR')),
+                          DropdownMenuItem(value: 'Bank Transfer', child: Text('Bank Transfer')),
+                        ],
+                        onChanged: (v) => setDlg(() => selectedMode = v ?? 'Cash'),
+                      ),
+                      const SizedBox(height: 10),
+                      TextFormField(
+                        controller: refController,
+                        style: const TextStyle(color: _textDark, fontSize: 13),
+                        decoration: _inputDecor(
+                          label: 'Receipt / Reference (Optional)',
+                          icon: Icons.tag_rounded,
                         ),
                       ),
-                      filled: true,
-                      fillColor: _bg,
-                    ),
-                    items: availableMonths
-                        .map(
-                          (m) => DropdownMenuItem(
-                            value: m,
-                            child: Text(_formatMonthKey(m)),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (v) => setDlg(() => selected = v),
+                    ],
                   ),
-                ],
+                ),
               ),
               actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx),
                   style: TextButton.styleFrom(foregroundColor: _textMuted),
-                  child: const Text(
-                    'Cancel',
-                    style: TextStyle(fontWeight: FontWeight.w600),
-                  ),
+                  child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w600)),
                 ),
                 ElevatedButton(
-                  onPressed: selected == null
+                  onPressed: (selectedMonths.isEmpty && selectedItemIds.isEmpty)
                       ? null
                       : () async {
                           Navigator.pop(ctx);
-                          await _markPaid(selected!);
+                          await _processMarkPaid(
+                            months: selectedMonths.toList(),
+                            itemIds: selectedItemIds.toList(),
+                            paymentMode: selectedMode,
+                            refNote: refController.text.trim(),
+                          );
                         },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _success,
@@ -192,10 +308,7 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text(
-                    'Confirm',
-                    style: TextStyle(fontWeight: FontWeight.w700),
-                  ),
+                  child: const Text('Confirm Received', style: TextStyle(fontWeight: FontWeight.w700)),
                 ),
               ],
             );
@@ -205,30 +318,48 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
     );
   }
 
-  Future<void> _markPaid(String monthKey) async {
+  Future<void> _processMarkPaid({
+    required List<String> months,
+    required List<String> itemIds,
+    required String paymentMode,
+    String? refNote,
+  }) async {
     setState(() => _saving = true);
     try {
-      await widget.authService.markFeesPaid(_student['id'], monthKey);
+      for (final m in months) {
+        await widget.authService.markFeesPaid(_student['id'], m);
+      }
+      for (final id in itemIds) {
+        await _feeService.markFeeItemPaid(
+          id,
+          paidVia: paymentMode,
+          txnRef: refNote?.isNotEmpty == true ? refNote : null,
+        );
+      }
+
       final updated = List<String>.from(_paidMonths);
-      if (!updated.contains(monthKey)) updated.add(monthKey);
-      updated.sort((a, b) => b.compareTo(a)); // newest first
+      for (final m in months) {
+        if (!updated.contains(m)) updated.add(m);
+      }
+      updated.sort((a, b) => b.compareTo(a));
+
       setState(() {
         _student['fees_paid_months'] = updated;
         _saving = false;
       });
+      await _loadFeeItems();
+
       if (mounted) {
+        final totalCount = months.length + itemIds.length;
         ScaffoldMessenger.of(context).showSnackBar(
-          _snack(
-            'Fees marked paid for ${_formatMonthKey(monthKey)}',
-            success: true,
-          ),
+          _snack('Marked $totalCount item(s) as paid via $paymentMode', success: true),
         );
       }
     } catch (e) {
       setState(() => _saving = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          _snack('Failed to mark fees. Try again.', success: false),
+          _snack('Failed to mark payment: $e', success: false),
         );
       }
     }
@@ -282,6 +413,54 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
     }
   }
 
+  Future<void> _unmarkFeeItemPaid(FeeItem item) async {
+    final isPrimary = AuthService.isPrimaryAdmin(widget.authService.currentUserEmail);
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: _surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          'Remove Payment?',
+          style: TextStyle(color: _textDark, fontWeight: FontWeight.w800),
+        ),
+        content: Text(
+          isPrimary
+              ? 'Remove paid record for ${item.title} (₹${item.amount.toInt()}) and set back to pending?'
+              : 'Remove paid record for ${item.title} and set back to pending?',
+          style: const TextStyle(color: _textMuted),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel', style: TextStyle(color: _textMuted)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _danger,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+    setState(() => _saving = true);
+    try {
+      await _feeService.unmarkFeeItemPaid(item.id);
+      await _loadFeeItems();
+      setState(() => _saving = false);
+    } catch (e) {
+      setState(() => _saving = false);
+    }
+  }
+
   void _openAttendanceHistory() {
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -311,6 +490,247 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
     final feesController = TextEditingController(
       text: (_student['fees'] ?? 0).toString(),
     );
+    bool chargeAdmissionFee = false;
+    final admissionTitleController = TextEditingController(text: 'Admission Fee (Upgrade)');
+    final admissionAmountController = TextEditingController(text: '1000');
+    String admissionFeeType = 'one_time';
+    final formKey = GlobalKey<FormState>();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: _surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setSheet) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+                top: 12,
+                left: 24,
+                right: 24,
+              ),
+              child: Form(
+                key: formKey,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          margin: const EdgeInsets.only(bottom: 18),
+                          decoration: BoxDecoration(
+                            color: _border,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                      ),
+                      const Text(
+                        'Upgrade Student',
+                        style: TextStyle(
+                          color: _textDark,
+                          fontSize: 19,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      DropdownButtonFormField<String>(
+                        initialValue: selectedType,
+                        dropdownColor: _surface,
+                        style: const TextStyle(color: _textDark, fontSize: 15),
+                        decoration: _inputDecor(
+                          label: 'Student Type',
+                          icon: Icons.school_rounded,
+                        ),
+                        items: dropdownItems.map((cat) {
+                          return DropdownMenuItem<String>(
+                            value: cat,
+                            child: Text(cat),
+                          );
+                        }).toList(),
+                        onChanged: (v) => setSheet(() => selectedType = v),
+                        validator: (v) =>
+                            (v == null || v.isEmpty) ? 'Select type' : null,
+                      ),
+                      const SizedBox(height: 14),
+                      TextFormField(
+                        controller: feesController,
+                        keyboardType: TextInputType.number,
+                        style: const TextStyle(color: _textDark),
+                        decoration: _inputDecor(
+                          label: 'Monthly Fees (₹)',
+                          icon: Icons.currency_rupee_rounded,
+                        ),
+                        validator: (v) =>
+                            (v == null || v.trim().isEmpty) ? 'Enter fees' : null,
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Optional Admission/Upgrade fee toggle
+                      Container(
+                        decoration: BoxDecoration(
+                          color: _bg,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: _border),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'Charge Admission / Upgrade Fee',
+                                        style: TextStyle(
+                                          color: _textDark,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 13.5,
+                                        ),
+                                      ),
+                                      Text(
+                                        'Charge for category upgrade (exceptions: leave off)',
+                                        style: TextStyle(
+                                          color: _textMuted.withValues(alpha: 0.8),
+                                          fontSize: 11.5,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Switch(
+                                  value: chargeAdmissionFee,
+                                  activeThumbColor: _primary,
+                                  onChanged: (val) => setSheet(() => chargeAdmissionFee = val),
+                                ),
+                              ],
+                            ),
+                            if (chargeAdmissionFee) ...[
+                              const SizedBox(height: 10),
+                              FeeHeadField(
+                                controller: admissionTitleController,
+                                labelText: 'Fee Title',
+                                fontSize: 13.5,
+                                borderRadius: 14,
+                                borderColor: _border,
+                                textColor: _textDark,
+                                primaryColor: _primary,
+                                fillColor: _surface,
+                              ),
+                              const SizedBox(height: 10),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: TextFormField(
+                                      controller: admissionAmountController,
+                                      keyboardType: TextInputType.number,
+                                      style: const TextStyle(color: _textDark, fontSize: 13.5),
+                                      decoration: _inputDecor(
+                                        label: 'Amount (₹)',
+                                        icon: Icons.currency_rupee_rounded,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: DropdownButtonFormField<String>(
+                                      initialValue: admissionFeeType,
+                                      dropdownColor: _surface,
+                                      style: const TextStyle(color: _textDark, fontSize: 13),
+                                      decoration: _inputDecor(
+                                        label: 'Frequency',
+                                        icon: Icons.repeat_rounded,
+                                      ),
+                                      items: const [
+                                        DropdownMenuItem(value: 'one_time', child: Text('One-Time')),
+                                        DropdownMenuItem(value: 'annual', child: Text('Annual')),
+                                      ],
+                                      onChanged: (v) => setSheet(() => admissionFeeType = v ?? 'one_time'),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 22),
+                      SizedBox(
+                        height: 52,
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            if (!formKey.currentState!.validate()) return;
+                            final type = selectedType!;
+                            final fees =
+                                double.tryParse(feesController.text.trim()) ??
+                                0.0;
+                            Map<String, dynamic>? extra;
+                            if (chargeAdmissionFee) {
+                              final admAmt = double.tryParse(admissionAmountController.text.trim()) ?? 0.0;
+                              if (admAmt > 0) {
+                                final now = DateTime.now();
+                                extra = {
+                                  'title': admissionTitleController.text.trim().isNotEmpty
+                                      ? admissionTitleController.text.trim()
+                                      : 'Admission Fee',
+                                  'fee_type': admissionFeeType,
+                                  'amount': admAmt,
+                                  'period_key': admissionFeeType == 'annual'
+                                      ? '${now.year}-${(now.year + 1).toString().substring(2)}'
+                                      : 'ONE_TIME',
+                                };
+                              }
+                            }
+                            Navigator.pop(ctx);
+                            await _doUpgrade(type, fees, extraFeeItem: extra);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _primary,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                          ),
+                          child: const Text(
+                            'Save Changes',
+                            style: TextStyle(
+                              fontSize: 15.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // ── Add Ad-Hoc / Custom Fee Item (Picnic, Uniform, Books, etc.) ───────
+  void _openAddFeeItemSheet() {
+    if (!AuthService.isPrimaryAdmin(widget.authService.currentUserEmail)) return;
+
+    final titleController = TextEditingController();
+    final amountController = TextEditingController();
+    String feeType = 'one_time';
+    DateTime? dueDate;
     final formKey = GlobalKey<FormState>();
 
     showModalBottomSheet(
@@ -348,72 +768,130 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
                       ),
                     ),
                     const Text(
-                      'Upgrade Student',
+                      'Add Custom Fee Item',
                       style: TextStyle(
                         color: _textDark,
                         fontSize: 19,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-                    const SizedBox(height: 20),
-                    DropdownButtonFormField<String>(
-                      value: selectedType,
-                      dropdownColor: _surface,
-                      style: const TextStyle(color: _textDark, fontSize: 15),
-                      decoration: _inputDecor(
-                        label: 'Student Type',
-                        icon: Icons.school_rounded,
+                    const SizedBox(height: 6),
+                    Text(
+                      'Add ad-hoc charges like Picnic, Uniform, Annual Charges, Books, etc.',
+                      style: TextStyle(
+                        color: _textMuted.withValues(alpha: 0.8),
+                        fontSize: 12,
                       ),
-                      items: dropdownItems.map((cat) {
-                        return DropdownMenuItem<String>(
-                          value: cat,
-                          child: Text(cat),
-                        );
-                      }).toList(),
-                      onChanged: (v) => setSheet(() => selectedType = v),
+                    ),
+                    const SizedBox(height: 20),
+                    FeeHeadField(
+                      controller: titleController,
+                      labelText: 'Fee Title (e.g. Picnic, Uniform, Exam Fee)',
+                      fontSize: 14,
+                      borderRadius: 14,
+                      borderColor: _border,
+                      textColor: _textDark,
+                      primaryColor: _primary,
+                      fillColor: _surface,
                       validator: (v) =>
-                          (v == null || v.isEmpty) ? 'Select type' : null,
+                          (v == null || v.trim().isEmpty) ? 'Enter fee title' : null,
                     ),
                     const SizedBox(height: 14),
-                    TextFormField(
-                      controller: feesController,
-                      keyboardType: TextInputType.number,
-                      style: const TextStyle(color: _textDark),
-                      decoration: _inputDecor(
-                        label: 'Monthly Fees (₹)',
-                        icon: Icons.currency_rupee_rounded,
-                      ),
-                      validator: (v) =>
-                          (v == null || v.trim().isEmpty) ? 'Enter fees' : null,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: amountController,
+                            keyboardType: TextInputType.number,
+                            style: const TextStyle(color: _textDark),
+                            decoration: _inputDecor(
+                              label: 'Amount (₹)',
+                              icon: Icons.currency_rupee_rounded,
+                            ),
+                            validator: (v) =>
+                                (v == null || v.trim().isEmpty) ? 'Enter amount' : null,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: DropdownButtonFormField<String>(
+                            initialValue: feeType,
+                            dropdownColor: _surface,
+                            style: const TextStyle(color: _textDark, fontSize: 13.5),
+                            decoration: _inputDecor(
+                              label: 'Frequency',
+                              icon: Icons.repeat_rounded,
+                            ),
+                            items: const [
+                              DropdownMenuItem(value: 'one_time', child: Text('One-Time')),
+                              DropdownMenuItem(value: 'annual', child: Text('Annual')),
+                              DropdownMenuItem(value: 'monthly', child: Text('Monthly')),
+                            ],
+                            onChanged: (v) => setSheet(() => feeType = v ?? 'one_time'),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 22),
+                    const SizedBox(height: 14),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.event_rounded, color: _primary),
+                      title: Text(
+                        dueDate == null
+                            ? 'Set Optional Due Date'
+                            : 'Due: ${dueDate!.day}/${dueDate!.month}/${dueDate!.year}',
+                        style: const TextStyle(color: _textDark, fontSize: 13.5),
+                      ),
+                      trailing: TextButton(
+                        onPressed: () async {
+                          final picked = await showDatePicker(
+                            context: ctx,
+                            initialDate: dueDate ?? DateTime.now().add(const Duration(days: 7)),
+                            firstDate: DateTime.now(),
+                            lastDate: DateTime.now().add(const Duration(days: 365)),
+                          );
+                          if (picked != null) setSheet(() => dueDate = picked);
+                        },
+                        child: Text(dueDate == null ? 'Pick' : 'Change'),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
                     SizedBox(
-                      height: 52,
+                      height: 50,
                       child: ElevatedButton(
                         onPressed: () async {
                           if (!formKey.currentState!.validate()) return;
-                          final type = selectedType!;
-                          final fees =
-                              double.tryParse(feesController.text.trim()) ??
-                              0.0;
+                          final amt = double.tryParse(amountController.text.trim()) ?? 0.0;
+                          final title = titleController.text.trim();
                           Navigator.pop(ctx);
-                          await _doUpgrade(type, fees);
+                          final now = DateTime.now();
+                          final period = feeType == 'monthly'
+                              ? '${now.year}-${now.month.toString().padLeft(2, '0')}'
+                              : (feeType == 'annual'
+                                  ? '${now.year}-${(now.year + 1).toString().substring(2)}'
+                                  : 'ONE_TIME');
+                          await _feeService.addFeeItem(
+                            studentId: _student['id']?.toString() ?? '',
+                            title: title,
+                            feeType: feeType,
+                            amount: amt,
+                            periodKey: period,
+                            dueDate: dueDate,
+                            createdBy: widget.authService.currentUserEmail,
+                          );
+                          await _loadFeeItems();
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              _snack('Added fee: $title (₹${amt.toStringAsFixed(0)})', success: true),
+                            );
+                          }
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: _primary,
                           foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(18),
-                          ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         ),
-                        child: const Text(
-                          'Save Changes',
-                          style: TextStyle(
-                            fontSize: 15.5,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
+                        child: const Text('Add Fee Item', style: TextStyle(fontWeight: FontWeight.w700)),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -424,6 +902,171 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
           },
         );
       },
+    );
+  }
+
+  Widget _buildFeeItemTile(FeeItem item) {
+    final typeLabel = item.feeType == 'one_time'
+        ? 'One-Time'
+        : (item.feeType == 'annual' ? 'Annual' : 'Monthly');
+    final isPrimary = AuthService.isPrimaryAdmin(widget.authService.currentUserEmail);
+
+    Color statusColor = AppColors.amber;
+    String statusText = 'Pending';
+    if (item.isPaid) {
+      statusColor = _success;
+      statusText = item.paidVia != null ? 'Paid (${item.paidVia})' : 'Paid';
+    } else if (item.isWaived) {
+      statusColor = _textMuted;
+      statusText = 'Waived';
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: _surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _border),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: statusColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              item.isPaid ? Icons.check_circle_rounded : Icons.label_important_rounded,
+              color: statusColor,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        item.title,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: _textDark,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '₹${item.amount.toStringAsFixed(0)}',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: _textDark,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: _bg,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: _border),
+                      ),
+                      child: Text(
+                        typeLabel,
+                        style: const TextStyle(fontSize: 11, color: _textMuted, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: statusColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        statusText,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: statusColor,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    if (item.dueDate != null) ...[
+                      const SizedBox(width: 8),
+                      Text(
+                        'Due: ${item.dueDate!.day}/${item.dueDate!.month}',
+                        style: const TextStyle(fontSize: 11, color: _textMuted),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+          if (isPrimary && !item.isPaid) ...[
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert_rounded, color: _textMuted, size: 20),
+              color: _surface,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              onSelected: (action) async {
+                if (action == 'pay') {
+                  await _feeService.markFeeItemPaid(item.id, paidVia: 'Cash');
+                  await _loadFeeItems();
+                } else if (action == 'waive') {
+                  await _feeService.updateFeeItem(item.id, {'status': 'waived'});
+                  await _loadFeeItems();
+                } else if (action == 'delete') {
+                  await _feeService.deleteFeeItem(item.id);
+                  await _loadFeeItems();
+                }
+              },
+              itemBuilder: (ctx) => [
+                const PopupMenuItem(
+                  value: 'pay',
+                  child: Row(
+                    children: [
+                      Icon(Icons.check_rounded, color: _success, size: 18),
+                      SizedBox(width: 8),
+                      Text('Mark Paid (Cash)'),
+                    ],
+                  ),
+                ),
+                if (!item.isWaived)
+                  const PopupMenuItem(
+                    value: 'waive',
+                    child: Row(
+                      children: [
+                        Icon(Icons.block_rounded, color: _textMuted, size: 18),
+                        SizedBox(width: 8),
+                        Text('Waive Fee'),
+                      ],
+                    ),
+                  ),
+                const PopupMenuItem(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      Icon(Icons.delete_outline_rounded, color: _danger, size: 18),
+                      SizedBox(width: 8),
+                      Text('Delete Item', style: TextStyle(color: _danger)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
     );
   }
 
@@ -481,7 +1124,11 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
     }
   }
 
-  Future<void> _doUpgrade(String type, double fees) async {
+  Future<void> _doUpgrade(
+    String type,
+    double fees, {
+    Map<String, dynamic>? extraFeeItem,
+  }) async {
     setState(() => _saving = true);
     try {
       await widget.authService.updateStudent(
@@ -489,6 +1136,17 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
         studentType: type,
         fees: fees,
       );
+      if (extraFeeItem != null) {
+        await _feeService.addFeeItem(
+          studentId: _student['id']?.toString() ?? '',
+          title: extraFeeItem['title'] ?? 'Admission Fee',
+          feeType: extraFeeItem['fee_type'] ?? 'one_time',
+          amount: (extraFeeItem['amount'] as num).toDouble(),
+          periodKey: extraFeeItem['period_key'] ?? 'ONE_TIME',
+          createdBy: widget.authService.currentUserEmail,
+        );
+        await _loadFeeItems();
+      }
       setState(() {
         _student['student_type'] = type;
         _student['fees'] = fees;
@@ -595,7 +1253,8 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
         ? '₹${fees.toStringAsFixed(0)}/month'
         : '—';
     final paid = _paidMonths..sort((a, b) => b.compareTo(a));
-    final totalPaid = paid.length;
+    final paidFeeItems = _feeItems.where((i) => i.isPaid).toList();
+    final totalPaid = paid.length + paidFeeItems.length;
 
     return Scaffold(
       backgroundColor: _bg,
@@ -632,48 +1291,11 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
                           shape: BoxShape.circle,
                           color: Colors.white.withValues(alpha: 0.3),
                         ),
-                        child: ClipOval(
-                          child: Container(
-                            width: 88,
-                            height: 88,
-                            color: Colors.white,
-                            child: (photoUrl != null && photoUrl.trim().isNotEmpty)
-                                ? Image.network(
-                                    photoUrl,
-                                    width: 88,
-                                    height: 88,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return const Center(
-                                        child: Icon(
-                                          Icons.person_rounded,
-                                          size: 44,
-                                          color: _primary,
-                                        ),
-                                      );
-                                    },
-                                    loadingBuilder: (context, child, loadingProgress) {
-                                      if (loadingProgress == null) return child;
-                                      return const Center(
-                                        child: SizedBox(
-                                          width: 24,
-                                          height: 24,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            color: _primary,
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  )
-                                : const Center(
-                                    child: Icon(
-                                      Icons.person_rounded,
-                                      size: 44,
-                                      color: _primary,
-                                    ),
-                                  ),
-                          ),
+                        child: StudentAvatar(
+                          photoUrl: photoUrl,
+                          name: name,
+                          size: 88,
+                          fontSize: 34,
                         ),
                       ),
                       const SizedBox(height: 10),
@@ -828,6 +1450,76 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
                   ),
                   const SizedBox(height: 20),
 
+                  // ── Configured Fee Heads (Primary Admin only) ───────
+                  if (AuthService.isPrimaryAdmin(widget.authService.currentUserEmail)) ...[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _sectionTitle('Configured Fee Heads'),
+                        GestureDetector(
+                          onTap: _saving ? null : _openAddFeeItemSheet,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _primarySoft,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Row(
+                              children: [
+                                Icon(
+                                  Icons.add_rounded,
+                                  color: _primaryDark,
+                                  size: 16,
+                                ),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Add Fee Item',
+                                  style: TextStyle(
+                                    color: _primaryDark,
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    if (_loadingFeeItems)
+                      const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(16),
+                          child: CircularProgressIndicator(strokeWidth: 2, color: _primary),
+                        ),
+                      )
+                    else if (_feeItems.isEmpty)
+                      Container(
+                        padding: const EdgeInsets.all(18),
+                        decoration: BoxDecoration(
+                          color: _surface,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: _border),
+                        ),
+                        child: const Center(
+                          child: Text(
+                            'No custom fee items added (e.g. Picnic, Uniform, Books).\nTap + Add Fee Item to add extra charges.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: _textMuted, fontSize: 13),
+                          ),
+                        ),
+                      )
+                    else
+                      Column(
+                        children: _feeItems.map((item) => _buildFeeItemTile(item)).toList(),
+                      ),
+                    const SizedBox(height: 20),
+                  ],
+
                   // ── Fees Payment History ─────────────────────────────
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -867,7 +1559,7 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
                     ],
                   ),
                   const SizedBox(height: 10),
-                  if (paid.isEmpty)
+                  if (paid.isEmpty && paidFeeItems.isEmpty)
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
@@ -886,35 +1578,70 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: paid.map((m) {
-                        return GestureDetector(
-                          onLongPress: () => _unmarkPaid(m),
-                          child: Chip(
-                            label: Text(_formatMonthKey(m)),
-                            backgroundColor: _success.withValues(alpha: 0.1),
-                            labelStyle: const TextStyle(
-                              color: _success,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 12.5,
+                      children: [
+                        // Paid tuition months
+                        ...paid.map((m) {
+                          return GestureDetector(
+                            onLongPress: () => _unmarkPaid(m),
+                            child: Chip(
+                              label: Text(_formatMonthKey(m)),
+                              backgroundColor: _success.withValues(alpha: 0.1),
+                              labelStyle: const TextStyle(
+                                color: _success,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 12.5,
+                              ),
+                              avatar: const Icon(
+                                Icons.check_circle_rounded,
+                                color: _success,
+                                size: 16,
+                              ),
+                              deleteIcon: const Icon(
+                                Icons.close_rounded,
+                                size: 14,
+                                color: _textMuted,
+                              ),
+                              onDeleted: () => _unmarkPaid(m),
+                              side: BorderSide(color: _success.withValues(alpha: 0.3)),
                             ),
-                            avatar: const Icon(
-                              Icons.check_circle_rounded,
-                              color: _success,
-                              size: 16,
+                          );
+                        }),
+                        // Paid custom fee items
+                        ...paidFeeItems.map((item) {
+                          final isPrimary = AuthService.isPrimaryAdmin(widget.authService.currentUserEmail);
+                          return GestureDetector(
+                            onLongPress: () => _unmarkFeeItemPaid(item),
+                            child: Chip(
+                              label: Text(
+                                isPrimary
+                                    ? '${item.title} (₹${item.amount.toInt()})'
+                                    : item.title,
+                              ),
+                              backgroundColor: _primarySoft,
+                              labelStyle: const TextStyle(
+                                color: _primaryDark,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 12.5,
+                              ),
+                              avatar: const Icon(
+                                Icons.verified_rounded,
+                                color: _primary,
+                                size: 16,
+                              ),
+                              deleteIcon: const Icon(
+                                Icons.close_rounded,
+                                size: 14,
+                                color: _textMuted,
+                              ),
+                              onDeleted: () => _unmarkFeeItemPaid(item),
+                              side: BorderSide(color: _primary.withValues(alpha: 0.3)),
                             ),
-                            deleteIcon: const Icon(
-                              Icons.close_rounded,
-                              size: 14,
-                              color: _textMuted,
-                            ),
-                            onDeleted: () => _unmarkPaid(m),
-                            side: BorderSide(color: _success.withValues(alpha: 0.3)),
-                          ),
-                        );
-                      }).toList(),
+                          );
+                        }),
+                      ],
                     ),
                   const SizedBox(height: 6),
-                  if (paid.isNotEmpty)
+                  if (paid.isNotEmpty || paidFeeItems.isNotEmpty)
                     Text(
                       'Long-press or tap ✕ on a chip to remove a payment record.',
                       style: TextStyle(
