@@ -7,6 +7,7 @@ import 'package:strawberry/features/auth/auth_service.dart';
 import 'package:excel/excel.dart' hide Border;
 import 'package:file_saver/file_saver.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:strawberry/core/utils/student_category_utils.dart';
 
 import 'package:strawberry/core/theme/app_colors.dart';
 import 'package:strawberry/core/widgets/playschool_animations.dart';
@@ -151,9 +152,14 @@ class _ReviewAnalyticsPageState extends State<ReviewAnalyticsPage> {
   Map<String, int> get _categoryBreakdown {
     final map = <String, int>{};
     for (final s in _students) {
-      final cat = (s['student_type'] as String?)?.trim();
-      final key = (cat == null || cat.isEmpty) ? 'Uncategorized' : cat;
-      map[key] = (map[key] ?? 0) + 1;
+      final cats = StudentCategoryUtils.getCategories(s);
+      if (cats.isEmpty) {
+        map['Uncategorized'] = (map['Uncategorized'] ?? 0) + 1;
+      } else {
+        for (final c in cats) {
+          map[c] = (map[c] ?? 0) + 1;
+        }
+      }
     }
     return map;
   }
@@ -181,8 +187,8 @@ class _ReviewAnalyticsPageState extends State<ReviewAnalyticsPage> {
       ) ||
       // If no specific category override, treat Saturday as holiday for those categories
       // but in Review Analytics we check all categories — if any LKG/Nursery/Playgroup/UKG student exists, Saturday is holiday
-      _students.any((s) => widget.authService.isSaturdayDefaultHoliday(
-            (s['student_type'] as String?) ?? ''));
+      _students.any((s) => StudentCategoryUtils.getCategories(s).any(
+            (c) => widget.authService.isSaturdayDefaultHoliday(c)));
     }
     return false;
   }
@@ -190,8 +196,8 @@ class _ReviewAnalyticsPageState extends State<ReviewAnalyticsPage> {
   String? _holidayTitleForDate(DateTime date) {
     if (date.weekday == DateTime.sunday) return 'Sunday';
     if (date.weekday == DateTime.saturday &&
-        _students.any((s) => widget.authService
-            .isSaturdayDefaultHoliday((s['student_type'] as String?) ?? ''))) {
+        _students.any((s) => StudentCategoryUtils.getCategories(s).any(
+            (c) => widget.authService.isSaturdayDefaultHoliday(c)))) {
       return 'Saturday';
     }
     final dateStr = DateFormat('yyyy-MM-dd').format(date);
@@ -346,7 +352,8 @@ class _ReviewAnalyticsPageState extends State<ReviewAnalyticsPage> {
       for (final s in sortedStudents) {
         final sid = s['id'] as String;
         final name = (s['name'] as String?) ?? 'Student';
-        final category = (s['student_type'] as String?) ?? '—';
+        final category = StudentCategoryUtils.formatCategories(s);
+        final studentCats = StudentCategoryUtils.getCategories(s);
         final dayMap = byStudent[sid] ?? {};
 
         int p = 0, a = 0, l = 0;
@@ -359,19 +366,19 @@ class _ReviewAnalyticsPageState extends State<ReviewAnalyticsPage> {
           final inTime = rec?['in_time']?.toString();
           final outTime = rec?['out_time']?.toString();
 
-          // Check if this day is a holiday for this student's category
+          // Check if this day is a holiday for this student's categories
           final isSun = date.weekday == DateTime.sunday;
           final isSatForCat = date.weekday == DateTime.saturday &&
-              widget.authService.isSaturdayDefaultHoliday(category);
+              studentCats.every((c) => widget.authService.isSaturdayDefaultHoliday(c));
           final hasWorkingDayOverride = _monthHolidays.any(
             (h) => h['date']?.toString() == dateStr &&
                 h['type'] == 'working_day' &&
-                (h['category'] == category || h['category'] == 'All'),
+                (studentCats.contains(h['category']) || h['category'] == 'All'),
           );
           final isDbHoliday = _monthHolidays.any(
             (h) => h['date']?.toString() == dateStr &&
                 h['type'] == 'holiday' &&
-                (h['category'] == 'All' || h['category'] == category),
+                (h['category'] == 'All' || studentCats.contains(h['category'])),
           );
           final isHoliday = (isSun || isSatForCat || isDbHoliday) && !hasWorkingDayOverride;
 
@@ -476,7 +483,7 @@ class _ReviewAnalyticsPageState extends State<ReviewAnalyticsPage> {
       for (final s in sortedStudents) {
         final sid = s['id'] as String;
         final name = (s['name'] as String?) ?? 'Student';
-        final category = (s['student_type'] as String?) ?? '—';
+        final category = StudentCategoryUtils.formatCategories(s);
         final dayMap = byStudent[sid] ?? {};
         for (int d = 1; d <= daysInMonth; d++) {
           final rec = dayMap[d];

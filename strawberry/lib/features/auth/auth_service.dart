@@ -721,8 +721,14 @@ class AuthService {
   Future<List<Map<String, dynamic>>> getNoticesForStudent(
       String uid, String? studentType) async {
     String orFilter = 'target_audience.eq.All';
-    if (studentType != null && studentType.isNotEmpty) {
-      orFilter += ',target_audience.eq.$studentType';
+    if (studentType != null && studentType.trim().isNotEmpty) {
+      final cats = studentType
+          .split(',')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty);
+      for (final cat in cats) {
+        orFilter += ',target_audience.eq.$cat';
+      }
     }
     if (uid.isNotEmpty) {
       orFilter += ',and(target_audience.eq.Specific,specific_student_id.eq.$uid)';
@@ -755,7 +761,13 @@ class AuthService {
       final audience = (notice['target_audience'] ?? 'All') as String;
       final specificId = notice['specific_student_id'] as String?;
       if (audience == 'All') return true;
-      if (studentType != null && audience == studentType) return true;
+      if (studentType != null && studentType.trim().isNotEmpty) {
+        final cats = studentType
+            .split(',')
+            .map((e) => e.trim().toLowerCase())
+            .where((e) => e.isNotEmpty);
+        if (cats.contains(audience.toLowerCase())) return true;
+      }
       if (audience == 'Specific' && specificId == uid) return true;
       return false;
     }

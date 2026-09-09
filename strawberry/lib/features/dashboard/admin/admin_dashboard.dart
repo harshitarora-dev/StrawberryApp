@@ -15,6 +15,7 @@ import 'package:strawberry/features/about/about_page.dart';
 import 'package:strawberry/features/chat/chat_page.dart';
 import 'package:strawberry/features/payments/fee_head_field.dart';
 import 'package:strawberry/core/widgets/student_avatar.dart';
+import 'package:strawberry/core/utils/student_category_utils.dart';
 
 import 'package:strawberry/core/theme/app_colors.dart';
 import 'package:strawberry/core/widgets/playschool_animations.dart';
@@ -95,6 +96,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  String _selectedDirectoryCategory = 'All';
 
   @override
   void initState() {
@@ -397,7 +399,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
     final name = request['name'] ?? 'Unknown';
     final uid = request['id'] ?? '';
 
-    String? selectedStudentType;
+    final Set<String> selectedCategories = {};
+    if (request['student_type'] != null || request['program'] != null) {
+      selectedCategories.addAll(StudentCategoryUtils.getCategories(request['student_type'] ?? request['program']));
+    }
+    String? categoryError;
     final feesController = TextEditingController();
     bool chargeAdmissionFee = true;
     final admissionTitleController = TextEditingController(text: 'Admission Fee');
@@ -528,35 +534,111 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       ),
                       const SizedBox(height: 18),
 
-                      // Student Type Dropdown
-                      DropdownButtonFormField<String>(
-                        initialValue: selectedStudentType,
-                        dropdownColor: _Palette.surface,
-                        style: const TextStyle(
-                          color: _Palette.textDark,
-                          fontSize: 15,
+                      // Student Categories Multi-Select
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: _Palette.bg,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: categoryError != null ? _Palette.danger : _Palette.border,
+                          ),
                         ),
-                        decoration: _adminInputDecoration(
-                          label: 'Student Type / Class',
-                          icon: Icons.school_rounded,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.school_rounded, size: 18, color: _Palette.primary),
+                                const SizedBox(width: 8),
+                                const Text(
+                                  'Assign Classes / Categories *',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: _Palette.textDark,
+                                  ),
+                                ),
+                                const Spacer(),
+                                if (selectedCategories.isNotEmpty)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: _Palette.primarySoft,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Text(
+                                      '${selectedCategories.length} selected',
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
+                                        color: _Palette.primaryDark,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            const Text(
+                              'Tap all categories that apply to this student (e.g. Playgroup + Daycare)',
+                              style: TextStyle(fontSize: 12, color: _Palette.textMuted),
+                            ),
+                            const SizedBox(height: 12),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: _categories.map((cat) {
+                                final isSelected = selectedCategories.contains(cat);
+                                final color = StudentCategoryUtils.getCategoryColor(cat);
+                                return FilterChip(
+                                  selected: isSelected,
+                                  avatar: Text(StudentCategoryUtils.getCategoryEmoji(cat)),
+                                  label: Text(
+                                    cat,
+                                    style: TextStyle(
+                                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                      color: isSelected ? Colors.white : _Palette.textDark,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                  selectedColor: color,
+                                  backgroundColor: _Palette.surface,
+                                  checkmarkColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    side: BorderSide(
+                                      color: isSelected ? color : _Palette.border,
+                                      width: isSelected ? 1.5 : 1,
+                                    ),
+                                  ),
+                                  onSelected: (selected) {
+                                    setModalState(() {
+                                      if (selected) {
+                                        selectedCategories.add(cat);
+                                        categoryError = null;
+                                      } else {
+                                        selectedCategories.remove(cat);
+                                      }
+                                    });
+                                  },
+                                );
+                              }).toList(),
+                            ),
+                            if (categoryError != null) ...[
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  const Icon(Icons.error_outline_rounded, size: 14, color: _Palette.danger),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    categoryError!,
+                                    style: const TextStyle(color: _Palette.danger, fontSize: 12, fontWeight: FontWeight.w600),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ],
                         ),
-                        items: _categories.map((cat) {
-                          return DropdownMenuItem<String>(
-                            value: cat,
-                            child: Text(cat),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          setModalState(() {
-                            selectedStudentType = value;
-                          });
-                        },
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please select student type';
-                          }
-                          return null;
-                        },
                       ),
                       const SizedBox(height: 14),
 
@@ -786,9 +868,15 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         height: 54,
                         child: ElevatedButton(
                           onPressed: () async {
+                            if (selectedCategories.isEmpty) {
+                              setModalState(() {
+                                categoryError = 'Please select at least one class / category';
+                              });
+                              return;
+                            }
                             if (!formKey.currentState!.validate()) return;
 
-                            final type = selectedStudentType!;
+                            final type = StudentCategoryUtils.joinCategories(selectedCategories);
                             final monthlyFee = double.tryParse(feesController.text.trim()) ?? 0.0;
 
                             // Construct fee items
@@ -2761,19 +2849,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
   }
 
   // ---------------------------------------------------------------------
-  // Students tab — categorized & searchable
+  // Students tab — unified alphabetical directory & category filters
   // ---------------------------------------------------------------------
-  String _getCategoryEmoji(String category) {
-    final lower = category.toLowerCase();
-    if (lower.contains('playgroup')) return '🧸';
-    if (lower.contains('nursery')) return '🎨';
-    if (lower.contains('lkg')) return '📚';
-    if (lower.contains('ukg')) return '🎓';
-    if (lower.contains('daycare')) return '🌟';
-    if (lower.contains('tution') || lower.contains('tuition')) return '✏️';
-    return '🍓';
-  }
-
   Widget _buildSearchField() {
     return Container(
       decoration: BoxDecoration(
@@ -2840,42 +2917,34 @@ class _AdminDashboardState extends State<AdminDashboard> {
       );
     }
 
-    final filtered = _searchQuery.trim().isEmpty
-        ? _allStudents
-        : _allStudents
-              .where(
-                (s) => (s['name'] ?? '').toString().toLowerCase().contains(
-                  _searchQuery.trim().toLowerCase(),
-                ),
-              )
-              .toList();
+    // 1. Sort all students alphabetically (A to Z) by name
+    final sorted = List<Map<String, dynamic>>.from(_allStudents)..sort((a, b) {
+      final nameA = (a['name'] as String? ?? '').toLowerCase();
+      final nameB = (b['name'] as String? ?? '').toLowerCase();
+      return nameA.compareTo(nameB);
+    });
 
-    // Group students by type
-    final Map<String, List<Map<String, dynamic>>> grouped = {};
-    for (var cat in _categories) {
-      grouped[cat] = [];
-    }
-    for (var s in filtered) {
-      final type = s['student_type'] as String? ?? 'Other';
-      if (!grouped.containsKey(type)) {
-        grouped[type] = [];
-      }
-      grouped[type]!.add(s);
-    }
-    for (final list in grouped.values) {
-      list.sort(
-        (a, b) => (a['name'] ?? '').toString().toLowerCase().compareTo(
-          (b['name'] ?? '').toString().toLowerCase(),
-        ),
-      );
-    }
+    // 2. Filter by search query
+    final query = _searchQuery.trim().toLowerCase();
+    final searchFiltered = query.isEmpty
+        ? sorted
+        : sorted.where((s) {
+            final name = (s['name'] ?? '').toString().toLowerCase();
+            final parent = (s['parent_name'] ?? '').toString().toLowerCase();
+            final email = (s['email'] ?? '').toString().toLowerCase();
+            final phone = (s['phone'] ?? s['parent_phone'] ?? '').toString().toLowerCase();
+            final type = (s['student_type'] ?? '').toString().toLowerCase();
+            return name.contains(query) ||
+                parent.contains(query) ||
+                email.contains(query) ||
+                phone.contains(query) ||
+                type.contains(query);
+          }).toList();
 
-    final allKeys = [..._categories];
-    for (final key in grouped.keys) {
-      if (!allKeys.contains(key)) {
-        allKeys.add(key);
-      }
-    }
+    // 3. Filter by selected category pill
+    final filtered = _selectedDirectoryCategory == 'All'
+        ? searchFiltered
+        : searchFiltered.where((s) => StudentCategoryUtils.hasCategory(s, _selectedDirectoryCategory)).toList();
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -2893,150 +2962,105 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   padding: EdgeInsets.fromLTRB(horizontalPadding, 16, horizontalPadding, 8),
                   child: _buildSearchField(),
                 ),
+                // Horizontal category filter pills
+                Padding(
+                  padding: EdgeInsets.fromLTRB(horizontalPadding, 4, horizontalPadding, 10),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _buildCategoryFilterChip(
+                          label: 'All Students',
+                          emoji: '🎒',
+                          count: sorted.length,
+                          isSelected: _selectedDirectoryCategory == 'All',
+                          onTap: () => setState(() => _selectedDirectoryCategory = 'All'),
+                        ),
+                        const SizedBox(width: 8),
+                        ..._categories.map((cat) {
+                          final count = sorted.where((s) => StudentCategoryUtils.hasCategory(s, cat)).length;
+                          final isSelected = _selectedDirectoryCategory == cat;
+                          final emoji = StudentCategoryUtils.getCategoryEmoji(cat);
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: _buildCategoryFilterChip(
+                              label: cat,
+                              emoji: emoji,
+                              count: count,
+                              isSelected: isSelected,
+                              color: StudentCategoryUtils.getCategoryColor(cat),
+                              onTap: () => setState(() => _selectedDirectoryCategory = cat),
+                            ),
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
+                ),
+                // Student count badge
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 4),
+                  child: Row(
+                    children: [
+                      Text(
+                        'Showing ${filtered.length} student${filtered.length == 1 ? '' : 's'}',
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          color: _Palette.textMuted,
+                        ),
+                      ),
+                      if (_selectedDirectoryCategory != 'All') ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: _Palette.primarySoft,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            'in $_selectedDirectoryCategory',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: _Palette.primaryDark,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 6),
                 Expanded(
                   child: RefreshIndicator(
                     onRefresh: _loadStudents,
                     color: _Palette.primary,
-                    child: allKeys.isEmpty
+                    child: filtered.isEmpty
                         ? ListView(
                             physics: const AlwaysScrollableScrollPhysics(),
                             children: [
                               SizedBox(
-                                height: MediaQuery.of(context).size.height * 0.5,
+                                height: MediaQuery.of(context).size.height * 0.45,
                                 child: _emptyState(
                                   icon: Icons.search_off_rounded,
                                   iconColor: _Palette.textFaint,
-                                  title: 'No Matches',
-                                  subtitle: 'Try a different search term',
+                                  title: 'No Superstars Found',
+                                  subtitle: _searchQuery.isNotEmpty
+                                      ? 'No matching students for "$_searchQuery"'
+                                      : 'No students enrolled in $_selectedDirectoryCategory yet',
                                 ),
                               ),
                             ],
                           )
-                        : ListView(
+                        : ListView.builder(
+                            physics: const AlwaysScrollableScrollPhysics(),
                             padding: EdgeInsets.fromLTRB(horizontalPadding, 4, horizontalPadding, 24),
-                            children: allKeys.map((type) {
-                              final list = grouped[type] ?? [];
-                              final emoji = _getCategoryEmoji(type);
-                              return _AdminCard(
-                                margin: const EdgeInsets.only(bottom: 12),
-                                padding: EdgeInsets.zero,
-                                child: Theme(
-                                  data: Theme.of(
-                                    context,
-                                  ).copyWith(dividerColor: Colors.transparent),
-                                  child: ExpansionTile(
-                                    tilePadding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                    ),
-                                    childrenPadding: const EdgeInsets.only(bottom: 6),
-                                    title: Row(
-                                      children: [
-                                        Text(
-                                          '$emoji $type',
-                                          style: _AdminTextStyles.sectionHeading,
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 2,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: _Palette.primarySoft,
-                                            borderRadius: BorderRadius.circular(12),
-                                          ),
-                                          child: Text(
-                                            '${list.length}',
-                                            style: const TextStyle(
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.w700,
-                                              color: _Palette.primaryDark,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    children: list.isEmpty
-                                        ? [
-                                            const Padding(
-                                              padding: EdgeInsets.all(16),
-                                              child: Text(
-                                                'No students in this category yet',
-                                                style: TextStyle(
-                                                  fontSize: 13,
-                                                  color: _Palette.textMuted,
-                                                ),
-                                              ),
-                                            ),
-                                          ]
-                                        : list.map((student) {
-                                            final sName = student['name'] ?? 'Student';
-                                            final pName = (student['parent_name'] as String?)?.trim() ?? '';
-                                            final pPhone = (student['parent_phone'] as String?)?.trim() ?? '';
-                                            final sEmail = (student['email'] as String?)?.trim() ?? '';
-                                            final sPhone = (student['phone'] as String?)?.trim() ?? '';
-                                            final photo = student['photo_url'] as String?;
-
-                                            String subtitleText;
-                                            if (pName.isNotEmpty && pPhone.isNotEmpty) {
-                                              subtitleText = 'Parent: $pName • $pPhone';
-                                            } else if (pName.isNotEmpty) {
-                                              subtitleText = 'Parent: $pName';
-                                            } else if (pPhone.isNotEmpty) {
-                                              subtitleText = 'Phone: $pPhone';
-                                            } else if (sPhone.isNotEmpty) {
-                                              subtitleText = 'Phone: $sPhone';
-                                            } else if (sEmail.isNotEmpty) {
-                                              subtitleText = sEmail;
-                                            } else {
-                                              subtitleText = 'Enrolled in ${student['student_type'] ?? 'Class'}';
-                                            }
-
-                                            return ListTile(
-                                              contentPadding:
-                                                  const EdgeInsets.symmetric(
-                                                horizontal: 16,
-                                                vertical: 2,
-                                              ),
-                                              leading: StudentAvatar(
-                                                photoUrl: photo,
-                                                name: sName,
-                                                size: 38,
-                                              ),
-                                              title: Text(
-                                                sName,
-                                                style: const TextStyle(
-                                                  fontSize: 14,
-                                                  fontWeight: FontWeight.w700,
-                                                  color: _Palette.textDark,
-                                                ),
-                                              ),
-                                              subtitle: Text(
-                                                subtitleText,
-                                                style: const TextStyle(
-                                                  fontSize: 12,
-                                                  color: _Palette.textMuted,
-                                                ),
-                                              ),
-                                              trailing: const Icon(
-                                                Icons.chevron_right_rounded,
-                                                color: _Palette.textFaint,
-                                              ),
-                                              onTap: () {
-                                                _openPage(
-                                                  StudentDetailPage(
-                                                    student: student,
-                                                    authService: _authService,
-                                                  ),
-                                                  title: student['name'] ?? 'Student Profile',
-                                                );
-                                              },
-                                            );
-                                          }).toList(),
-                                  ),
-                                ),
-                              );
-                            }).toList(),
+                            itemCount: filtered.length,
+                            itemBuilder: (context, index) {
+                              final student = filtered[index];
+                              return _buildStudentCard(student);
+                            },
                           ),
                   ),
                 ),
@@ -3045,6 +3069,183 @@ class _AdminDashboardState extends State<AdminDashboard> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildStudentCard(Map<String, dynamic> student) {
+    final sName = student['name'] ?? 'Student';
+    final pName = (student['parent_name'] as String?)?.trim() ?? '';
+    final pPhone = (student['parent_phone'] as String?)?.trim() ?? '';
+    final sPhone = (student['phone'] as String?)?.trim() ?? '';
+    final sEmail = (student['email'] as String?)?.trim() ?? '';
+    final photo = student['photo_url'] as String?;
+    final categories = StudentCategoryUtils.getCategories(student);
+
+    String subtitleText;
+    if (pName.isNotEmpty && pPhone.isNotEmpty) {
+      subtitleText = 'Parent: $pName • $pPhone';
+    } else if (pName.isNotEmpty) {
+      subtitleText = 'Parent: $pName';
+    } else if (pPhone.isNotEmpty) {
+      subtitleText = 'Phone: $pPhone';
+    } else if (sPhone.isNotEmpty) {
+      subtitleText = 'Phone: $sPhone';
+    } else if (sEmail.isNotEmpty) {
+      subtitleText = sEmail;
+    } else {
+      subtitleText = 'Strawberry Student';
+    }
+
+    return _AdminCard(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      onTap: () {
+        _openPage(
+          StudentDetailPage(
+            student: student,
+            authService: _authService,
+          ),
+          title: student['name'] ?? 'Student Profile',
+        );
+      },
+      child: Row(
+        children: [
+          StudentAvatar(
+            photoUrl: photo,
+            name: sName,
+            size: 46,
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  sName,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: _Palette.textDark,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  subtitleText,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: _Palette.textMuted,
+                  ),
+                ),
+                if (categories.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    children: categories.map((c) {
+                      final cColor = StudentCategoryUtils.getCategoryColor(c);
+                      final emoji = StudentCategoryUtils.getCategoryEmoji(c);
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                        decoration: BoxDecoration(
+                          color: cColor.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: cColor.withValues(alpha: 0.3)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(emoji, style: const TextStyle(fontSize: 11)),
+                            const SizedBox(width: 4),
+                            Text(
+                              c,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: cColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const Icon(
+            Icons.chevron_right_rounded,
+            color: _Palette.textFaint,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategoryFilterChip({
+    required String label,
+    required String emoji,
+    required int count,
+    required bool isSelected,
+    Color? color,
+    required VoidCallback onTap,
+  }) {
+    final activeColor = color ?? _Palette.primary;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        decoration: BoxDecoration(
+          color: isSelected ? activeColor : _Palette.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? activeColor : _Palette.border,
+            width: isSelected ? 1.5 : 1,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: activeColor.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(emoji, style: const TextStyle(fontSize: 13)),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                color: isSelected ? Colors.white : _Palette.textDark,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+              decoration: BoxDecoration(
+                color: isSelected ? Colors.white.withValues(alpha: 0.25) : _Palette.bg,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                '$count',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: isSelected ? Colors.white : _Palette.textMuted,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

@@ -5,7 +5,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:strawberry/core/theme/app_colors.dart';
 import 'package:strawberry/core/theme/app_decorations.dart';
 import 'package:strawberry/core/theme/app_typography.dart';
-import 'package:strawberry/core/utils/responsive.dart';
 import 'package:strawberry/core/widgets/app_button.dart';
 import 'about_model.dart';
 import 'about_service.dart';

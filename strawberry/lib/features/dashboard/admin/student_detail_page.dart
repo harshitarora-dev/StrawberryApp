@@ -3,6 +3,7 @@ import 'package:strawberry/features/auth/auth_service.dart';
 import 'package:strawberry/features/payments/fee_service.dart';
 import 'package:strawberry/features/payments/fee_head_field.dart';
 import 'package:strawberry/core/widgets/student_avatar.dart';
+import 'package:strawberry/core/utils/student_category_utils.dart';
 import 'package:strawberry/features/dashboard/admin/student_attendance_history_page.dart';
 
 import 'package:strawberry/core/theme/app_colors.dart';
@@ -477,15 +478,13 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
     if (!AuthService.isPrimaryAdmin(widget.authService.currentUserEmail)) {
       return;
     }
-    String? selectedType = _student['student_type'] as String?;
+    final Set<String> selectedCategories = {
+      ...StudentCategoryUtils.getCategories(_student),
+    };
+    String? categoryError;
 
-    // Ensure the current category is represented in the dropdown selection, even if it was deleted.
-    List<String> dropdownItems = List.from(_categories);
-    if (selectedType != null &&
-        selectedType.isNotEmpty &&
-        !dropdownItems.contains(selectedType)) {
-      dropdownItems.add(selectedType);
-    }
+    // Ensure all current categories are in the category list
+    final allCategoryOptions = <String>{..._categories, ...selectedCategories}.toList();
 
     final feesController = TextEditingController(
       text: (_student['fees'] ?? 0).toString(),
@@ -540,23 +539,103 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
                         ),
                       ),
                       const SizedBox(height: 20),
-                      DropdownButtonFormField<String>(
-                        initialValue: selectedType,
-                        dropdownColor: _surface,
-                        style: const TextStyle(color: _textDark, fontSize: 15),
-                        decoration: _inputDecor(
-                          label: 'Student Type',
-                          icon: Icons.school_rounded,
+                      // Multi-select categories
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: _bg,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: categoryError != null ? _danger : _border,
+                          ),
                         ),
-                        items: dropdownItems.map((cat) {
-                          return DropdownMenuItem<String>(
-                            value: cat,
-                            child: Text(cat),
-                          );
-                        }).toList(),
-                        onChanged: (v) => setSheet(() => selectedType = v),
-                        validator: (v) =>
-                            (v == null || v.isEmpty) ? 'Select type' : null,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.school_rounded, size: 18, color: _primary),
+                                const SizedBox(width: 8),
+                                const Text(
+                                  'Enrolled Classes / Categories *',
+                                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: _textDark),
+                                ),
+                                const Spacer(),
+                                if (selectedCategories.isNotEmpty)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: _primarySoft,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Text(
+                                      '${selectedCategories.length} selected',
+                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: _primaryDark),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            const Text(
+                              'Tap all categories that apply (e.g. Playgroup + Daycare)',
+                              style: TextStyle(fontSize: 12, color: _textMuted),
+                            ),
+                            const SizedBox(height: 12),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: allCategoryOptions.map((cat) {
+                                final isSelected = selectedCategories.contains(cat);
+                                final color = StudentCategoryUtils.getCategoryColor(cat);
+                                return FilterChip(
+                                  selected: isSelected,
+                                  avatar: Text(StudentCategoryUtils.getCategoryEmoji(cat)),
+                                  label: Text(
+                                    cat,
+                                    style: TextStyle(
+                                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                      color: isSelected ? Colors.white : _textDark,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                  selectedColor: color,
+                                  backgroundColor: _surface,
+                                  checkmarkColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    side: BorderSide(
+                                      color: isSelected ? color : _border,
+                                      width: isSelected ? 1.5 : 1,
+                                    ),
+                                  ),
+                                  onSelected: (selected) {
+                                    setSheet(() {
+                                      if (selected) {
+                                        selectedCategories.add(cat);
+                                        categoryError = null;
+                                      } else {
+                                        selectedCategories.remove(cat);
+                                      }
+                                    });
+                                  },
+                                );
+                              }).toList(),
+                            ),
+                            if (categoryError != null) ...[
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  const Icon(Icons.error_outline_rounded, size: 14, color: _danger),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    categoryError!,
+                                    style: const TextStyle(color: _danger, fontSize: 12, fontWeight: FontWeight.w600),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ],
+                        ),
                       ),
                       const SizedBox(height: 14),
                       TextFormField(
@@ -669,8 +748,12 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
                         height: 52,
                         child: ElevatedButton(
                           onPressed: () async {
+                            if (selectedCategories.isEmpty) {
+                              setSheet(() => categoryError = 'Please select at least one class / category');
+                              return;
+                            }
                             if (!formKey.currentState!.validate()) return;
-                            final type = selectedType!;
+                            final type = StudentCategoryUtils.joinCategories(selectedCategories);
                             final fees =
                                 double.tryParse(feesController.text.trim()) ??
                                 0.0;
@@ -1298,7 +1381,7 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
                           fontSize: 34,
                         ),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 8),
                       Text(
                         name,
                         style: const TextStyle(
@@ -1307,13 +1390,36 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
                           fontWeight: FontWeight.w800,
                         ),
                       ),
-                      Text(
-                        type,
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.8),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
+                      const SizedBox(height: 6),
+                      Wrap(
+                        alignment: WrapAlignment.center,
+                        spacing: 6,
+                        runSpacing: 4,
+                        children: StudentCategoryUtils.getCategories(_student).map((c) {
+                          return Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(StudentCategoryUtils.getCategoryEmoji(c), style: const TextStyle(fontSize: 12)),
+                                const SizedBox(width: 4),
+                                Text(
+                                  c,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
                       ),
                     ],
                   ),

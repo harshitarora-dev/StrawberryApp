@@ -19,6 +19,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:strawberry/core/utils/url_navigation.dart';
 import 'package:strawberry/core/widgets/student_avatar.dart';
 import 'package:strawberry/core/utils/image_utils.dart';
+import 'package:strawberry/core/utils/student_category_utils.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -713,17 +714,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     return 'Mission Accomplished Today, Superstar! 🌙';
   }
 
-  String _getCategoryEmoji(String? category) {
-    if (category == null) return '🍓';
-    final lower = category.toLowerCase();
-    if (lower.contains('playgroup')) return '🧸';
-    if (lower.contains('nursery')) return '🎨';
-    if (lower.contains('lkg')) return '📚';
-    if (lower.contains('ukg')) return '🎓';
-    if (lower.contains('daycare')) return '🌟';
-    return '🍓';
-  }
-
   Widget _buildProfileHero(bool isDesktop) {
     final rawPhoto = _profile?['photo_url'] as String?;
     final photoUrl = (rawPhoto != null && rawPhoto.trim().isNotEmpty)
@@ -731,7 +721,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         : _authService.currentUserPhotoUrl;
     final name = _profile?['name'] ?? 'Student';
     final studentType = _profile?['student_type'] as String? ?? 'Preschool';
-    final emoji = _getCategoryEmoji(studentType);
+    final categories = StudentCategoryUtils.getCategories(_profile);
     final parentName = _profile?['parent_name'] as String? ?? '';
     final phone = _profile?['phone'] as String? ?? '';
     final fee = _profile?['fees'] ?? 0;
@@ -814,27 +804,34 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                             ),
                           ),
                           const SizedBox(width: 10),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(emoji, style: const TextStyle(fontSize: 13)),
-                                const SizedBox(width: 4),
-                                Text(
-                                  studentType,
-                                  style: const TextStyle(
-                                    color: AppColors.primaryDark,
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 12,
-                                  ),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 4,
+                            children: (categories.isNotEmpty ? categories : [studentType]).map((c) {
+                              final cEmoji = StudentCategoryUtils.getCategoryEmoji(c);
+                              return Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(16),
                                 ),
-                              ],
-                            ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(cEmoji, style: const TextStyle(fontSize: 13)),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      c,
+                                      style: const TextStyle(
+                                        color: AppColors.primaryDark,
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
                           ),
                         ],
                       ),
@@ -934,19 +931,27 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         ],
                       ),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  children: (categories.isNotEmpty ? categories : [studentType]).map((c) {
+                    final cEmoji = StudentCategoryUtils.getCategoryEmoji(c);
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(14),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(emoji, style: const TextStyle(fontSize: 12)),
+                          Text(cEmoji, style: const TextStyle(fontSize: 12)),
                           const SizedBox(width: 4),
                           Text(
-                            studentType,
+                            c,
                             style: const TextStyle(
                               color: AppColors.primaryDark,
                               fontWeight: FontWeight.w800,
@@ -955,8 +960,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           ),
                         ],
                       ),
-                    ),
-                  ],
+                    );
+                  }).toList(),
                 ),
                 if (parentName.isNotEmpty || phone.isNotEmpty) ...[
                   const SizedBox(height: 10),

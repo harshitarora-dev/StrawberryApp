@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:strawberry/features/auth/auth_service.dart';
 import 'package:intl/intl.dart';
+import 'package:strawberry/core/utils/student_category_utils.dart';
 
 import 'package:strawberry/core/theme/app_colors.dart';
 import 'package:strawberry/core/widgets/playschool_animations.dart';
@@ -45,6 +46,7 @@ class _AttendanceMarkPageState extends State<AttendanceMarkPage> {
   Map<String, String> _attendanceStatus = {};
   Map<String, TimeOfDay?> _inTimes = {};
   Map<String, TimeOfDay?> _outTimes = {};
+  final Set<String> _alreadyMarkedStudentIds = {};
   bool _loading = true;
   bool _saving = false;
 
@@ -168,15 +170,17 @@ class _AttendanceMarkPageState extends State<AttendanceMarkPage> {
         _attendanceStatus.clear();
         _inTimes.clear();
         _outTimes.clear();
+        _alreadyMarkedStudentIds.clear();
         final existingMap = {
           for (var r in records) r['student_id'] as String: r
         };
         final filteredStudents = _students.where((s) =>
-            (s['student_type'] as String? ?? 'Other') == _selectedCategory).toList();
+            StudentCategoryUtils.hasCategory(s, _selectedCategory)).toList();
         for (var s in filteredStudents) {
           final id = s['id'] as String;
           final rec = existingMap[id];
           if (rec != null) {
+            _alreadyMarkedStudentIds.add(id);
             _attendanceStatus[id] = rec['status'] as String? ?? 'Present';
             _inTimes[id] = _parseTimeString(rec['in_time'] as String?);
             _outTimes[id] = _parseTimeString(rec['out_time'] as String?);
@@ -348,7 +352,7 @@ class _AttendanceMarkPageState extends State<AttendanceMarkPage> {
 
     // Save attendance only for the filtered category students
     final filteredStudents = _students.where((s) =>
-        (s['student_type'] as String? ?? 'Other') == _selectedCategory).toList();
+        StudentCategoryUtils.hasCategory(s, _selectedCategory)).toList();
 
     final entries = filteredStudents
         .map(
@@ -396,7 +400,7 @@ class _AttendanceMarkPageState extends State<AttendanceMarkPage> {
   ({int present, int absent, int late}) get _counts {
     int present = 0, absent = 0, late = 0;
     final filteredIds = _students
-        .where((s) => (s['student_type'] as String? ?? 'Other') == _selectedCategory)
+        .where((s) => StudentCategoryUtils.hasCategory(s, _selectedCategory))
         .map((s) => s['id'] as String)
         .toSet();
 
@@ -412,7 +416,7 @@ class _AttendanceMarkPageState extends State<AttendanceMarkPage> {
 
   void _markAllAsHoliday() {
     final filteredStudents = _students
-        .where((s) => (s['student_type'] as String? ?? 'Other') == _selectedCategory)
+        .where((s) => StudentCategoryUtils.hasCategory(s, _selectedCategory))
         .toList();
     setState(() {
       for (final s in filteredStudents) {
@@ -760,11 +764,39 @@ class _AttendanceMarkPageState extends State<AttendanceMarkPage> {
                             fontWeight: FontWeight.w700,
                             color: _Palette.textDark)),
                     const SizedBox(height: 2),
-                    Text(type,
-                        style: const TextStyle(
-                            fontSize: 12.5,
-                            color: _Palette.textMuted,
-                            fontWeight: FontWeight.w500)),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            StudentCategoryUtils.formatCategories(student),
+                            style: const TextStyle(
+                              fontSize: 12.5,
+                              color: _Palette.textMuted,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (_alreadyMarkedStudentIds.contains(id)) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                            decoration: BoxDecoration(
+                              color: _Palette.primarySoft,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text(
+                              'Marked earlier',
+                              style: TextStyle(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w700,
+                                color: _Palette.primaryDark,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -914,7 +946,7 @@ class _AttendanceMarkPageState extends State<AttendanceMarkPage> {
   Widget build(BuildContext context) {
     final isDesktopWidth = MediaQuery.of(context).size.width >= 960;
     final filteredStudents = _students.where((s) =>
-        (s['student_type'] as String? ?? 'Other') == _selectedCategory).toList();
+        StudentCategoryUtils.hasCategory(s, _selectedCategory)).toList();
 
     return Scaffold(
       backgroundColor: _Palette.bg,

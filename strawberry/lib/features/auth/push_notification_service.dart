@@ -194,12 +194,12 @@ class PushNotificationService {
           targetTokens = [response['fcm_token'] as String];
         }
       } else {
-        // Audience is a specific category (e.g. LKG, Nursery)
+        // Audience is a specific category (e.g. LKG, Nursery, Daycare)
         final response = await _supabase
             .from('profiles')
             .select('fcm_token')
             .eq('role', 'student')
-            .eq('student_type', audience)
+            .ilike('student_type', '%$audience%')
             .not('fcm_token', 'is', null);
 
         targetTokens = List<String>.from(

@@ -5,6 +5,7 @@ import 'package:strawberry/core/theme/app_typography.dart';
 import 'package:strawberry/core/theme/app_decorations.dart';
 import 'package:strawberry/core/widgets/app_badge.dart';
 import 'package:strawberry/core/widgets/playschool_animations.dart';
+import 'package:strawberry/core/utils/student_category_utils.dart';
 import 'package:strawberry/features/auth/auth_service.dart';
 
 class AttendancePage extends StatefulWidget {
@@ -75,7 +76,7 @@ class _AttendancePageState extends State<AttendancePage> {
 
   // ── Derived Stats & Helper Methods ────────────────────────────────────
 
-  String get _category => (_profile?['student_type'] as String?)?.trim() ?? 'All';
+  List<String> get _categories => StudentCategoryUtils.getCategories(_profile);
 
   Map<String, Map<String, dynamic>> get _recordsByDate {
     final map = <String, Map<String, dynamic>>{};
@@ -89,7 +90,11 @@ class _AttendancePageState extends State<AttendancePage> {
   /// Map of holidays for visible month (Sunday, Saturday if applicable, or explicit DB holiday)
   Map<String, Map<String, dynamic>> get _holidaysByDate {
     final holidayMap = <String, Map<String, dynamic>>{};
-    final isSatDefault = _authService.isSaturdayDefaultHoliday(_category);
+    final cats = _categories;
+    // Saturday is default holiday only if ALL student's categories have Saturday as default holiday
+    final isSatDefault = cats.isNotEmpty
+        ? cats.every((c) => _authService.isSaturdayDefaultHoliday(c))
+        : _authService.isSaturdayDefaultHoliday('All');
     final daysInMonth = DateTime(_visibleMonth.year, _visibleMonth.month + 1, 0).day;
 
     for (int day = 1; day <= daysInMonth; day++) {
@@ -105,15 +110,16 @@ class _AttendancePageState extends State<AttendancePage> {
     for (final h in _monthHolidays) {
       final dateStr = h['date']?.toString();
       if (dateStr == null) continue;
-      if (h['type'] == 'holiday' &&
-          (h['category'] == 'All' || h['category'] == _category)) {
+      final hCat = h['category']?.toString() ?? 'All';
+      final isRelevant = hCat == 'All' || cats.contains(hCat);
+      if (h['type'] == 'holiday' && isRelevant) {
         holidayMap[dateStr] = {
           'type': 'holiday',
           'title': h['title'],
-          'category': h['category'],
+          'category': hCat,
         };
       }
-      if (h['type'] == 'working_day' && h['category'] == _category) {
+      if (h['type'] == 'working_day' && isRelevant) {
         holidayMap[dateStr] = {
           'type': 'working_day',
           'title': h['title'],
