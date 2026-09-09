@@ -1,5 +1,6 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+
+import 'package:strawberry/core/utils/image_utils.dart';
 
 class StudentAvatar extends StatelessWidget {
   final String? photoUrl;
@@ -17,17 +18,9 @@ class StudentAvatar extends StatelessWidget {
     this.border,
   });
 
-  /// Transform Google user content URLs on Web to bypass CanvasKit CORS block
+  /// Transform Google user content URLs on Web to bypass CanvasKit CORS block and downscale
   static String sanitizeUrl(String? url) {
-    if (url == null || url.trim().isEmpty) return '';
-    final trimmed = url.trim();
-    if (kIsWeb) {
-      if (trimmed.contains('googleusercontent.com') ||
-          trimmed.contains('ggpht.com')) {
-        return 'https://images.weserv.nl/?url=${Uri.encodeComponent(trimmed)}';
-      }
-    }
-    return trimmed;
+    return AppImageUtils.optimize(url, maxWidth: 200);
   }
 
   /// Deterministic pastel gradient based on student's name

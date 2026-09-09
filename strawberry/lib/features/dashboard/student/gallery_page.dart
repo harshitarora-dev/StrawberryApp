@@ -7,6 +7,7 @@ import 'package:strawberry/core/theme/app_decorations.dart';
 import 'package:strawberry/core/utils/responsive.dart';
 import 'package:strawberry/core/widgets/app_empty_state.dart';
 import 'package:strawberry/core/widgets/playschool_animations.dart';
+import 'package:strawberry/core/utils/image_utils.dart';
 import 'package:strawberry/features/auth/auth_service.dart';
 
 class GalleryPage extends StatefulWidget {
@@ -311,7 +312,7 @@ class _GalleryPageState extends State<GalleryPage> {
                 children: [
                 // Background Image with smooth loading
                 Image.network(
-                  url,
+                  AppImageUtils.optimize(url, maxWidth: 600),
                   fit: BoxFit.cover,
                   loadingBuilder: (context, child, progress) {
                     if (progress == null) return child;
@@ -511,7 +512,7 @@ class _LightboxViewerState extends State<_LightboxViewer> {
                 maxScale: 4.0,
                 child: Center(
                   child: Image.network(
-                    url,
+                    AppImageUtils.optimize(url, maxWidth: 1400),
                     fit: BoxFit.contain,
                     loadingBuilder: (context, child, progress) {
                       if (progress == null) return child;

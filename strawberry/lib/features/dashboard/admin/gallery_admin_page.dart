@@ -9,6 +9,7 @@ import 'package:strawberry/core/theme/app_decorations.dart';
 import 'package:strawberry/core/utils/responsive.dart';
 import 'package:strawberry/core/widgets/app_empty_state.dart';
 import 'package:strawberry/core/widgets/playschool_animations.dart';
+import 'package:strawberry/core/utils/image_utils.dart';
 
 class GalleryAdminPage extends StatefulWidget {
   final AuthService authService;
@@ -673,7 +674,7 @@ class _GalleryAdminPageState extends State<GalleryAdminPage> {
         children: [
           // Photo
           Image.network(
-            url,
+            AppImageUtils.optimize(url, maxWidth: 600),
             fit: BoxFit.cover,
             loadingBuilder: (context, child, progress) {
               if (progress == null) return child;

@@ -18,6 +18,7 @@ import 'package:strawberry/features/dashboard/student/gallery_page.dart';
 import 'package:strawberry/features/dashboard/admin/admin_dashboard.dart';
 import 'package:strawberry/core/widgets/playschool_animations.dart';
 import 'package:strawberry/core/utils/url_navigation.dart';
+import 'package:strawberry/core/utils/image_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -2400,7 +2401,7 @@ class _AuthScreenState extends State<AuthScreen>
                               fit: StackFit.expand,
                               children: [
                                 Image.network(
-                                  url,
+                                  AppImageUtils.optimize(url, maxWidth: 600),
                                   fit: BoxFit.cover,
                                   errorBuilder: (_, _, _) => Container(
                                     color: AppColors.primarySoft,

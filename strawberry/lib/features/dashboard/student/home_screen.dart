@@ -18,6 +18,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:strawberry/core/utils/url_navigation.dart';
 import 'package:strawberry/core/widgets/student_avatar.dart';
+import 'package:strawberry/core/utils/image_utils.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -1659,7 +1660,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           fit: StackFit.expand,
                           children: [
                             Image.network(
-                              url,
+                              AppImageUtils.optimize(url, maxWidth: 600),
                               fit: BoxFit.cover,
                               errorBuilder: (ctx, err, stack) => Container(
                                 color: AppColors.surfaceAlt,
