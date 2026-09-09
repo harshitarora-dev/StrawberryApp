@@ -295,6 +295,9 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
 
   // ── Upgrade student sheet ────────────────────────────────────────────
   void _openUpgradeSheet() {
+    if (!AuthService.isPrimaryAdmin(widget.authService.currentUserEmail)) {
+      return;
+    }
     String? selectedType = _student['student_type'] as String?;
 
     // Ensure the current category is represented in the dropdown selection, even if it was deleted.
@@ -629,19 +632,48 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
                           shape: BoxShape.circle,
                           color: Colors.white.withValues(alpha: 0.3),
                         ),
-                        child: CircleAvatar(
-                          radius: 44,
-                          backgroundColor: Colors.white,
-                          backgroundImage: photoUrl != null
-                              ? NetworkImage(photoUrl)
-                              : null,
-                          child: photoUrl == null
-                              ? const Icon(
-                                  Icons.person_rounded,
-                                  size: 44,
-                                  color: _primary,
-                                )
-                              : null,
+                        child: ClipOval(
+                          child: Container(
+                            width: 88,
+                            height: 88,
+                            color: Colors.white,
+                            child: (photoUrl != null && photoUrl.trim().isNotEmpty)
+                                ? Image.network(
+                                    photoUrl,
+                                    width: 88,
+                                    height: 88,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return const Center(
+                                        child: Icon(
+                                          Icons.person_rounded,
+                                          size: 44,
+                                          color: _primary,
+                                        ),
+                                      );
+                                    },
+                                    loadingBuilder: (context, child, loadingProgress) {
+                                      if (loadingProgress == null) return child;
+                                      return const Center(
+                                        child: SizedBox(
+                                          width: 24,
+                                          height: 24,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: _primary,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  )
+                                : const Center(
+                                    child: Icon(
+                                      Icons.person_rounded,
+                                      size: 44,
+                                      color: _primary,
+                                    ),
+                                  ),
+                          ),
                         ),
                       ),
                       const SizedBox(height: 10),
@@ -777,12 +809,14 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
                         label: 'Category',
                         value: type,
                       ),
-                      const Divider(color: _border, height: 1),
-                      _infoRow(
-                        icon: Icons.currency_rupee_rounded,
-                        label: 'Monthly Fees',
-                        value: feesDisplay,
-                      ),
+                      if (AuthService.isPrimaryAdmin(widget.authService.currentUserEmail)) ...[
+                        const Divider(color: _border, height: 1),
+                        _infoRow(
+                          icon: Icons.currency_rupee_rounded,
+                          label: 'Monthly Fees',
+                          value: feesDisplay,
+                        ),
+                      ],
                       const Divider(color: _border, height: 1),
                       _infoRow(
                         icon: Icons.receipt_long_rounded,
@@ -896,17 +930,19 @@ class _StudentDetailPageState extends State<StudentDetailPage> {
       ),
 
       // ── Floating Upgrade button ──────────────────────────────────────
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _saving ? null : _openUpgradeSheet,
-        backgroundColor: _primary,
-        foregroundColor: Colors.white,
-        elevation: 3,
-        icon: const Icon(Icons.upgrade_rounded),
-        label: const Text(
-          'Upgrade Student',
-          style: TextStyle(fontWeight: FontWeight.w700),
-        ),
-      ),
+      floatingActionButton: AuthService.isPrimaryAdmin(widget.authService.currentUserEmail)
+          ? FloatingActionButton.extended(
+              onPressed: _saving ? null : _openUpgradeSheet,
+              backgroundColor: _primary,
+              foregroundColor: Colors.white,
+              elevation: 3,
+              icon: const Icon(Icons.upgrade_rounded),
+              label: const Text(
+                'Upgrade Student',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
+            )
+          : null,
     );
   }
 

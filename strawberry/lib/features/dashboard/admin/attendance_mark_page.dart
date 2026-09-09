@@ -743,13 +743,27 @@ class _AttendanceMarkPageState extends State<AttendanceMarkPage> {
         children: [
           Row(
             children: [
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: _Palette.primarySoft,
-                backgroundImage: photo != null ? NetworkImage(photo) : null,
-                child: photo == null
-                    ? const Icon(Icons.person_rounded, color: _Palette.primary, size: 20)
-                    : null,
+              ClipOval(
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  color: _Palette.primarySoft,
+                  child: (photo != null && photo.trim().isNotEmpty)
+                      ? Image.network(
+                          photo,
+                          width: 40,
+                          height: 40,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Center(
+                              child: Icon(Icons.person_rounded, color: _Palette.primary, size: 20),
+                            );
+                          },
+                        )
+                      : const Center(
+                          child: Icon(Icons.person_rounded, color: _Palette.primary, size: 20),
+                        ),
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(

@@ -335,6 +335,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
   }
 
   void _openFeePaymentsPage() {
+    if (!AuthService.isPrimaryAdmin(_authService.currentUserEmail)) {
+      return;
+    }
     _openPage(
       FeePaymentsAdminPage(authService: _authService),
       title: 'Fee Records & UPI Logs',
@@ -383,6 +386,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
   // Approval bottom sheet
   // ---------------------------------------------------------------------
   void _openApprovalSheet(Map<String, dynamic> request) {
+    if (!AuthService.isPrimaryAdmin(_authService.currentUserEmail)) {
+      return;
+    }
     final name = request['name'] ?? 'Unknown';
     final uid = request['id'] ?? '';
 
@@ -478,20 +484,34 @@ class _AdminDashboardState extends State<AdminDashboard> {
                               ),
                               shape: BoxShape.circle,
                             ),
-                            child: CircleAvatar(
-                              radius: 20,
-                              backgroundColor: Colors.white,
-                              backgroundImage:
-                                  (request['photo_url'] as String?) != null
-                                  ? NetworkImage(request['photo_url'] as String)
-                                  : null,
-                              child: (request['photo_url'] as String?) == null
-                                  ? const Icon(
-                                      Icons.person_rounded,
-                                      color: _Palette.primary,
-                                      size: 20,
-                                    )
-                                  : null,
+                            child: ClipOval(
+                              child: Container(
+                                width: 40,
+                                height: 40,
+                                color: Colors.white,
+                                child: ((request['photo_url'] as String?) != null &&
+                                        (request['photo_url'] as String).trim().isNotEmpty)
+                                    ? Image.network(
+                                        request['photo_url'] as String,
+                                        width: 40,
+                                        height: 40,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (context, error, stackTrace) => const Center(
+                                          child: Icon(
+                                            Icons.person_rounded,
+                                            color: _Palette.primary,
+                                            size: 20,
+                                          ),
+                                        ),
+                                      )
+                                    : const Center(
+                                        child: Icon(
+                                          Icons.person_rounded,
+                                          color: _Palette.primary,
+                                          size: 20,
+                                        ),
+                                      ),
+                              ),
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -923,7 +943,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
     final quickLinks = [
       (Icons.insights_rounded, 'Review & Analytics', _openReviewPage),
       (Icons.event_available_rounded, 'Mark Attendance', _openAttendancePage),
-      (Icons.payments_rounded, 'Fee Records', _openFeePaymentsPage),
+      if (AuthService.isPrimaryAdmin(_authService.currentUserEmail))
+        (Icons.payments_rounded, 'Fee Records', _openFeePaymentsPage),
       (Icons.campaign_rounded, 'Notice Board', _openNoticePage),
       (Icons.photo_library_rounded, 'Photo Gallery', _openGalleryPage),
       (Icons.category_rounded, 'Categories & Grades', _openCategoriesPage),
@@ -1318,8 +1339,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
                               _buildAdminAdmissionsCard(),
                               const SizedBox(height: 18),
                               _buildAdminAttendanceCard(),
-                              const SizedBox(height: 18),
-                              _buildAdminFeeCard(),
+                              if (AuthService.isPrimaryAdmin(_authService.currentUserEmail)) ...[
+                                const SizedBox(height: 18),
+                                _buildAdminFeeCard(),
+                              ],
                             ],
                           ),
                         ),
@@ -1342,8 +1365,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     _buildAdminAdmissionsCard(),
                     const SizedBox(height: 16),
                     _buildAdminAttendanceCard(),
-                    const SizedBox(height: 16),
-                    _buildAdminFeeCard(),
+                    if (AuthService.isPrimaryAdmin(_authService.currentUserEmail)) ...[
+                      const SizedBox(height: 16),
+                      _buildAdminFeeCard(),
+                    ],
                     const SizedBox(height: 16),
                     _buildAdminChatsCard(),
                     const SizedBox(height: 16),
@@ -1685,13 +1710,25 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   ),
                   child: Row(
                     children: [
-                      CircleAvatar(
-                        radius: 18,
-                        backgroundColor: _Palette.primarySoft,
-                        backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
-                        child: photoUrl == null
-                            ? const Icon(Icons.person_rounded, color: _Palette.primary, size: 16)
-                            : null,
+                      ClipOval(
+                        child: Container(
+                          width: 36,
+                          height: 36,
+                          color: _Palette.primarySoft,
+                          child: (photoUrl != null && photoUrl.trim().isNotEmpty)
+                              ? Image.network(
+                                  photoUrl,
+                                  width: 36,
+                                  height: 36,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) => const Center(
+                                    child: Icon(Icons.person_rounded, color: _Palette.primary, size: 16),
+                                  ),
+                                )
+                              : const Center(
+                                  child: Icon(Icons.person_rounded, color: _Palette.primary, size: 16),
+                                ),
+                        ),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
@@ -1713,17 +1750,30 @@ class _AdminDashboardState extends State<AdminDashboard> {
                           ],
                         ),
                       ),
-                      ElevatedButton(
-                        onPressed: () => _openApprovalSheet(req),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _Palette.primary,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      if (AuthService.isPrimaryAdmin(_authService.currentUserEmail))
+                        ElevatedButton(
+                          onPressed: () => _openApprovalSheet(req),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _Palette.primary,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                          child: const Text('Review', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
+                        )
+                      else
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: _Palette.amber.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Text(
+                            'Pending',
+                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: _Palette.amber),
+                          ),
                         ),
-                        child: const Text('Review', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
-                      ),
                     ],
                   ),
                 );
@@ -2226,13 +2276,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
         color: _Palette.amber,
         onTap: _openNoticePage,
       ),
-      _QuickActionCard(
-        title: 'Fee Payments',
-        subtitle: 'Track UPI fee payments',
-        icon: Icons.account_balance_wallet_rounded,
-        color: _Palette.leafGreen,
-        onTap: _openFeePaymentsPage,
-      ),
+      if (AuthService.isPrimaryAdmin(_authService.currentUserEmail))
+        _QuickActionCard(
+          title: 'Fee Payments',
+          subtitle: 'Track UPI fee payments',
+          icon: Icons.account_balance_wallet_rounded,
+          color: _Palette.leafGreen,
+          onTap: _openFeePaymentsPage,
+        ),
       _QuickActionCard(
         title: 'Holidays',
         subtitle: 'Configure category holidays & weekends',
@@ -2410,18 +2461,33 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   child: Row(
                     children: [
-                      CircleAvatar(
-                        radius: 22,
-                        backgroundColor: _Palette.primarySoft,
-                        backgroundImage: photoUrl != null
-                            ? NetworkImage(photoUrl)
-                            : null,
-                        child: photoUrl == null
-                            ? const Icon(
-                                Icons.person_rounded,
-                                color: _Palette.primary,
-                              )
-                            : null,
+                      ClipOval(
+                        child: Container(
+                          width: 44,
+                          height: 44,
+                          color: _Palette.primarySoft,
+                          child: (photoUrl != null && photoUrl.trim().isNotEmpty)
+                              ? Image.network(
+                                  photoUrl,
+                                  width: 44,
+                                  height: 44,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) => const Center(
+                                    child: Icon(
+                                      Icons.person_rounded,
+                                      color: _Palette.primary,
+                                      size: 20,
+                                    ),
+                                  ),
+                                )
+                              : const Center(
+                                  child: Icon(
+                                    Icons.person_rounded,
+                                    color: _Palette.primary,
+                                    size: 20,
+                                  ),
+                                ),
+                        ),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
@@ -2435,28 +2501,55 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      ElevatedButton(
-                        onPressed: () => _openApprovalSheet(request),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _Palette.primary,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
+                      if (AuthService.isPrimaryAdmin(_authService.currentUserEmail))
+                        ElevatedButton(
+                          onPressed: () => _openApprovalSheet(request),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _Palette.primary,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 18,
+                              vertical: 10,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          child: const Text(
+                            'Review',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13,
+                            ),
+                          ),
+                        )
+                      else
+                        Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 18,
-                            vertical: 10,
+                            horizontal: 12,
+                            vertical: 8,
                           ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
+                          decoration: BoxDecoration(
+                            color: _Palette.amber.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.hourglass_top_rounded, size: 14, color: _Palette.amber),
+                              SizedBox(width: 4),
+                              Text(
+                                'Pending Review',
+                                style: TextStyle(
+                                  color: _Palette.amber,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        child: const Text(
-                          'Review',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
                     ],
                   ),
                 ),
@@ -2708,19 +2801,35 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                                 horizontal: 16,
                                                 vertical: 2,
                                               ),
-                                              leading: CircleAvatar(
-                                                radius: 19,
-                                                backgroundColor: _Palette.primarySoft,
-                                                backgroundImage: photo != null
-                                                    ? NetworkImage(photo)
-                                                    : null,
-                                                child: photo == null
-                                                    ? const Icon(
-                                                        Icons.person_rounded,
-                                                        color: _Palette.primary,
-                                                        size: 20,
-                                                      )
-                                                    : null,
+                                              leading: ClipOval(
+                                                child: Container(
+                                                  width: 38,
+                                                  height: 38,
+                                                  color: _Palette.primarySoft,
+                                                  child: (photo != null && photo.trim().isNotEmpty)
+                                                      ? Image.network(
+                                                          photo,
+                                                          width: 38,
+                                                          height: 38,
+                                                          fit: BoxFit.cover,
+                                                          errorBuilder: (context, error, stackTrace) {
+                                                            return const Center(
+                                                              child: Icon(
+                                                                Icons.person_rounded,
+                                                                color: _Palette.primary,
+                                                                size: 20,
+                                                              ),
+                                                            );
+                                                          },
+                                                        )
+                                                      : const Center(
+                                                          child: Icon(
+                                                            Icons.person_rounded,
+                                                            color: _Palette.primary,
+                                                            size: 20,
+                                                          ),
+                                                        ),
+                                                ),
                                               ),
                                               title: Text(
                                                 sName,

@@ -229,6 +229,35 @@ class _FeePaymentsAdminPageState extends State<FeePaymentsAdminPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (!AuthService.isPrimaryAdmin(widget.authService.currentUserEmail)) {
+      return Scaffold(
+        backgroundColor: _bg,
+        appBar: AppBar(
+          backgroundColor: _bg,
+          elevation: 0,
+          foregroundColor: _textDark,
+          title: const Text(
+            'Fee Payments',
+            style: TextStyle(fontWeight: FontWeight.w800, color: _textDark),
+          ),
+        ),
+        body: const Center(
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: Text(
+              'Access restricted to Primary Administrators only.',
+              style: TextStyle(
+                color: _textMuted,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: _bg,
       appBar: AppBar(
