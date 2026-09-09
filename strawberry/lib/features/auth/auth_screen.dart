@@ -310,16 +310,26 @@ class _AuthScreenState extends State<AuthScreen>
       for (final p in standardPrograms) {
         if (p.toLowerCase() == clean) return p;
       }
-      return standardPrograms.first;
+      return input.trim();
     }
 
-    final availableCategories = [
-      ...standardPrograms,
-      for (final c in _categories)
-        if (!standardPrograms.any((sp) => sp.toLowerCase() == c.toLowerCase()))
-          c,
-    ];
+    final availableCategories = <String>[];
+    for (final p in standardPrograms) {
+      if (!availableCategories.contains(p)) {
+        availableCategories.add(p);
+      }
+    }
+    for (final c in _categories) {
+      final normalized = normalizeProgram(c);
+      if (!availableCategories.contains(normalized)) {
+        availableCategories.add(normalized);
+      }
+    }
+
     String selectedProgram = normalizeProgram(preselectedProgram);
+    if (!availableCategories.contains(selectedProgram)) {
+      selectedProgram = availableCategories.first;
+    }
     bool submitting = false;
 
     showModalBottomSheet(
