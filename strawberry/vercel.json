@@ -21,6 +21,10 @@
       "destination": "/robots.txt"
     },
     {
+      "source": "/photo/:file",
+      "destination": "/api/photo?file=:file"
+    },
+    {
       "source": "/photos/:path*",
       "destination": "https://tbsmesdqigeajrwswlkj.supabase.co/storage/v1/object/public/gallery/:path*"
     },

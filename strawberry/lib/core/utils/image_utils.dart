@@ -44,7 +44,7 @@ class AppImageUtils {
                 !Uri.base.host.contains('127.0.0.1')
             ? Uri.base.host
             : 'strawberrydaycare.co.in';
-        return 'https://$host/photos/$fileName';
+        return 'https://$host/photo/$fileName';
       }
     }
     return trimmed;
