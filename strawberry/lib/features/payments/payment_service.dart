@@ -324,12 +324,33 @@ class PaymentService {
     // --- Fallback: plain launch, no native result channel available. ---
     bool launched = false;
     try {
-      launched = await launchUrl(
-        Uri.parse(uriString),
-        mode: LaunchMode.externalApplication,
-      );
+      if (kIsWeb) {
+        // On mobile web (Chrome on Android / Safari on iOS):
+        // Default `_blank` opens a blank new tab showing upi:// in the URL bar
+        // because browsers prohibit custom scheme intents from detached windows.
+        // Opening with `_self` keeps the current page intact and directly triggers
+        // the mobile OS UPI app chooser (GPay, PhonePe, Paytm, BHIM, etc.).
+        launched = await launchUrl(
+          Uri.parse(uriString),
+          mode: LaunchMode.platformDefault,
+          webOnlyWindowName: '_self',
+        );
+      } else {
+        launched = await launchUrl(
+          Uri.parse(uriString),
+          mode: LaunchMode.externalApplication,
+        );
+      }
     } catch (_) {
-      launched = false;
+      try {
+        launched = await launchUrl(
+          Uri.parse(uriString),
+          mode: LaunchMode.platformDefault,
+          webOnlyWindowName: kIsWeb ? '_self' : null,
+        );
+      } catch (_) {
+        launched = false;
+      }
     }
 
     await _updateStatus(rowId, launched ? 'submitted' : 'cancelled');
