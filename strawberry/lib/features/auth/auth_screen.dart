@@ -19,6 +19,7 @@ import 'package:strawberry/features/dashboard/admin/admin_dashboard.dart';
 import 'package:strawberry/core/widgets/playschool_animations.dart';
 import 'package:strawberry/core/utils/url_navigation.dart';
 import 'package:strawberry/core/utils/image_utils.dart';
+import 'package:strawberry/features/auth/school_hero_media.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -1177,18 +1178,10 @@ class _AuthScreenState extends State<AuthScreen>
                         ),
                       ],
                     ),
-                    child: ClipRRect(
+                    child: SchoolHeroMedia(
+                      height: (screenWidth != null && screenWidth >= 1400) ? 480 : 450,
                       borderRadius: BorderRadius.circular(26),
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          Image.asset(
-                            'assets/images/school.jpg',
-                            fit: BoxFit.cover,
-                            alignment: Alignment.topCenter,
-                          ),
-                        ],
-                      ),
+                      isExploreActive: _activeTab == 0,
                     ),
                   ),
 
@@ -1502,14 +1495,10 @@ class _AuthScreenState extends State<AuthScreen>
                       ),
                     ],
                   ),
-                  child: ClipRRect(
+                  child: SchoolHeroMedia(
+                    height: 250,
                     borderRadius: BorderRadius.circular(18),
-                    child: Image.asset(
-                      'assets/images/school.jpg',
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      alignment: Alignment.topCenter,
-                    ),
+                    isExploreActive: _activeTab == 0,
                   ),
                 ),
               ],
