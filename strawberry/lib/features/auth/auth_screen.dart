@@ -3283,7 +3283,7 @@ class _AuthScreenState extends State<AuthScreen>
                 child: Text('Parent Portal', style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 12)),
               ),
               InkWell(
-                onTap: () => openPrivacyPolicy(),
+                onTap: () => openPrivacyPolicy(context),
                 child: const Text('Privacy Policy', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 12, fontWeight: FontWeight.w600)),
               ),
             ],
@@ -3678,7 +3678,7 @@ class _AuthScreenState extends State<AuthScreen>
             const SizedBox(height: 4),
             Center(
               child: InkWell(
-                onTap: () => openPrivacyPolicy(),
+                onTap: () => openPrivacyPolicy(context),
                 borderRadius: BorderRadius.circular(8),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),

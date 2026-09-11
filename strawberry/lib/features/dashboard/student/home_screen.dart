@@ -2280,7 +2280,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 child: const Text('Location & Map', style: TextStyle(color: Colors.white70, fontSize: 12)),
               ),
               InkWell(
-                onTap: () => openPrivacyPolicy(),
+                onTap: () => openPrivacyPolicy(context),
                 child: const Text('Privacy Policy', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 12, fontWeight: FontWeight.w600)),
               ),
             ],

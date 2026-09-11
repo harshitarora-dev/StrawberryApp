@@ -1,12 +1,25 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:strawberry/features/about/privacy_policy_page.dart';
 
 /// Opens the Strawberry Preschool Privacy & Data Policy.
 ///
-/// On Web: Navigates to `/privacy` in the SAME tab/window (`_self`) so users don't get
-/// kicked out into a new tab while browsing the website.
-/// On Mobile Apps: Opens `https://strawberrydaycare.co.in/privacy` in the external browser.
-Future<void> openPrivacyPolicy() async {
+/// If a [BuildContext] is provided (or when running on mobile app), it pushes
+/// the native in-app [PrivacyPolicyPage] with a non-fixed, smooth-scrolling navbar.
+///
+/// On Web fallback: Navigates to `/privacy` in the SAME tab/window (`_self`).
+/// On Mobile Apps fallback: Opens `https://strawberrydaycare.co.in/privacy` in the browser.
+Future<void> openPrivacyPolicy([BuildContext? context]) async {
+  if (context != null && context.mounted) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const PrivacyPolicyPage(),
+      ),
+    );
+    return;
+  }
+
   try {
     if (kIsWeb) {
       final uri = Uri.base.resolve('/privacy');

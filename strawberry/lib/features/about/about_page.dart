@@ -909,7 +909,7 @@ class _AboutPageState extends State<AboutPage> {
 
   Widget _buildPrivacyPolicyCard() {
     return InkWell(
-      onTap: () => openPrivacyPolicy(),
+      onTap: () => openPrivacyPolicy(context),
       borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
