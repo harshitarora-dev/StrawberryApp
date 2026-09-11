@@ -1185,6 +1185,7 @@ class _AuthScreenState extends State<AuthScreen>
                           Image.asset(
                             'assets/images/school.jpg',
                             fit: BoxFit.cover,
+                            alignment: Alignment.topCenter,
                           ),
                         ],
                       ),
@@ -1485,6 +1486,31 @@ class _AuthScreenState extends State<AuthScreen>
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 18),
+
+                // Featured Campus Celebration Photo (Mobile)
+                Container(
+                  height: 250,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.22),
+                        blurRadius: 18,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: Image.asset(
+                      'assets/images/school.jpg',
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      alignment: Alignment.topCenter,
+                    ),
+                  ),
                 ),
               ],
             ),

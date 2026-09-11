@@ -314,14 +314,16 @@ class _AboutPageState extends State<AboutPage> {
                   ? Image.asset(
                       _info.schoolImageUrl,
                       width: double.infinity,
-                      height: 220,
+                      height: 260,
                       fit: BoxFit.cover,
+                      alignment: Alignment.topCenter,
                     )
                   : Image.network(
                       _info.schoolImageUrl,
                       width: double.infinity,
-                      height: 220,
+                      height: 260,
                       fit: BoxFit.cover,
+                      alignment: Alignment.topCenter,
                       errorBuilder: (_, _, _) => const SizedBox.shrink(),
                     ),
             ),
